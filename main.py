@@ -83,7 +83,6 @@ def main() -> None:
 
     print("\n" + "=" * 55)
     print("  All Sprint 1 architecture checks passed.")
-    print("  Ready to demonstrate to professor.")
     print("=" * 55)
 
 
