@@ -25,14 +25,13 @@ class GameSession:
     """
     Top-level game container. Instantiated once at game start.
     Owns the Player profile, the active Semester, and the
-    GlobalCareerClock that tracks the 7-year hard cap.
+    GlobalCareerClock that tracks the 4-year hard cap.
 
     Composition relationships:
         GameSession 1 *-- 1 Player
         GameSession 1 *-- 1 Semester (active at any given time)
     """
 
-    # Short scope: 4 years x 4 semesters x ~60 days average = ~960 days
     __GLOBAL_YEAR_CAP_DAYS: int = 960
 
     def __init__(self) -> None:
@@ -49,28 +48,29 @@ class GameSession:
 
     def increment_global_clock(self, days: int) -> None:
         """
-        Increment the global career clock by the given number of days.
+        Increment the global career clock by the given days.
         Called by GameClock after every TimeConsumable action.
-        Does nothing if the session is already frozen.
-        [Sprint 2 — stub]
+        Silently ignored if session is already frozen or days < 0.
         """
-        pass
+        if self.__is_frozen or days < 0:
+            return
+        self.__global_career_clock_days += days
 
     def has_reached_year_cap(self) -> bool:
         """
         Return True if the global clock has hit or exceeded the cap.
-        Checked every semester end — triggers freeze and endgame.
-        [Sprint 2 — stub]
+        Graduation takes priority if both conditions trigger together —
+        checked by GameClock before calling this.
         """
-        pass
+        return self.__global_career_clock_days >= self.__GLOBAL_YEAR_CAP_DAYS
 
     def freeze_session(self) -> None:
         """
-        Lock all further progression. Called when the year cap is hit
-        or graduation is confirmed. Endgame evaluation runs after this.
-        [Sprint 2 — stub]
+        Lock all further progression.
+        Called when the year cap is hit or graduation is confirmed.
+        Once frozen, increment_global_clock() becomes a no-op.
         """
-        pass
+        self.__is_frozen = True
 
     def get_is_frozen(self) -> bool:
         """Return whether the session has been frozen."""
@@ -90,16 +90,20 @@ class GameSession:
         """
         Replace the active Semester with a new instance.
         Called by GameClock when advancing to a new semester.
-        [Sprint 2 — stub]
+        The old Semester is discarded — Player and AcademicHistory
+        survive independently via aggregation.
         """
-        pass
+        self.__active_semester = semester
 
     # ── Endgame ───────────────────────────────────────────────
 
     def trigger_endgame_evaluation(self) -> EndgameEvaluationManager:
         """
-        Freeze the session and spawn the EndgameEvaluationManager.
-        Returns the manager so the caller can run evaluations.
-        [Sprint 3 — stub until EndgameEvaluationManager exists]
+        Freeze the session and spawn EndgameEvaluationManager.
+        Returns the manager so the caller can run all three
+        evaluation dimensions before generating the epilogue.
+        [Sprint 3 — EndgameEvaluationManager created by Saif]
         """
-        pass
+        self.freeze_session()
+        from engine.endgame_manager import EndgameEvaluationManager
+        return EndgameEvaluationManager()
