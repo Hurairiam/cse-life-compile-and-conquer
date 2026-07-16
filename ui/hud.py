@@ -1,91 +1,165 @@
 """
-Created by: Nangiba Tasnim (dev3)
-This file contains NO game logic. It only draws the numbers
-that are passed into render(). Abu Huraira's main loop calls render()
-every frame and gives it the current values.
+ui/hud.py
+CSE Life: Compile & Conquer
+Created by: Nangiba Tasnim (dev4-ui-screens)
+
+The HUD (Heads-Up Display) is the info strip across the top of the
+screen during gameplay: days left, money, semester, and credits.
+
+Style: bolder pastel, pixel font, with a small icon next to each stat.
+
+This file has NO game logic. It only draws the numbers passed into
+render(). Abu Huraira's main loop calls render() every frame and gives
+it the current values. Icons and font load with a safety net, so the
+game still runs even if an art file is missing.
 """
 from __future__ import annotations
 import pygame
 
 
+# -------------------------------------------------------------
+# COLOURS  (bolder pastel -- change any of these to restyle)
+# Each colour is (Red, Green, Blue), each number from 0 to 255.
+# -------------------------------------------------------------
+PANEL_PINK  = (247, 200, 226)   # the strip background
+BORDER_ROSE = (214, 106, 168)   # outline under the strip + around the bar
+TEXT_PLUM   = (91, 43, 74)      # dark text so numbers stay readable
+BAR_TRACK   = (230, 214, 245)   # empty part of the days bar (lavender)
+
+BAR_GREEN   = (108, 214, 154)   # days safe   (above 30)
+BAR_AMBER   = (245, 190, 90)    # days low    (16-30)
+BAR_RED     = (232, 96, 130)    # days at the firewall (15 or under)
+
+PLACEHOLDER = (176, 148, 230)   # small square shown if an icon PNG is missing
+
+# -------------------------------------------------------------
+# LAYOUT  (positions and sizes, all in pixels)
+# -------------------------------------------------------------
+STRIP_HEIGHT = 48
+ICON_SIZE    = 26
+FONT_SIZE    = 12
+
+# Left x-position where each stat begins across the screen.
+X_DAYS     = 12
+X_WALLET   = 340
+X_SEMESTER = 590
+X_CREDITS  = 780
+
+
 class HUD:
-    __CAUTION_THRESHOLD: int = 30
-    __FIREWALL_THRESHOLD: int = 15
-    __MAX_DAYS: int = 80
+    """
+    Persistent pastel status bar shown during gameplay.
+
+    It never fetches its own data -- every number it draws is handed in
+    through render(). That keeps my visual code fully separate from the
+    game logic my teammates write (separation of concerns).
+    """
 
     def __init__(self) -> None:
-        self.__font: pygame.font.Font = pygame.font.SysFont("Arial", 16)
+        """Load the pixel font and the four stat icons once, up front."""
+        self.__font: pygame.font.Font = self.__load_font()
+        # A small dictionary: stat name -> its icon image (or None).
+        self.__icons: dict[str, pygame.Surface | None] = {
+            "days":     self.__load_icon("assets/ui/icon_days.png"),
+            "wallet":   self.__load_icon("assets/ui/icon_wallet.png"),
+            "semester": self.__load_icon("assets/ui/icon_semester.png"),
+            "credits":  self.__load_icon("assets/ui/icon_credits.png"),
+        }
 
+    # -- loading helpers --------------------------------------
+    def __load_font(self) -> pygame.font.Font:
+        """
+        Try to load the cute pixel font. If the file isn't there yet,
+        fall back to a chunky built-in font so nothing crashes.
+        """
+        try:
+            return pygame.font.Font("assets/ui/PressStart2P.ttf", FONT_SIZE)
+        except (FileNotFoundError, OSError, pygame.error):
+            return pygame.font.SysFont("Courier", FONT_SIZE + 2, bold=True)
+
+    def __load_icon(self, path: str) -> pygame.Surface | None:
+        """
+        Load one icon PNG and shrink it to icon size. Returns None if the
+        file is missing -- the HUD then draws a placeholder square instead.
+        """
+        try:
+            image = pygame.image.load(path).convert_alpha()
+            return pygame.transform.scale(image, (ICON_SIZE, ICON_SIZE))
+        except (FileNotFoundError, OSError, pygame.error):
+            return None
+
+    # -- main drawing -----------------------------------------
     def render(self, screen: pygame.Surface, time_pool: int,
                wallet: float, semester: int, credits: int) -> None:
         """
         Draw the whole HUD strip.
-
-        screen    : the Pygame window we draw onto
-        time_pool : days left in the semester (0-80)
-        wallet    : money the player has, in BDT
-        semester  : which semester the player is in
-        credits   : credits earned so far (goal is 140)
+        time_pool : days left (0-80)     wallet : money in BDT
+        semester  : current semester     credits: credits earned (goal 140)
         """
-        screen_width: int = screen.get_width()
+        width: int = screen.get_width()
 
-        # 1) The dark background strip across the top.
-        pygame.draw.rect(screen, (15, 15, 25),
-                         pygame.Rect(0, 0, screen_width, 42))
+        # 1) pastel background strip + its bottom outline
+        pygame.draw.rect(screen, PANEL_PINK,
+                         pygame.Rect(0, 0, width, STRIP_HEIGHT))
+        pygame.draw.rect(screen, BORDER_ROSE,
+                         pygame.Rect(0, STRIP_HEIGHT - 4, width, 4))
 
-        # 2) The days bar.
-        self.__draw_days_bar(screen, time_pool)
+        # 2) the four stats
+        self.__draw_days(screen, time_pool)
+        self.__draw_stat(screen, "wallet",   f"{wallet:,.0f}",  X_WALLET)
+        self.__draw_stat(screen, "semester", f"Sem {semester}", X_SEMESTER)
+        self.__draw_stat(screen, "credits",  f"{credits}/140",  X_CREDITS)
 
-        # 3) The three text readouts: wallet, semester, credits.
-        self.__draw_text(screen, f"Wallet: {wallet:,.0f} BDT",
-                         240, (255, 215, 90))
-        self.__draw_text(screen, f"Semester: {semester}",
-                         470, (200, 200, 210))
-        self.__draw_text(screen, f"Credits: {credits} / 140",
-                         640, (160, 210, 255))
+    # -- piece-by-piece drawing -------------------------------
+    def __draw_days(self, screen: pygame.Surface, time_pool: int) -> None:
+        """Draw the days icon, the colour-changing bar, and the number."""
+        self.__draw_icon(screen, "days", X_DAYS)
 
-    def __draw_days_bar(self, screen: pygame.Surface,
-                        time_pool: int) -> None:
-        """
-        Draw the coloured bar showing days left.
-        Green when safe, amber when getting low, red when at the firewall.
-        """
-        # The empty grey bar (the "track" the fill sits inside).
-        track = pygame.Rect(12, 11, 200, 20)
-        pygame.draw.rect(screen, (45, 45, 60), track)
+        bar_x = X_DAYS + ICON_SIZE + 6
+        track = pygame.Rect(bar_x, 15, 90, 18)
+        pygame.draw.rect(screen, BAR_TRACK, track)
 
-        # How much of the bar to fill, based on days left out of 80.
-        fill_width: int = int(200 * time_pool / self.__MAX_DAYS)
-        fill = pygame.Rect(12, 11, fill_width, 20)
+        # how full the bar is, based on days left out of 80
+        fill_width = int(90 * time_pool / 80)
+        fill = pygame.Rect(bar_x, 15, fill_width, 18)
 
-        # Pick the colour based on how many days are left.
-        if time_pool > self.__CAUTION_THRESHOLD:
-            colour = (70, 180, 70)      # green  -- plenty of time
-        elif time_pool > self.__FIREWALL_THRESHOLD:
-            colour = (220, 160, 40)     # amber  -- getting low
+        # pick the colour from how many days remain
+        if time_pool > 30:
+            colour = BAR_GREEN
+        elif time_pool > 15:
+            colour = BAR_AMBER
         else:
-            colour = (210, 55, 55)      # red    -- firewall active
+            colour = BAR_RED
 
         pygame.draw.rect(screen, colour, fill)
+        pygame.draw.rect(screen, BORDER_ROSE, track, 2)   # bar outline
 
-        # The "Days: 45 / 80" label sitting on top of the bar.
-        label = self.__font.render(
-            f"Days: {time_pool} / 80", True, (255, 255, 255))
-        screen.blit(label, (16, 13))
+        number = self.__font.render(str(time_pool), True, TEXT_PLUM)
+        screen.blit(number, (bar_x + 98, 17))
 
-    def __draw_text(self, screen: pygame.Surface, text: str,
-                    x: int, colour: tuple) -> None:
-        """A small helper so I don't repeat the same drawing code."""
-        surface = self.__font.render(text, True, colour)
-        screen.blit(surface, (x, 13))
+    def __draw_stat(self, screen: pygame.Surface, icon_key: str,
+                    text: str, x: int) -> None:
+        """Draw one icon followed by its text (wallet / semester / credits)."""
+        self.__draw_icon(screen, icon_key, x)
+        surface = self.__font.render(text, True, TEXT_PLUM)
+        screen.blit(surface, (x + ICON_SIZE + 6, 17))
+
+    def __draw_icon(self, screen: pygame.Surface, icon_key: str,
+                    x: int) -> None:
+        """Blit the icon image, or a placeholder square if it's missing."""
+        icon = self.__icons[icon_key]
+        if icon is not None:
+            screen.blit(icon, (x, 11))
+        else:
+            pygame.draw.rect(screen, PLACEHOLDER,
+                             pygame.Rect(x, 11, ICON_SIZE, ICON_SIZE))
 
 
-# ---------------------------------------------------------------------
-# STUB TEST -- this part is just so I can run the file on its own and
-# see the HUD. Abu Huraira removes this when he plugs in the real game.
-# Run this file to see three fake states: safe, caution, firewall.
-# Press any key to switch between them.
-# ---------------------------------------------------------------------
+# -------------------------------------------------------------
+# STUB TEST -- lets me run this file on its own to see the HUD.
+# Abu Huraira removes this block when he plugs in the real game.
+# Press any key to cycle days: 45 (green) -> 20 (amber) -> 8 (red).
+# -------------------------------------------------------------
 if __name__ == "__main__":
     pygame.init()
     window = pygame.display.set_mode((1280, 720))
@@ -104,7 +178,7 @@ if __name__ == "__main__":
             if event.type == pygame.KEYDOWN:
                 index = (index + 1) % len(fake_days)   # switch state
 
-        window.fill((30, 30, 40))          # plain background
+        window.fill((40, 34, 52))          # plain background
         hud.render(window,
                    time_pool=fake_days[index],
                    wallet=15000.0,
