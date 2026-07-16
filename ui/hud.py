@@ -16,7 +16,7 @@ game still runs even if an art file is missing.
 from __future__ import annotations
 import pygame
 
-PANEL_TAN   = (231, 214, 189)   # the strip background
+PANEL_TAN   = (231, 214, 189)   # the strip background+
 BORDER_BROWN = (169, 130, 94)   # outline under the strip + around the bar
 TEXT_COFFEE = (74, 53, 39)      # dark text so numbers stay readable
 BAR_TRACK   = (214, 196, 168)   # empty part of the days bar
