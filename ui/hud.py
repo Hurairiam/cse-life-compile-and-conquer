@@ -1,7 +1,6 @@
 """
-ui/hud.py
 CSE Life: Compile & Conquer
-Created by: Nangiba Tasnim (dev4-ui-screens)
+Created by: Nangiba Tasnim (Dev 3)
 
 The HUD (Heads-Up Display) is the info strip across the top of the
 screen during gameplay: days left, money, semester, and credits.
@@ -17,11 +16,6 @@ game still runs even if an art file is missing.
 from __future__ import annotations
 import pygame
 
-
-# -------------------------------------------------------------
-# COLOURS  (neutral brown pastel -- change any of these to restyle)
-# Each colour is (Red, Green, Blue), each number from 0 to 255.
-# -------------------------------------------------------------
 PANEL_TAN   = (231, 214, 189)   # the strip background
 BORDER_BROWN = (169, 130, 94)   # outline under the strip + around the bar
 TEXT_COFFEE = (74, 53, 39)      # dark text so numbers stay readable
@@ -49,8 +43,6 @@ BAR_HEIGHT    = 16
 
 class HUD:
     """
-    Persistent neutral-pastel status bar shown during gameplay.
-
     It never fetches its own data -- every number it draws is handed in
     through render(). That keeps my visual code fully separate from the
     game logic my teammates write (separation of concerns). The stats
@@ -71,7 +63,7 @@ class HUD:
     # -- loading helpers --------------------------------------
     def __load_font(self) -> pygame.font.Font:
         """
-        Try to load the cute pixel font. If the file isn't there yet,
+        Try to load the chosen pixel font. If the file isn't there yet,
         fall back to a chunky built-in font so nothing crashes.
         """
         try:
@@ -111,7 +103,7 @@ class HUD:
         #    tightly together instead of being spread across the screen.
         x = START_X
         x = self.__draw_days(screen, time_pool, x) + GAP
-        x = self.__draw_stat(screen, "wallet",   f"{wallet:,.0f}",  x) + GAP
+        x = self.__draw_stat(screen, "wallet",   f"{wallet:,.0f} BDT", x) + GAP
         x = self.__draw_stat(screen, "semester", f"Sem {semester}", x) + GAP
         x = self.__draw_stat(screen, "credits",  f"{credits}/140",  x)
 
@@ -145,8 +137,9 @@ class HUD:
         pygame.draw.rect(screen, BORDER_BROWN, track, 2)   # bar outline
 
         number_x = bar_x + BAR_WIDTH + ICON_TEXT_GAP
-        self.__draw_text(screen, str(time_pool), number_x)
-        return number_x + self.__font.size(str(time_pool))[0]
+        days_text = f"{time_pool}/80"
+        self.__draw_text(screen, days_text, number_x)
+        return number_x + self.__font.size(days_text)[0]
 
     def __draw_stat(self, screen: pygame.Surface, icon_key: str,
                     text: str, x: int) -> int:
@@ -203,9 +196,9 @@ if __name__ == "__main__":
         window.fill((203, 191, 166))       # neutral background
         hud.render(window,
                    time_pool=fake_days[index],
-                   wallet=15000.0,
-                   semester=3,
-                   credits=27)
+                   wallet=0.0,
+                   semester=1,
+                   credits=0)
         pygame.display.flip()
         clock.tick(60)
 
