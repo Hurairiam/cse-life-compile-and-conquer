@@ -40,7 +40,8 @@ def main() -> None:
     print(f"     Remaining : {player.get_time_pool_days()} days (unchanged)")
 
     player.deposit_funds(3500.00)
-    print(f"\n[OK] Deposit 3500 BDT → balance: {player.get_wallet_balance()} BDT")
+    print(
+        f"\n[OK] Deposit 3500 BDT → balance: {player.get_wallet_balance()} BDT")
 
     # ── Prove: Course instantiation ───────────────────────────────
     course = Course("CSE101", "Intro to Programming", 3)
@@ -83,7 +84,6 @@ def main() -> None:
 
     print("\n" + "=" * 55)
     print("  All Sprint 1 architecture checks passed.")
-    print("  Ready to demonstrate to professor.")
     print("=" * 55)
 
 
