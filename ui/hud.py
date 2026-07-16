@@ -6,7 +6,8 @@ Created by: Nangiba Tasnim (dev4-ui-screens)
 The HUD (Heads-Up Display) is the info strip across the top of the
 screen during gameplay: days left, money, semester, and credits.
 
-Style: bolder pastel, pixel font, with a small icon next to each stat.
+Style: neutral brown pastel, pixel font, with a small icon next to each
+stat. Everything sits packed together on the left side of the strip.
 
 This file has NO game logic. It only draws the numbers passed into
 render(). Abu Huraira's main loop calls render() every frame and gives
@@ -18,41 +19,42 @@ import pygame
 
 
 # -------------------------------------------------------------
-# COLOURS  (bolder pastel -- change any of these to restyle)
+# COLOURS  (neutral brown pastel -- change any of these to restyle)
 # Each colour is (Red, Green, Blue), each number from 0 to 255.
 # -------------------------------------------------------------
-PANEL_PINK  = (247, 200, 226)   # the strip background
-BORDER_ROSE = (214, 106, 168)   # outline under the strip + around the bar
-TEXT_PLUM   = (91, 43, 74)      # dark text so numbers stay readable
-BAR_TRACK   = (230, 214, 245)   # empty part of the days bar (lavender)
+PANEL_TAN   = (231, 214, 189)   # the strip background
+BORDER_BROWN = (169, 130, 94)   # outline under the strip + around the bar
+TEXT_COFFEE = (74, 53, 39)      # dark text so numbers stay readable
+BAR_TRACK   = (214, 196, 168)   # empty part of the days bar
 
-BAR_GREEN   = (108, 214, 154)   # days safe   (above 30)
-BAR_AMBER   = (245, 190, 90)    # days low    (16-30)
-BAR_RED     = (232, 96, 130)    # days at the firewall (15 or under)
+BAR_GREEN   = (167, 185, 133)   # days safe   (above 30)   -- soft sage
+BAR_AMBER   = (217, 169, 106)   # days low    (16-30)      -- warm tan-gold
+BAR_RED     = (199, 123, 107)   # days at firewall (15 or under) -- terracotta
 
-PLACEHOLDER = (176, 148, 230)   # small square shown if an icon PNG is missing
+PLACEHOLDER = (196, 178, 150)   # small square shown if an icon PNG is missing
 
 # -------------------------------------------------------------
 # LAYOUT  (positions and sizes, all in pixels)
 # -------------------------------------------------------------
-STRIP_HEIGHT = 48
-ICON_SIZE    = 26
-FONT_SIZE    = 12
+STRIP_HEIGHT  = 44
+ICON_SIZE     = 24
+FONT_SIZE     = 10
 
-# Left x-position where each stat begins across the screen.
-X_DAYS     = 12
-X_WALLET   = 340
-X_SEMESTER = 590
-X_CREDITS  = 780
+START_X       = 10   # left edge where the first stat begins
+GAP           = 22   # space between one stat and the next
+ICON_TEXT_GAP = 6    # space between an icon and its text
+BAR_WIDTH     = 84
+BAR_HEIGHT    = 16
 
 
 class HUD:
     """
-    Persistent pastel status bar shown during gameplay.
+    Persistent neutral-pastel status bar shown during gameplay.
 
     It never fetches its own data -- every number it draws is handed in
     through render(). That keeps my visual code fully separate from the
-    game logic my teammates write (separation of concerns).
+    game logic my teammates write (separation of concerns). The stats
+    are drawn one after another, left to right, packed to the left.
     """
 
     def __init__(self) -> None:
@@ -75,7 +77,7 @@ class HUD:
         try:
             return pygame.font.Font("assets/ui/PressStart2P.ttf", FONT_SIZE)
         except (FileNotFoundError, OSError, pygame.error):
-            return pygame.font.SysFont("Courier", FONT_SIZE + 2, bold=True)
+            return pygame.font.SysFont("Courier", FONT_SIZE + 3, bold=True)
 
     def __load_icon(self, path: str) -> pygame.Surface | None:
         """
@@ -98,30 +100,38 @@ class HUD:
         """
         width: int = screen.get_width()
 
-        # 1) pastel background strip + its bottom outline
-        pygame.draw.rect(screen, PANEL_PINK,
+        # 1) tan background strip + its bottom outline
+        pygame.draw.rect(screen, PANEL_TAN,
                          pygame.Rect(0, 0, width, STRIP_HEIGHT))
-        pygame.draw.rect(screen, BORDER_ROSE,
+        pygame.draw.rect(screen, BORDER_BROWN,
                          pygame.Rect(0, STRIP_HEIGHT - 4, width, 4))
 
-        # 2) the four stats
-        self.__draw_days(screen, time_pool)
-        self.__draw_stat(screen, "wallet",   f"{wallet:,.0f}",  X_WALLET)
-        self.__draw_stat(screen, "semester", f"Sem {semester}", X_SEMESTER)
-        self.__draw_stat(screen, "credits",  f"{credits}/140",  X_CREDITS)
+        # 2) the four stats, drawn left to right. Each helper returns the
+        #    x position where the NEXT stat should start, so they pack
+        #    tightly together instead of being spread across the screen.
+        x = START_X
+        x = self.__draw_days(screen, time_pool, x) + GAP
+        x = self.__draw_stat(screen, "wallet",   f"{wallet:,.0f}",  x) + GAP
+        x = self.__draw_stat(screen, "semester", f"Sem {semester}", x) + GAP
+        x = self.__draw_stat(screen, "credits",  f"{credits}/140",  x)
 
     # -- piece-by-piece drawing -------------------------------
-    def __draw_days(self, screen: pygame.Surface, time_pool: int) -> None:
-        """Draw the days icon, the colour-changing bar, and the number."""
-        self.__draw_icon(screen, "days", X_DAYS)
+    def __draw_days(self, screen: pygame.Surface, time_pool: int,
+                    x: int) -> int:
+        """
+        Draw the days icon, the colour-changing bar, and the number.
+        Returns the x position just past the number.
+        """
+        self.__draw_icon(screen, "days", x)
 
-        bar_x = X_DAYS + ICON_SIZE + 6
-        track = pygame.Rect(bar_x, 15, 90, 18)
+        bar_x = x + ICON_SIZE + ICON_TEXT_GAP
+        bar_y = (STRIP_HEIGHT - BAR_HEIGHT) // 2
+        track = pygame.Rect(bar_x, bar_y, BAR_WIDTH, BAR_HEIGHT)
         pygame.draw.rect(screen, BAR_TRACK, track)
 
         # how full the bar is, based on days left out of 80
-        fill_width = int(90 * time_pool / 80)
-        fill = pygame.Rect(bar_x, 15, fill_width, 18)
+        fill_width = int(BAR_WIDTH * time_pool / 80)
+        fill = pygame.Rect(bar_x, bar_y, fill_width, BAR_HEIGHT)
 
         # pick the colour from how many days remain
         if time_pool > 30:
@@ -132,27 +142,39 @@ class HUD:
             colour = BAR_RED
 
         pygame.draw.rect(screen, colour, fill)
-        pygame.draw.rect(screen, BORDER_ROSE, track, 2)   # bar outline
+        pygame.draw.rect(screen, BORDER_BROWN, track, 2)   # bar outline
 
-        number = self.__font.render(str(time_pool), True, TEXT_PLUM)
-        screen.blit(number, (bar_x + 98, 17))
+        number_x = bar_x + BAR_WIDTH + ICON_TEXT_GAP
+        self.__draw_text(screen, str(time_pool), number_x)
+        return number_x + self.__font.size(str(time_pool))[0]
 
     def __draw_stat(self, screen: pygame.Surface, icon_key: str,
-                    text: str, x: int) -> None:
-        """Draw one icon followed by its text (wallet / semester / credits)."""
+                    text: str, x: int) -> int:
+        """
+        Draw one icon followed by its text (wallet / semester / credits).
+        Returns the x position just past the text.
+        """
         self.__draw_icon(screen, icon_key, x)
-        surface = self.__font.render(text, True, TEXT_PLUM)
-        screen.blit(surface, (x + ICON_SIZE + 6, 17))
+        text_x = x + ICON_SIZE + ICON_TEXT_GAP
+        self.__draw_text(screen, text, text_x)
+        return text_x + self.__font.size(text)[0]
 
     def __draw_icon(self, screen: pygame.Surface, icon_key: str,
                     x: int) -> None:
         """Blit the icon image, or a placeholder square if it's missing."""
+        y = (STRIP_HEIGHT - ICON_SIZE) // 2
         icon = self.__icons[icon_key]
         if icon is not None:
-            screen.blit(icon, (x, 11))
+            screen.blit(icon, (x, y))
         else:
             pygame.draw.rect(screen, PLACEHOLDER,
-                             pygame.Rect(x, 11, ICON_SIZE, ICON_SIZE))
+                             pygame.Rect(x, y, ICON_SIZE, ICON_SIZE))
+
+    def __draw_text(self, screen: pygame.Surface, text: str, x: int) -> None:
+        """Draw text vertically centred in the strip."""
+        surface = self.__font.render(text, True, TEXT_COFFEE)
+        y = (STRIP_HEIGHT - self.__font.get_height()) // 2
+        screen.blit(surface, (x, y))
 
 
 # -------------------------------------------------------------
@@ -178,7 +200,7 @@ if __name__ == "__main__":
             if event.type == pygame.KEYDOWN:
                 index = (index + 1) % len(fake_days)   # switch state
 
-        window.fill((40, 34, 52))          # plain background
+        window.fill((203, 191, 166))       # neutral background
         hud.render(window,
                    time_pool=fake_days[index],
                    wallet=15000.0,
