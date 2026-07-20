@@ -51,44 +51,103 @@ class GameClock:
     def process_time_consumable(self, action: TimeConsumable) -> None:
         """
         Execute a TimeConsumable action against the active player.
-        This is the single entry point for ALL time-costing actions.
-        Increments the GlobalCareerClock after the action completes.
-        Does nothing if the session is frozen.
-        [Sprint 2 — stub]
+        This is the single entry point for ALL time-costing actions
+        in the game — MainQuest, SideQuest, and future career actions
+        all go through here, none call execute_action() directly.
+
+        Order of operations:
+        1. Guard: do nothing if session is frozen
+        2. Read the time cost before execution (for clock increment)
+        3. Call execute_action() on the action — deducts time, awards
+           credits or EXP, marks quest complete etc.
+        4. Increment the GlobalCareerClock by the same day cost
         """
-        pass
+        if self.__session.get_is_frozen():
+            return
+
+        player: Player = self.__session.get_active_player()
+        days_cost: int = action.get_time_cost()
+        action.execute_action(player)
+        self.__session.increment_global_clock(days_cost)
 
     # ── Firewall ──────────────────────────────────────────────
 
     def is_eligible_for_side_activities(self) -> bool:
         """
         Return True if the player is allowed to do side activities.
-        Returns False when timePoolDays <= 15 (firewall active).
-        Called at the start of every gameplay loop iteration.
-        [Sprint 2 — stub]
+        Returns False when remaining semester days <= 15.
+
+        This is the 15-day Borderline Firewall. When it activates,
+        the main loop must route the player directly to the exam
+        phase — no NPC interactions, no skill sprints, no drops.
+
+        Called at the start of every gameplay loop iteration before
+        presenting any action choices to the player.
         """
-        pass
+        remaining: int = self.__current_semester.get_time_pool_days()
+        return remaining > self.__MIN_MAIN_QUEST_TIME_BORDER
 
     # ── Semester Lifecycle ────────────────────────────────────
 
     def advance_semester(self) -> None:
         """
         Close the current semester and open the next one.
-        Calls player.advance_semester() which resets the time pool.
-        Creates a new Semester instance and sets it on GameSession.
-        Does NOT carry over backlog — that is check_semester_end_state().
-        [Sprint 2 — stub]
+
+        Order of operations:
+        1. Terminate the current semester (clears its quest pool)
+        2. Call player.advance_semester() which increments the
+           semester counter AND resets the 80-day time pool
+        3. Instantiate a fresh Semester with the new number
+        4. Set it as active on GameSession
+        5. Update local reference
         """
-        pass
+        player: Player = self.__session.get_active_player()
+
+        self.__current_semester.terminate()
+        player.advance_semester()
+
+        new_number: int = player.get_current_semester()
+        new_semester: Semester = Semester(new_number)
+
+        self.__session.set_active_semester(new_semester)
+        self.__current_semester = new_semester
 
     def check_semester_end_state(self) -> None:
         """
         Called after all registered courses have been attempted
-        or the time pool hits zero. Carries any incomplete courses
-        to backlog via AcademicHistory. Then checks cap and graduation.
-        [Sprint 2 — stub]
+        or the time pool hits zero.
+
+        Order of operations:
+        1. Get registered courses from the current semester
+        2. For each incomplete course, push it to AcademicHistory
+           backlog so RegistrationManager re-injects it next semester
+        3. Check GlobalCareerClock cap — freeze and trigger endgame
+           if reached
+        4. Check graduation eligibility — if 140+ credits achieved,
+           freeze and trigger endgame (graduation takes priority
+           over year cap if both occur simultaneously)
         """
-        pass
+        player: Player = self.__session.get_active_player()
+        history: AcademicHistory = player.get_academic_history()
+
+        # Guard: history may not be wired yet in early sprint testing
+        if history is None:
+            return
+
+        # Carry incomplete courses to backlog
+        for course in self.__current_semester.get_registered_courses():
+            if not course.get_is_completed():
+                history.add_backlog(course)
+
+        # Check year cap first (graduation takes priority below)
+        if self.__session.has_reached_year_cap():
+            self.__session.freeze_session()
+            return
+
+        # Check graduation — 140+ credits
+        if player.get_accumulated_credits() >= 140:
+            self.__session.freeze_session()
+            return
 
     # ── Getters ───────────────────────────────────────────────
 
