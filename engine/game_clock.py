@@ -118,34 +118,26 @@ class GameClock:
         or the time pool hits zero.
 
         Order of operations:
-        1. Get registered courses from the current semester
-        2. For each incomplete course, push it to AcademicHistory
-           backlog so RegistrationManager re-injects it next semester
+        1. Carry incomplete courses to backlog (only if history exists)
+        2. Check graduation — 140+ credits (takes priority over cap)
         3. Check GlobalCareerClock cap — freeze and trigger endgame
-           if reached
-        4. Check graduation eligibility — if 140+ credits achieved,
-           freeze and trigger endgame (graduation takes priority
-           over year cap if both occur simultaneously)
         """
         player: Player = self.__session.get_active_player()
         history: AcademicHistory = player.get_academic_history()
 
-        # Guard: history may not be wired yet in early sprint testing
-        if history is None:
-            return
+        # Carry incomplete courses to backlog only if history is wired
+        if history is not None:
+            for course in self.__current_semester.get_registered_courses():
+                if not course.get_is_completed():
+                    history.add_backlog(course)
 
-        # Carry incomplete courses to backlog
-        for course in self.__current_semester.get_registered_courses():
-            if not course.get_is_completed():
-                history.add_backlog(course)
-
-        # Check year cap first (graduation takes priority below)
-        if self.__session.has_reached_year_cap():
+        # Graduation takes priority — check first
+        if player.get_accumulated_credits() >= 140:
             self.__session.freeze_session()
             return
 
-        # Check graduation — 140+ credits
-        if player.get_accumulated_credits() >= 140:
+        # Year cap check
+        if self.__session.has_reached_year_cap():
             self.__session.freeze_session()
             return
 
