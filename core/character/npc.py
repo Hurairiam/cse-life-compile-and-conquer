@@ -95,13 +95,14 @@ class NPC(Character):
             if not quest.get_is_completed():
                 return quest
         return None
+
     def interact(self) -> None:
         """
-        Signal that the player has initiated NPC interaction.
-        DialogueManager takes over rendering from the screen manager.
-        [Sprint 2 — implemented by Ayesha's layer]
+        Signals that the player has initiated interaction with this NPC.
+        The DialogueManager takes over rendering from the screen manager.
+        No game logic runs here — this is purely a trigger signal.
         """
-        pass
+        pass  # DialogueManager activated by screen state manager
 
     # ── Movement ──────────────────────────────────────────────
 
