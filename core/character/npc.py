@@ -88,12 +88,13 @@ class NPC(Character):
 
     def offer_quest(self) -> Optional[Quest]:
         """
-        Return the first uncompleted quest from this NPC's pool.
-        Returns None if all quests are done or pool is empty.
-        [Sprint 2 — implemented by Ayesha's layer]
+        Returns the first uncompleted quest from this NPC's quest pool.
+        Returns None if all quests are completed or none are available.
         """
-        pass
-
+        for quest in self.__quest_pointer_array:
+            if not quest.get_is_completed():
+                return quest
+        return None
     def interact(self) -> None:
         """
         Signal that the player has initiated NPC interaction.
