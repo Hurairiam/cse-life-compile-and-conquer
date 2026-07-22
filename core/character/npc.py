@@ -77,9 +77,8 @@ class NPC(Character):
         """
         Mark this NPC as inaccessible for the rest of the semester.
         Called by GameClock when the exploration phase ends.
-        [Sprint 2 — implemented by Ayesha's layer]
         """
-        pass
+        self.__is_accessible = False
 
     def get_is_accessible(self) -> bool:
         """Return whether this NPC is currently accessible."""
