@@ -63,12 +63,15 @@ class NPC(Character):
 
     def is_within_availability_window(self, player: Player) -> bool:
         """
-        Returns True if the player's remaining time ratio falls
-        within this NPC's window (0.75–1.00 of the 80-day pool).
-        An inaccessible NPC always returns False.
-        [Sprint 2 — implemented by Ayesha's layer]
+        Returns True if the player's remaining time ratio falls within
+        this NPC's availability window (0.75 to 1.00 of the semester pool).
+        An NPC is only accessible in the first 20 days of an 80-day semester.
+        Called by the game engine before showing the NPC on screen.
         """
-        pass
+        if not self.__is_accessible:
+            return False
+        ratio: float = player.get_time_pool_days() / 80.0
+        return self.__availability_ratio_min <= ratio <= self.__availability_ratio_max
 
     def expire_for_semester(self) -> None:
         """
