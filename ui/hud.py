@@ -173,11 +173,18 @@ class HUD:
 # -------------------------------------------------------------
 # STUB TEST -- lets me run this file on its own to see the HUD.
 # Abu Huraira removes this block when he plugs in the real game.
-# Press any key to cycle days: 45 (green) -> 20 (amber) -> 8 (red).
+#   Press any key  -> cycle days: 45 (green) -> 20 (amber) -> 8 (red)
+#   Press F11      -> toggle windowed / fullscreen
 # -------------------------------------------------------------
 if __name__ == "__main__":
     pygame.init()
-    window = pygame.display.set_mode((1280, 720))
+
+    SIZE = (1280, 720)
+    WINDOWED_FLAGS   = pygame.SCALED                     # crisp scaling for pixel art
+    FULLSCREEN_FLAGS = pygame.SCALED | pygame.FULLSCREEN
+
+    is_fullscreen = False
+    window = pygame.display.set_mode(SIZE, WINDOWED_FLAGS)
     pygame.display.set_caption("HUD test")
     hud = HUD()
     clock = pygame.time.Clock()
@@ -191,7 +198,13 @@ if __name__ == "__main__":
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYDOWN:
-                index = (index + 1) % len(fake_days)   # switch state
+                if event.key == pygame.K_F11:
+                    # flip between windowed and fullscreen
+                    is_fullscreen = not is_fullscreen
+                    flags = FULLSCREEN_FLAGS if is_fullscreen else WINDOWED_FLAGS
+                    window = pygame.display.set_mode(SIZE, flags)
+                else:
+                    index = (index + 1) % len(fake_days)   # switch colour state
 
         window.fill((203, 191, 166))       # neutral background
         hud.render(window,
