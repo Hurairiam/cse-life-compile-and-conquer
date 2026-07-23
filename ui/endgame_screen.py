@@ -302,7 +302,7 @@ if __name__ == "__main__":
          ["You crossed the line with credits to spare.",
           "Three offers landed before you updated your CV.",
           "Every 80-day sprint was worth it."],
-         143, 48200.0),
+         140, 48200.0),
         ("AVERAGE GRADUATE",
          ["You made it. Barely, but you made it.",
           "The degree is real. The rest you'll figure out.",
