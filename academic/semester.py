@@ -9,6 +9,9 @@ is created each cycle by GameClock.advanceSemester(); the
 Player profile (AcademicHistory, SkillTree, wallet, credits)
 persists independently and is never reset.
 ─────────────────────────────────────────────────────────────
+FIX (this version): all_courses_attempted() was calling
+course.get_is_completed(), which does not exist on Course —
+the real getter is is_completed(). Corrected below.
 """
 
 from __future__ import annotations
@@ -110,8 +113,12 @@ class Semester:
         completed (isCompleted True — whether passed or failed,
         an exam attempt sets this via MainQuest.executeAction()).
         Empty registration counts as vacuously complete.
+
+        FIXED: now calls course.is_completed() — the actual getter
+        defined on Course. The old course.get_is_completed() call
+        does not exist on Course and raised AttributeError.
         """
-        return all(course.get_is_completed() for course in self.__registered_courses)
+        return all(course.is_completed() for course in self.__registered_courses)
 
     # ── Active Quest Pool ──────────────────────────────────────────
 
