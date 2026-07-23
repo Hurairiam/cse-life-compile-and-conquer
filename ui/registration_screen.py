@@ -4,7 +4,7 @@ Created by: Nangiba Tasnim (Dev 3)
 
 The Registration Screen is where the player picks courses for the
 semester. Left side: a table of courses (ID / Name / Credits). Right
-side: the player's portrait and info. Bottom: the running credit total
+side: the player's ID photo and info. Bottom: the running credit total
 and the Confirm / Cancel buttons.
 
 Row states:
@@ -21,9 +21,10 @@ Base idea from Abu Huraira (engine). Layout, styling + test by Nangiba.
 from __future__ import annotations
 import pygame
 
-# -- palette (matches the HUD) --------------------------------
+# -- palette --------------------------------------------------
 PANEL_TAN     = (231, 214, 189)   # screen background
 HEADER_TAN    = (214, 196, 168)   # table header bar
+TITLE_SLATE   = (45, 58, 71)      # #2D3A47 -- screen title
 BORDER_BROWN  = (169, 130, 94)    # outlines
 TEXT_COFFEE   = (74, 53, 39)      # main text
 CREDIT_HL     = (155, 110, 70)    # the "credit limit" line
@@ -32,11 +33,14 @@ ROW_WHITE     = (247, 243, 236)   # course not picked
 ROW_BLUE      = (120, 150, 190)   # course selected
 ROW_GREEN     = (150, 180, 125)   # course confirmed (locked)
 
-PORTRAIT_FILL = (190, 165, 135)   # placeholder block until a real photo exists
+PORTRAIT_BG    = (255, 255, 255)  # solid white behind the ID photo
+PORTRAIT_FILL  = (190, 165, 135)  # placeholder block if the photo is missing
 PORTRAIT_LABEL = (120, 95, 75)    # faded text inside the placeholder
 
 BTN_CONFIRM   = (150, 180, 125)   # confirm button
 BTN_CANCEL    = (199, 123, 107)   # cancel button
+
+PORTRAIT_PATH = "assets/portraits/player_id.png"
 
 # -------------------------------------------------------------
 # LAYOUT  (positions and sizes, all in pixels)
@@ -52,8 +56,21 @@ ROW_PITCH     = 44          # row height + the gap below it
 COL_ID_X      = TABLE_X + 15
 COL_NAME_X    = TABLE_X + 150
 COL_CREDITS_X = TABLE_X + 620
+SEP_1_X       = TABLE_X + 135   # divider between ID and NAME
+SEP_2_X       = TABLE_X + 605   # divider between NAME and CREDITS
 
-TITLE_SIZE    = 20
+# right-hand panel -- photo top lines up with the table header top
+PORTRAIT_X    = 910
+PORTRAIT_Y    = HEADER_Y
+PORTRAIT_SIZE = 230
+INFO_X        = PORTRAIT_X
+INFO_Y        = PORTRAIT_Y + PORTRAIT_SIZE + 20   # first info line
+INFO_PITCH    = 32                                # gap between info lines
+
+TOTAL_Y       = 500         # "Credits Selected" line
+BUTTON_Y      = 540         # Confirm / Cancel row
+
+TITLE_SIZE    = 28
 BODY_SIZE     = 12
 TOTAL_SIZE    = 16
 
@@ -68,22 +85,38 @@ class RegistrationScreen:
     """
 
     def __init__(self, screen_w: int, screen_h: int) -> None:
-        """Store screen size, load fonts, and fix the button rectangles."""
+        """Store screen size, load fonts + photo, fix the button rects."""
         self.__screen_w: int = screen_w
         self.__screen_h: int = screen_h
         self.__font_title: pygame.font.Font = self.__load_font(TITLE_SIZE)
         self.__font_body: pygame.font.Font = self.__load_font(BODY_SIZE)
         self.__font_total: pygame.font.Font = self.__load_font(TOTAL_SIZE)
-        self.__confirm_rect: pygame.Rect = pygame.Rect(40, 660, 200, 44)
-        self.__cancel_rect: pygame.Rect = pygame.Rect(260, 660, 200, 44)
+        self.__portrait_rect: pygame.Rect = pygame.Rect(
+            PORTRAIT_X, PORTRAIT_Y, PORTRAIT_SIZE, PORTRAIT_SIZE)
+        self.__portrait: pygame.Surface | None = self.__load_portrait()
+        self.__confirm_rect: pygame.Rect = pygame.Rect(40, BUTTON_Y, 200, 44)
+        self.__cancel_rect: pygame.Rect = pygame.Rect(260, BUTTON_Y, 200, 44)
 
-    # -- loading helper ---------------------------------------
+    # -- loading helpers --------------------------------------
     def __load_font(self, size: int) -> pygame.font.Font:
         """Load the pixel font, or fall back to a built-in font if missing."""
         try:
             return pygame.font.Font("assets/ui/PressStart2P.ttf", size)
         except (FileNotFoundError, OSError, pygame.error):
             return pygame.font.SysFont("Courier", size + 3, bold=True)
+
+    def __load_portrait(self) -> pygame.Surface | None:
+        """
+        Load the player's ID photo and fit it to the portrait box.
+        Returns None if the file isn't there yet -- the screen then draws
+        a placeholder block instead of crashing.
+        """
+        try:
+            image = pygame.image.load(PORTRAIT_PATH).convert_alpha()
+            return pygame.transform.scale(
+                image, (self.__portrait_rect.w, self.__portrait_rect.h))
+        except (FileNotFoundError, OSError, pygame.error):
+            return None
 
     # -- rectangle getters (for click detection outside this file) ---
     def __row_rect(self, i: int) -> pygame.Rect:
@@ -119,7 +152,8 @@ class RegistrationScreen:
         """
         screen.fill(PANEL_TAN)
 
-        title = self.__font_title.render("Course Registration", True, TEXT_COFFEE)
+        title = self.__font_title.render("Course Registration", True,
+                                         TITLE_SLATE)
         screen.blit(title, (40, 28))
 
         limit_text = self.__font_body.render(
@@ -138,13 +172,14 @@ class RegistrationScreen:
                 colour = ROW_WHITE
             pygame.draw.rect(screen, colour, row)
             pygame.draw.rect(screen, BORDER_BROWN, row, 2)
+            self.__draw_column_separators(screen, row)
             self.__draw_row_text(screen, course, row)
 
         self.__draw_player_panel(screen, player_name, student_id, semester)
 
         total_text = self.__font_total.render(
             f"Credits Selected: {current_credits}", True, TEXT_COFFEE)
-        screen.blit(total_text, (40, 612))
+        screen.blit(total_text, (40, TOTAL_Y))
 
         self.__draw_button(screen, self.__confirm_rect, "CONFIRM", BTN_CONFIRM)
         self.__draw_button(screen, self.__cancel_rect, "CANCEL", BTN_CANCEL)
@@ -155,6 +190,7 @@ class RegistrationScreen:
         bar = pygame.Rect(TABLE_X, HEADER_Y, TABLE_W, HEADER_H)
         pygame.draw.rect(screen, HEADER_TAN, bar)
         pygame.draw.rect(screen, BORDER_BROWN, bar, 2)
+        self.__draw_column_separators(screen, bar)
         cy = bar.y + (HEADER_H - self.__font_body.get_height()) // 2
         screen.blit(self.__font_body.render("ID", True, TEXT_COFFEE),
                     (COL_ID_X, cy))
@@ -162,6 +198,13 @@ class RegistrationScreen:
                     (COL_NAME_X, cy))
         screen.blit(self.__font_body.render("CREDITS", True, TEXT_COFFEE),
                     (COL_CREDITS_X, cy))
+
+    def __draw_column_separators(self, screen: pygame.Surface,
+                                 rect: pygame.Rect) -> None:
+        """Draw the two vertical column dividers inside a row or header."""
+        for x in (SEP_1_X, SEP_2_X):
+            pygame.draw.line(screen, BORDER_BROWN,
+                             (x, rect.y), (x, rect.bottom - 1), 2)
 
     def __draw_row_text(self, screen: pygame.Surface, course,
                         row: pygame.Rect) -> None:
@@ -177,19 +220,26 @@ class RegistrationScreen:
 
     def __draw_player_panel(self, screen: pygame.Surface, name: str,
                             student_id: str, semester: int) -> None:
-        """Draw the portrait placeholder and the player's info on the right."""
-        portrait = pygame.Rect(910, 90, 230, 230)
-        pygame.draw.rect(screen, PORTRAIT_FILL, portrait)
-        pygame.draw.rect(screen, BORDER_BROWN, portrait, 3)
-        self.__blit_centered(screen, self.__font_body, "PHOTO",
-                             PORTRAIT_LABEL, portrait)
+        """Draw the ID photo (or placeholder) and the player's info."""
+        box = self.__portrait_rect
+        if self.__portrait is not None:
+            pygame.draw.rect(screen, PORTRAIT_BG, box)   # white backdrop
+            screen.blit(self.__portrait, (box.x, box.y))
+        else:
+            pygame.draw.rect(screen, PORTRAIT_FILL, box)
+            self.__blit_centered(screen, self.__font_body, "PHOTO",
+                                 PORTRAIT_LABEL, box)
+        pygame.draw.rect(screen, BORDER_BROWN, box, 3)
 
-        screen.blit(self.__font_body.render(name, True, TEXT_COFFEE),
-                    (910, 340))
-        screen.blit(self.__font_body.render(f"ID: {student_id}", True,
-                    TEXT_COFFEE), (910, 372))
-        screen.blit(self.__font_body.render(f"Semester {semester}", True,
-                    TEXT_COFFEE), (910, 404))
+        screen.blit(self.__font_body.render(
+            f"Student Name: {name}", True, TEXT_COFFEE),
+            (INFO_X, INFO_Y))
+        screen.blit(self.__font_body.render(
+            f"ID: {student_id}", True, TEXT_COFFEE),
+            (INFO_X, INFO_Y + INFO_PITCH))
+        screen.blit(self.__font_body.render(
+            f"Semester: {semester}", True, TEXT_COFFEE),
+            (INFO_X, INFO_Y + INFO_PITCH * 2))
 
     def __draw_button(self, screen: pygame.Surface, rect: pygame.Rect,
                       label: str, colour: tuple) -> None:
@@ -293,12 +343,14 @@ if __name__ == "__main__":
                             break
 
         reg.render(window, courses, selected, confirmed, total_credits(),
-                   CREDIT_LIMIT, "STUDENT NAME", "CSE-00000000", 3)
+                   CREDIT_LIMIT, "Player", "8324782", 3)
 
+        # hint text, bottom-RIGHT so it clears the buttons
         hint = hint_font.render(
             "Click rows to select  |  CONFIRM / CANCEL  |  F11 fullscreen",
             True, (120, 95, 75))
-        window.blit(hint, (40, 700))
+        window.blit(hint, (window.get_width() - hint.get_width() - 24,
+                           window.get_height() - hint.get_height() - 14))
 
         pygame.display.flip()
         clock.tick(60)
