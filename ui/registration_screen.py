@@ -3,18 +3,21 @@ CSE Life: Compile & Conquer
 Created by: Nangiba Tasnim (Dev 3)
 
 The Registration Screen is where the player picks courses for the
-semester. Left side: a table of courses (ID / Name / Credits). Right
-side: the player's ID photo and info. Bottom: the running credit total
-and the Confirm / Cancel buttons.
+semester. It is laid out as a framed card: a table of courses on the
+left (ID / Name / Credits), the player's ID photo, info and buttons on
+the right, and a boxed credit total with a progress bar underneath.
 
 Row states:
     white = not picked      blue = selected      green = confirmed (locked)
 
+Credit bar:
+    blue = under the limit   amber = exactly at it   red = over it
+
 This file has NO game logic. render() only DRAWS the state it is handed:
 which courses exist, which are selected, which are confirmed, and the
 totals. Abu Huraira's engine decides those values during integration.
-For now, the stub test at the bottom fakes the clicking so I can see it
-work on its own.
+The over-limit warning popup lives entirely in the stub test below, so
+this class stays a pure drawing layer.
 
 Base idea from Abu Huraira (engine). Layout, styling + test by Nangiba.
 """
@@ -22,34 +25,48 @@ from __future__ import annotations
 import pygame
 
 # -- palette --------------------------------------------------
-PANEL_TAN     = (231, 214, 189)   # screen background
+PANEL_TAN     = (231, 214, 189)   # screen background, behind the card
+CARD_TAN      = (240, 228, 208)   # the card itself, slightly lighter
 HEADER_TAN    = (214, 196, 168)   # table header bar
 TITLE_SLATE   = (45, 58, 71)      # #2D3A47 -- screen title
-BORDER_BROWN  = (169, 130, 94)    # outlines
+BORDER_BROWN  = (169, 130, 94)    # card frame, outlines, corner marks
 TEXT_COFFEE   = (74, 53, 39)      # main text
-CREDIT_HL     = (155, 110, 70)    # the "credit limit" line
+CREDIT_HL     = (155, 110, 70)    # the "credit limit" line + labels
 
 ROW_WHITE     = (247, 243, 236)   # course not picked
 ROW_BLUE      = (120, 150, 190)   # course selected
 ROW_GREEN     = (150, 180, 125)   # course confirmed (locked)
 
+BAR_TRACK     = (222, 208, 186)   # empty part of the credit bar
+BAR_FULL      = (217, 169, 106)   # bar colour exactly at the limit
+BAR_OVER      = (186, 74, 62)     # bar colour once the limit is passed
+
 PORTRAIT_BG    = (255, 255, 255)  # solid white behind the ID photo
-PORTRAIT_FILL  = (190, 165, 135)  # placeholder block if the photo is missing
+PORTRAIT_FILL  = (190, 165, 135)  # placeholder if the photo is missing
 PORTRAIT_LABEL = (120, 95, 75)    # faded text inside the placeholder
 
 BTN_CONFIRM   = (150, 180, 125)   # confirm button
 BTN_CANCEL    = (199, 123, 107)   # cancel button
 
 PORTRAIT_PATH = "assets/portraits/player_id.png"
+FONT_PATH     = "assets/ui/PressStart2P.ttf"
 
 # -------------------------------------------------------------
 # LAYOUT  (positions and sizes, all in pixels)
 # -------------------------------------------------------------
-TABLE_X       = 40
-TABLE_W       = 760
-HEADER_Y      = 128
+CARD_MARGIN   = 24          # gap between screen edge and the card
+CARD_PAD      = 14          # gap between the card and its inner border
+CORNER_LEN    = 22          # length of each corner mark arm
+
+TITLE_Y       = 50
+LIMIT_Y       = 112
+
+# left column -- the course table
+TABLE_X       = 60
+TABLE_W       = 740
+HEADER_Y      = 148
 HEADER_H      = 34
-FIRST_ROW_Y   = 170
+FIRST_ROW_Y   = 190
 ROW_H         = 38
 ROW_PITCH     = 44          # row height + the gap below it
 
@@ -59,19 +76,28 @@ COL_CREDITS_X = TABLE_X + 620
 SEP_1_X       = TABLE_X + 135   # divider between ID and NAME
 SEP_2_X       = TABLE_X + 605   # divider between NAME and CREDITS
 
-# right-hand panel -- photo top lines up with the table header top
-PORTRAIT_X    = 910
-PORTRAIT_Y    = HEADER_Y
-PORTRAIT_SIZE = 230
-INFO_X        = PORTRAIT_X
-INFO_Y        = PORTRAIT_Y + PORTRAIT_SIZE + 20   # first info line
-INFO_PITCH    = 32                                # gap between info lines
+# left column -- the boxed credit total underneath the table
+FOOTER_X      = TABLE_X
+FOOTER_Y      = 496
+FOOTER_W      = TABLE_W
+FOOTER_H      = 112
+BAR_W         = 420
+BAR_H         = 16
 
-TOTAL_Y       = 500         # "Credits Selected" line
-BUTTON_Y      = 540         # Confirm / Cancel row
+# right column -- photo, info, buttons (all share the same x + width)
+RIGHT_X       = 900
+RIGHT_W       = 230
+PORTRAIT_Y    = HEADER_Y            # photo top lines up with the table top
+PORTRAIT_SIZE = RIGHT_W
+INFO_Y        = PORTRAIT_Y + PORTRAIT_SIZE + 22
+INFO_PITCH    = 30
+CONFIRM_Y     = 512
+CANCEL_Y      = 564
+BTN_H         = 44
 
 TITLE_SIZE    = 28
 BODY_SIZE     = 12
+LABEL_SIZE    = 10
 TOTAL_SIZE    = 16
 
 
@@ -90,18 +116,21 @@ class RegistrationScreen:
         self.__screen_h: int = screen_h
         self.__font_title: pygame.font.Font = self.__load_font(TITLE_SIZE)
         self.__font_body: pygame.font.Font = self.__load_font(BODY_SIZE)
+        self.__font_label: pygame.font.Font = self.__load_font(LABEL_SIZE)
         self.__font_total: pygame.font.Font = self.__load_font(TOTAL_SIZE)
         self.__portrait_rect: pygame.Rect = pygame.Rect(
-            PORTRAIT_X, PORTRAIT_Y, PORTRAIT_SIZE, PORTRAIT_SIZE)
+            RIGHT_X, PORTRAIT_Y, PORTRAIT_SIZE, PORTRAIT_SIZE)
         self.__portrait: pygame.Surface | None = self.__load_portrait()
-        self.__confirm_rect: pygame.Rect = pygame.Rect(40, BUTTON_Y, 200, 44)
-        self.__cancel_rect: pygame.Rect = pygame.Rect(260, BUTTON_Y, 200, 44)
+        self.__confirm_rect: pygame.Rect = pygame.Rect(
+            RIGHT_X, CONFIRM_Y, RIGHT_W, BTN_H)
+        self.__cancel_rect: pygame.Rect = pygame.Rect(
+            RIGHT_X, CANCEL_Y, RIGHT_W, BTN_H)
 
     # -- loading helpers --------------------------------------
     def __load_font(self, size: int) -> pygame.font.Font:
         """Load the pixel font, or fall back to a built-in font if missing."""
         try:
-            return pygame.font.Font("assets/ui/PressStart2P.ttf", size)
+            return pygame.font.Font(FONT_PATH, size)
         except (FileNotFoundError, OSError, pygame.error):
             return pygame.font.SysFont("Courier", size + 3, bold=True)
 
@@ -146,19 +175,20 @@ class RegistrationScreen:
         visible_courses : courses to list
         selected        : courses drawn blue
         confirmed       : courses drawn green (locked)
-        current_credits : running total to show at the bottom
-        credit_limit    : the cap to display above the table
+        current_credits : running total shown in the footer box
+        credit_limit    : the cap displayed above the table
         player_name / student_id / semester : right-panel info
         """
         screen.fill(PANEL_TAN)
+        self.__draw_card(screen)
 
         title = self.__font_title.render("Course Registration", True,
                                          TITLE_SLATE)
-        screen.blit(title, (40, 28))
+        screen.blit(title, (TABLE_X, TITLE_Y))
 
         limit_text = self.__font_body.render(
             f"Credit Limit: {credit_limit}", True, CREDIT_HL)
-        screen.blit(limit_text, (40, 96))
+        screen.blit(limit_text, (TABLE_X, LIMIT_Y))
 
         self.__draw_header(screen)
 
@@ -175,16 +205,41 @@ class RegistrationScreen:
             self.__draw_column_separators(screen, row)
             self.__draw_row_text(screen, course, row)
 
+        self.__draw_credit_footer(screen, current_credits, credit_limit)
         self.__draw_player_panel(screen, player_name, student_id, semester)
-
-        total_text = self.__font_total.render(
-            f"Credits Selected: {current_credits}", True, TEXT_COFFEE)
-        screen.blit(total_text, (40, TOTAL_Y))
 
         self.__draw_button(screen, self.__confirm_rect, "CONFIRM", BTN_CONFIRM)
         self.__draw_button(screen, self.__cancel_rect, "CANCEL", BTN_CANCEL)
 
     # -- piece-by-piece drawing -------------------------------
+    def __draw_card(self, screen: pygame.Surface) -> None:
+        """Draw the framed card panel, inner border, and corner marks."""
+        card = pygame.Rect(CARD_MARGIN, CARD_MARGIN,
+                           screen.get_width() - CARD_MARGIN * 2,
+                           screen.get_height() - CARD_MARGIN * 2)
+        pygame.draw.rect(screen, CARD_TAN, card)
+        pygame.draw.rect(screen, BORDER_BROWN, card, 3)
+
+        inner = card.inflate(-CARD_PAD * 2, -CARD_PAD * 2)
+        pygame.draw.rect(screen, BORDER_BROWN, inner, 1)
+        self.__draw_corners(screen, inner)
+
+    def __draw_corners(self, screen: pygame.Surface,
+                       rect: pygame.Rect) -> None:
+        """Draw short bracket marks at each corner of the inner border."""
+        n = CORNER_LEN
+        corners = [
+            ((rect.left, rect.top), (n, 0), (0, n)),        # top-left
+            ((rect.right, rect.top), (-n, 0), (0, n)),      # top-right
+            ((rect.left, rect.bottom), (n, 0), (0, -n)),    # bottom-left
+            ((rect.right, rect.bottom), (-n, 0), (0, -n)),  # bottom-right
+        ]
+        for (px, py), (dx1, dy1), (dx2, dy2) in corners:
+            pygame.draw.line(screen, BORDER_BROWN, (px, py),
+                             (px + dx1, py + dy1), 3)
+            pygame.draw.line(screen, BORDER_BROWN, (px, py),
+                             (px + dx2, py + dy2), 3)
+
     def __draw_header(self, screen: pygame.Surface) -> None:
         """Draw the table header bar with the three column titles."""
         bar = pygame.Rect(TABLE_X, HEADER_Y, TABLE_W, HEADER_H)
@@ -218,6 +273,43 @@ class RegistrationScreen:
             str(course.get_credit_value()), True, TEXT_COFFEE),
             (COL_CREDITS_X, cy))
 
+    def __draw_credit_footer(self, screen: pygame.Surface, current: int,
+                             limit: int) -> None:
+        """
+        Draw the boxed credit total with a fill bar toward the limit.
+        The bar and the count go blue / amber / red depending on whether
+        the total is under, exactly at, or over the limit. This only
+        picks a colour from numbers already handed in -- it does not
+        decide anything about whether the selection is allowed.
+        """
+        box = pygame.Rect(FOOTER_X, FOOTER_Y, FOOTER_W, FOOTER_H)
+        pygame.draw.rect(screen, HEADER_TAN, box)
+        pygame.draw.rect(screen, BORDER_BROWN, box, 2)
+
+        if current > limit:
+            bar_colour = BAR_OVER
+            count_colour = BAR_OVER
+        elif current == limit:
+            bar_colour = BAR_FULL
+            count_colour = TEXT_COFFEE
+        else:
+            bar_colour = ROW_BLUE
+            count_colour = TEXT_COFFEE
+
+        screen.blit(self.__font_label.render(
+            "CREDITS SELECTED", True, CREDIT_HL), (box.x + 24, box.y + 18))
+        screen.blit(self.__font_total.render(
+            f"{current} / {limit}", True, count_colour),
+            (box.x + 24, box.y + 40))
+
+        bar = pygame.Rect(box.x + 24, box.y + 76, BAR_W, BAR_H)
+        pygame.draw.rect(screen, BAR_TRACK, bar)
+        filled = int(BAR_W * min(current / limit, 1.0)) if limit > 0 else 0
+        if filled > 0:
+            pygame.draw.rect(screen, bar_colour,
+                             pygame.Rect(bar.x, bar.y, filled, BAR_H))
+        pygame.draw.rect(screen, BORDER_BROWN, bar, 2)
+
     def __draw_player_panel(self, screen: pygame.Surface, name: str,
                             student_id: str, semester: int) -> None:
         """Draw the ID photo (or placeholder) and the player's info."""
@@ -233,13 +325,13 @@ class RegistrationScreen:
 
         screen.blit(self.__font_body.render(
             f"Student Name: {name}", True, TEXT_COFFEE),
-            (INFO_X, INFO_Y))
+            (RIGHT_X, INFO_Y))
         screen.blit(self.__font_body.render(
             f"ID: {student_id}", True, TEXT_COFFEE),
-            (INFO_X, INFO_Y + INFO_PITCH))
+            (RIGHT_X, INFO_Y + INFO_PITCH))
         screen.blit(self.__font_body.render(
             f"Semester: {semester}", True, TEXT_COFFEE),
-            (INFO_X, INFO_Y + INFO_PITCH * 2))
+            (RIGHT_X, INFO_Y + INFO_PITCH * 2))
 
     def __draw_button(self, screen: pygame.Surface, rect: pygame.Rect,
                       label: str, colour: tuple) -> None:
@@ -263,8 +355,12 @@ class RegistrationScreen:
 # Abu Huraira removes this block when he plugs in the real game.
 #   Click a course row -> select (blue)   |   click again -> deselect
 #   CONFIRM -> selected rows turn green + lock
+#             (blocked with a warning popup if over the credit limit)
 #   CANCEL  -> reset everything back to white
 #   F11     -> toggle windowed / fullscreen
+#
+# The popup and the over-limit check live HERE, not in the class --
+# in the real game RegistrationManager decides this, not the screen.
 # -------------------------------------------------------------
 if __name__ == "__main__":
 
@@ -281,6 +377,13 @@ if __name__ == "__main__":
         def get_credit_value(self) -> int:
             return self.__credits
 
+    def _stub_font(size: int) -> pygame.font.Font:
+        """Same font-loading safety net the class uses."""
+        try:
+            return pygame.font.Font(FONT_PATH, size)
+        except (FileNotFoundError, OSError, pygame.error):
+            return pygame.font.SysFont("Courier", size + 3, bold=True)
+
     pygame.init()
 
     SIZE = (1280, 720)
@@ -292,7 +395,10 @@ if __name__ == "__main__":
     pygame.display.set_caption("Registration screen test")
     reg = RegistrationScreen(1280, 720)
     clock = pygame.time.Clock()
-    hint_font = pygame.font.SysFont("Courier", 14)
+    hint_font = pygame.font.SysFont("Courier", 13)
+
+    popup_title_font = _stub_font(16)
+    popup_body_font = _stub_font(11)
 
     courses = [
         _FakeCourse("CSE101", "Intro to Programming", 3),
@@ -305,10 +411,44 @@ if __name__ == "__main__":
     selected: list = []    # courses clicked (blue)
     confirmed: list = []   # courses confirmed (green, locked)
     CREDIT_LIMIT = 15
+    show_warning = False   # True while the over-limit popup is open
+
+    POPUP_RECT = pygame.Rect(340, 248, 600, 224)
+    OK_RECT = pygame.Rect(POPUP_RECT.centerx - 80,
+                          POPUP_RECT.bottom - 66, 160, 42)
+    POPUP_LINES = [
+        "You can register a maximum of",
+        f"{CREDIT_LIMIT} credits per semester.",
+        "Deselect a course and try again.",
+    ]
 
     def total_credits() -> int:
         """Add up the credits of everything selected or confirmed."""
         return sum(c.get_credit_value() for c in selected + confirmed)
+
+    def draw_popup(surface: pygame.Surface) -> None:
+        """Dim the screen and draw the over-limit warning box on top."""
+        shade = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        shade.fill((25, 18, 12, 160))
+        surface.blit(shade, (0, 0))
+
+        pygame.draw.rect(surface, CARD_TAN, POPUP_RECT)
+        pygame.draw.rect(surface, BAR_OVER, POPUP_RECT, 4)
+
+        title = popup_title_font.render("TOO MANY CREDITS", True, BAR_OVER)
+        surface.blit(title, (POPUP_RECT.centerx - title.get_width() // 2,
+                             POPUP_RECT.y + 30))
+
+        for i, line in enumerate(POPUP_LINES):
+            text = popup_body_font.render(line, True, TEXT_COFFEE)
+            surface.blit(text, (POPUP_RECT.centerx - text.get_width() // 2,
+                                POPUP_RECT.y + 78 + i * 26))
+
+        pygame.draw.rect(surface, BTN_CANCEL, OK_RECT)
+        pygame.draw.rect(surface, BORDER_BROWN, OK_RECT, 3)
+        ok = popup_body_font.render("OK", True, TEXT_COFFEE)
+        surface.blit(ok, (OK_RECT.centerx - ok.get_width() // 2,
+                          OK_RECT.centery - ok.get_height() // 2))
 
     running = True
     while running:
@@ -323,12 +463,23 @@ if __name__ == "__main__":
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 pos = event.pos
-                if reg.get_confirm_rect().collidepoint(pos):
-                    confirmed.extend(selected)      # blue -> green
-                    selected.clear()
+
+                if show_warning:
+                    # popup is open -- only the OK button responds
+                    if OK_RECT.collidepoint(pos):
+                        show_warning = False
+
+                elif reg.get_confirm_rect().collidepoint(pos):
+                    if total_credits() > CREDIT_LIMIT:
+                        show_warning = True         # block + warn
+                    else:
+                        confirmed.extend(selected)  # blue -> green
+                        selected.clear()
+
                 elif reg.get_cancel_rect().collidepoint(pos):
                     selected.clear()                # full reset
                     confirmed.clear()
+
                 else:
                     row_rects = reg.get_course_row_rects(len(courses))
                     for i, r in enumerate(row_rects):
@@ -345,12 +496,15 @@ if __name__ == "__main__":
         reg.render(window, courses, selected, confirmed, total_credits(),
                    CREDIT_LIMIT, "Player", "8324782", 3)
 
-        # hint text, bottom-RIGHT so it clears the buttons
+        # hint text, bottom-right, tucked inside the card frame
         hint = hint_font.render(
             "Click rows to select  |  CONFIRM / CANCEL  |  F11 fullscreen",
-            True, (120, 95, 75))
-        window.blit(hint, (window.get_width() - hint.get_width() - 24,
-                           window.get_height() - hint.get_height() - 14))
+            True, (150, 125, 100))
+        window.blit(hint, (window.get_width() - hint.get_width() - 62,
+                           window.get_height() - hint.get_height() - 52))
+
+        if show_warning:
+            draw_popup(window)
 
         pygame.display.flip()
         clock.tick(60)
