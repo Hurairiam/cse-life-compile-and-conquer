@@ -109,16 +109,23 @@ class Semester:
 
     def all_courses_attempted(self) -> bool:
         """
-        Return True if every registered course has been marked
-        completed (isCompleted True — whether passed or failed,
-        an exam attempt sets this via MainQuest.executeAction()).
+        Return True if every registered course has had its exam
+        attempted this semester — whether the outcome was a PASS
+        (is_completed() True) or a FAIL (is_backlogged() True).
         Empty registration counts as vacuously complete.
 
-        FIXED: now calls course.is_completed() — the actual getter
-        defined on Course. The old course.get_is_completed() call
-        does not exist on Course and raised AttributeError.
+        FIX (this version): previously this only checked
+        course.is_completed(), which is True ONLY on a pass. A
+        failed course sets is_backlogged() True and is_completed()
+        stays False (see course.py's mark_backlogged()), so a
+        semester with even one failed course could never satisfy
+        this check under the old logic — even though that course's
+        exam genuinely was attempted. Now either flag counts.
         """
-        return all(course.is_completed() for course in self.__registered_courses)
+        return all(
+            course.is_completed() or course.is_backlogged()
+            for course in self.__registered_courses
+        )
 
     # ── Active Quest Pool ──────────────────────────────────────────
 
