@@ -1,5 +1,12 @@
+# Ignore all __pycache__ directories anywhere in the project
+**/__pycache__/
 __pycache__/
+
+# Ignore all compiled Python files
 *.pyc
-*.pyc
+*.pyo
+*.pyd
+
+# OS & Editor specific files
 .DS_Store
 .vscode/
