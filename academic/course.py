@@ -128,6 +128,39 @@ class Course:
         if code not in self.__prerequisites:
             self.__prerequisites.append(code)
 
+    def are_prerequisites_satisfied(self, history) -> bool:
+        """
+        Check whether every prerequisite code stored on this course
+        has been completed, according to the player's AcademicHistory.
+        Returns True if this course has no prerequisites at all
+        (free-entry course).
+
+        Used by engine/registration_manager.py's
+        filter_visible_catalog() to decide whether a course should
+        be shown/selectable this semester. `history` is typed loosely
+        here (no import of AcademicHistory) to avoid a circular
+        import — it only needs to expose is_prerequisite_satisfied().
+        """
+        for prereq_code in self.__prerequisites:
+            if not history.is_prerequisite_satisfied(prereq_code):
+                return False
+        return True
+
+    # ── Compatibility Aliases ────────────────────────────────────────
+    # These exist ONLY so engine/registration_manager.py and
+    # engine/game_clock.py (which call get_course_id() / get_is_completed())
+    # keep working without modification. The real, canonical methods are
+    # get_course_code() and is_completed() — use those in any new code.
+    # Both aliases simply delegate; there is only one source of truth.
+
+    def get_course_id(self) -> str:
+        """Alias for get_course_code() — engine/ layer compatibility."""
+        return self.get_course_code()
+
+    def get_is_completed(self) -> bool:
+        """Alias for is_completed() — engine/ layer compatibility."""
+        return self.is_completed()
+
     # ── MCQ Ladder Management (structure ready, content empty) ──────
 
     def add_question(
