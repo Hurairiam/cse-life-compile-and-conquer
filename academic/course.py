@@ -6,15 +6,20 @@ Academic Package — Course Entity
 ─────────────────────────────────────────────────────────────
 Encapsulates all metadata for a single university course: its identity,
 credit value, prerequisite chain, category tag, and the 3-question
-(Easy/Medium/Hard) Q&A ladder used by the exam simulation to determine:
+(Easy/Medium/Hard) MCQ ladder used by the exam simulation to determine:
 
     1. Pass/Fail status of the course
     2. The time-cost optimization of the linked MainQuest's exam action
 
+EXAM FORMAT (confirmed): Each course has exactly 3 MCQ questions
+(easy/medium/hard), each with multiple lettered options (A/B/C/D...).
+A course is passed only if the player answers ALL 3 correctly.
+
 STATUS: Question/Answer content is intentionally left EMPTY in this
-version. All methods needed to store, retrieve, and validate questions
-are implemented and ready — actual question data will be loaded later
-via add_question() calls from a separate catalog/content file.
+version. All methods needed to store, retrieve, and validate MCQ
+questions are implemented and ready — actual question data will be
+loaded later via add_question() calls from a separate catalog/content
+file (course_catalog.py).
 
 Design notes
 ────────────
@@ -74,9 +79,11 @@ class Course:
         self.__is_lab_component: bool = is_lab_component
         self.__category: Optional[str] = category.strip() if category else None
 
-        # 3-question Q&A ladder → {"easy": {...}, "medium": {...}, "hard": {...}}
+        # 3-question MCQ ladder → {"easy": {...}, "medium": {...}, "hard": {...}}
+        # Each entry: {"question_text": str, "options": {"A": str, "B": str, ...},
+        #              "correct_option": "A"}
         # Intentionally EMPTY for now — filled later via add_question().
-        self.__questions: Dict[str, Dict[str, str]] = {}
+        self.__questions: Dict[str, Dict[str, object]] = {}
 
         # Persistent lifecycle state (mutated by MainQuest / AcademicHistory)
         self.__is_completed: bool = False
@@ -121,56 +128,102 @@ class Course:
         if code not in self.__prerequisites:
             self.__prerequisites.append(code)
 
-    # ── Q&A Ladder Management (structure ready, content empty) ──────
-    def add_question(self, difficulty: str, question_text: str, correct_answer: str) -> bool:
+    # ── MCQ Ladder Management (structure ready, content empty) ──────
+
+    def add_question(
+        self,
+        difficulty: str,
+        question_text: str,
+        options: List[str],
+        correct_option: str,
+    ) -> bool:
         """
-        Registers one question for this course under a difficulty tier.
-        difficulty must be one of: 'easy', 'medium', 'hard'.
-        Returns True on success, False if the difficulty label is invalid
-        or the text/answer is empty.
-        NOTE: Not called anywhere yet — question content will be supplied
-        later via a separate catalog/content file.
+        Register one MCQ for this course under a difficulty tier.
+
+        difficulty:      must be one of 'easy', 'medium', 'hard'.
+        question_text:   the question prompt shown to the player.
+        options:         list of option texts, e.g.
+                         ["A stack", "A queue", "A tree", "A graph"]
+                         — automatically lettered A, B, C, ... in order.
+        correct_option:  the letter of the correct option, e.g. "A".
+                         Case-insensitive; must correspond to a real
+                         lettered option.
+
+        Returns True on success, False if:
+          - difficulty is not a valid tier, or
+          - question_text is empty, or
+          - fewer than 2 options are given, or
+          - correct_option doesn't match any generated letter.
+
+        NOTE: Not called anywhere yet — question content will be
+        supplied later via course_catalog.py.
         """
-        if not question_text or not correct_answer:
-            return False
         difficulty = difficulty.strip().lower()
         if difficulty not in self.VALID_DIFFICULTIES:
             return False
+        if not question_text:
+            return False
+        if not options or len(options) < 2:
+            return False
+
+        # Letter each option in order: A, B, C, D, ...
+        lettered_options: Dict[str, str] = {
+            chr(ord("A") + i): opt.strip() for i, opt in enumerate(options)
+        }
+
+        correct_option = correct_option.strip().upper()
+        if correct_option not in lettered_options:
+            return False
+
         self.__questions[difficulty] = {
             "question_text": question_text.strip(),
-            "correct_answer": correct_answer.strip(),
+            "options": lettered_options,
+            "correct_option": correct_option,
         }
         return True
 
     def is_question_set_complete(self) -> bool:
-        """True only when all 3 difficulty tiers have a registered question."""
+        """True only when all 3 difficulty tiers have a registered MCQ."""
         return all(tier in self.__questions for tier in self.VALID_DIFFICULTIES)
 
-    def get_question(self, difficulty: str) -> Optional[Dict[str, str]]:
-        """Returns {'question_text': ...} for one tier — never the answer."""
+    def get_question(self, difficulty: str) -> Optional[Dict[str, object]]:
+        """
+        Returns {'question_text': ..., 'options': {'A': ..., 'B': ...}}
+        for one tier — the correct_option is never exposed here.
+        """
         difficulty = difficulty.strip().lower()
         data = self.__questions.get(difficulty)
-        return {"question_text": data["question_text"]} if data else None
-
-    def get_all_questions(self) -> Dict[str, Dict[str, str]]:
-        """Returns question_text only, per tier — correct_answer is never exposed."""
+        if not data:
+            return None
         return {
-            tier: {"question_text": data["question_text"]}
+            "question_text": data["question_text"],
+            "options": dict(data["options"]),
+        }
+
+    def get_all_questions(self) -> Dict[str, Dict[str, object]]:
+        """Returns question_text + options only, per tier — never the answer."""
+        return {
+            tier: {
+                "question_text": data["question_text"],
+                "options": dict(data["options"]),
+            }
             for tier, data in self.__questions.items()
         }
 
     def check_answers(self, submitted_answers: Dict[str, str]) -> bool:
         """
-        Validates a full exam attempt against all 3 tiers.
+        Validates a full exam attempt against all 3 MCQ tiers.
 
-        submitted_answers: {"easy": "...", "medium": "...", "hard": "..."}
+        submitted_answers: {"easy": "A", "medium": "C", "hard": "B"}
+        (the option letter the player picked for each tier)
 
         Returns True only if:
           - The question set is complete (all 3 tiers registered), AND
-          - All 3 submitted answers match (case-insensitive, trimmed)
+          - All 3 submitted option letters match the correct_option
+            for their tier (case-insensitive)
 
         This single boolean result feeds BOTH downstream outcomes:
-          - Course Pass/Fail
+          - Course Pass/Fail (confirmed rule: all 3 MCQs correct = pass)
           - MainQuest exam time-cost optimization (10 vs 14 days)
 
         NOTE: Will always return False right now since no questions are
@@ -179,8 +232,8 @@ class Course:
         if not self.is_question_set_complete():
             return False
         for tier in self.VALID_DIFFICULTIES:
-            expected = self.__questions[tier]["correct_answer"].strip().lower()
-            given = str(submitted_answers.get(tier, "")).strip().lower()
+            expected = self.__questions[tier]["correct_option"]
+            given = str(submitted_answers.get(tier, "")).strip().upper()
             if expected != given:
                 return False
         return True
