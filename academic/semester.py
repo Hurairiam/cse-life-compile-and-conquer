@@ -94,6 +94,16 @@ class Semester:
         if course not in self.__registered_courses:
             self.__registered_courses.append(course)
 
+    def add_course(self, course: Course) -> None:
+        """
+        Alias for register_course() — kept ONLY so
+        engine/registration_manager.py's confirm_registration()
+        (which calls semester.add_course()) keeps working without
+        modification. Delegates directly; register_course() remains
+        the one real implementation.
+        """
+        self.register_course(course)
+
     def deregister_course(self, course: Course) -> None:
         """
         Remove a course from this semester's registered list.
