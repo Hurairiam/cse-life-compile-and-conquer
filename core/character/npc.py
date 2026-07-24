@@ -63,20 +63,22 @@ class NPC(Character):
 
     def is_within_availability_window(self, player: Player) -> bool:
         """
-        Returns True if the player's remaining time ratio falls
-        within this NPC's window (0.75–1.00 of the 80-day pool).
-        An inaccessible NPC always returns False.
-        [Sprint 2 — implemented by Ayesha's layer]
+        Returns True if the player's remaining time ratio falls within
+        this NPC's availability window (0.75 to 1.00 of the semester pool).
+        An NPC is only accessible in the first 20 days of an 80-day semester.
+        Called by the game engine before showing the NPC on screen.
         """
-        pass
+        if not self.__is_accessible:
+            return False
+        ratio: float = player.get_time_pool_days() / 80.0
+        return self.__availability_ratio_min <= ratio <= self.__availability_ratio_max
 
     def expire_for_semester(self) -> None:
         """
         Mark this NPC as inaccessible for the rest of the semester.
         Called by GameClock when the exploration phase ends.
-        [Sprint 2 — implemented by Ayesha's layer]
         """
-        pass
+        self.__is_accessible = False
 
     def get_is_accessible(self) -> bool:
         """Return whether this NPC is currently accessible."""
@@ -86,19 +88,21 @@ class NPC(Character):
 
     def offer_quest(self) -> Optional[Quest]:
         """
-        Return the first uncompleted quest from this NPC's pool.
-        Returns None if all quests are done or pool is empty.
-        [Sprint 2 — implemented by Ayesha's layer]
+        Returns the first uncompleted quest from this NPC's quest pool.
+        Returns None if all quests are completed or none are available.
         """
-        pass
+        for quest in self.__quest_pointer_array:
+            if not quest.get_is_completed():
+                return quest
+        return None
 
     def interact(self) -> None:
         """
-        Signal that the player has initiated NPC interaction.
-        DialogueManager takes over rendering from the screen manager.
-        [Sprint 2 — implemented by Ayesha's layer]
+        Signals that the player has initiated interaction with this NPC.
+        The DialogueManager takes over rendering from the screen manager.
+        No game logic runs here — this is purely a trigger signal.
         """
-        pass
+        pass  # DialogueManager activated by screen state manager
 
     # ── Movement ──────────────────────────────────────────────
 
