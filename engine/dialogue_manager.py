@@ -56,24 +56,24 @@ class DialogueManager:
         """
         Advances to the next dialogue line.
         Returns True if there are more lines remaining.
-        Returns False when the sequence is complete.
-        [Sprint 2 — next iteration]
+        Returns False when the sequence is complete -- caller should
+        deactivate the dialogue state in the screen manager.
         """
-        pass
+        self.__current_index += 1
+        if self.__current_index >= len(self.__dialogue_queue):
+            self.__is_active = False
+            return False
+        return True
 
     def is_active(self) -> bool:
-        """
-        Returns True if a dialogue sequence is currently running.
-        [Sprint 2 — next iteration]
-        """
-        pass
+        """Returns True if a dialogue sequence is currently running."""
+        return self.__is_active
 
     def get_current_line(self) -> str:
-        """
-        Returns the current dialogue line, or empty string if inactive.
-        [Sprint 2 — next iteration]
-        """
-        pass
+        """Returns the current dialogue line, or empty string if inactive."""
+        if not self.__is_active:
+            return ""
+        return self.__dialogue_queue[self.__current_index]
 
     def render(self, screen: pygame.Surface) -> None:
         """
