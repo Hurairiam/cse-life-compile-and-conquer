@@ -147,15 +147,15 @@ class Course:
         return True
 
     # ── Compatibility Aliases ────────────────────────────────────────
-    # These exist ONLY so engine/registration_manager.py and
-    # engine/game_clock.py (which call get_course_id() / get_is_completed())
-    # keep working without modification. The real, canonical methods are
-    # get_course_code() and is_completed() — use those in any new code.
-    # Both aliases simply delegate; there is only one source of truth.
-
-    def get_course_id(self) -> str:
-        """Alias for get_course_code() — engine/ layer compatibility."""
-        return self.get_course_code()
+    # get_course_id() was removed (previously an alias for
+    # get_course_code()) to standardize naming across the whole
+    # codebase — "code" and "id" were being used interchangeably for
+    # the exact same value, which was confusing even though it never
+    # caused a functional bug. get_course_code() is now the ONE
+    # canonical name; engine/registration_manager.py was updated to
+    # match. get_is_completed() stays as-is — that's a different,
+    # unrelated compatibility alias (verb-prefix style, not a code/id
+    # naming clash) for engine/game_clock.py.
 
     def get_is_completed(self) -> bool:
         """Alias for is_completed() — engine/ layer compatibility."""
