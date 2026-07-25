@@ -80,6 +80,33 @@ class DialogueManager:
         Renders the dialogue box, current text line, portrait, and
         the SPACE key hint. Called every frame by the main loop.
         Does nothing if is_active() is False.
-        [Sprint 2 — next iteration]
         """
-        pass
+        if not self.__is_active:
+            return
+
+        # Draw box background
+        pygame.draw.rect(screen, (18, 18, 30), self.__box_rect)
+        pygame.draw.rect(screen, (80, 130, 200), self.__box_rect, 2)
+
+        # Draw portrait if available
+        if self.__current_portrait:
+            portrait_rect = pygame.Rect(
+                self.__box_rect.x + 10,
+                self.__box_rect.y + 12,
+                96, 96
+            )
+            screen.blit(self.__current_portrait, portrait_rect)
+            text_x: int = self.__box_rect.x + 116
+        else:
+            text_x = self.__box_rect.x + 14
+
+        # Draw current dialogue line
+        line: str = self.__dialogue_queue[self.__current_index]
+        text_surface = self.__font.render(line, True, (240, 240, 240))
+        screen.blit(text_surface, (text_x, self.__box_rect.y + 22))
+
+        # Draw SPACE hint at bottom of box
+        hint = self.__font_hint.render(
+            "[ SPACE ]  Continue", True, (120, 120, 140)
+        )
+        screen.blit(hint, (self.__box_rect.x + 14, self.__box_rect.bottom - 22))
