@@ -94,4 +94,9 @@ EPILOGUE_TEXTS: dict[str, list[str]] = {
         "Recruiters were already reaching out before you even finished updating your resume.",
         "Turns out all that hard work was 100% worth it in the end. Time to celebrate!",
     ],
+    "AVERAGE GRADUATE": [
+        "140 credits in the bag! You officially did it.",
+        "You have the qualification ready, and there's still plenty of room to polish your toolkit.",
+        "Now the fun part starts: learning through real projects out in the field.",
+    ],
 }
