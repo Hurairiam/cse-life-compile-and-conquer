@@ -84,7 +84,27 @@ DEFAULT_SEMESTER_INTRO: list[str] = [
 
 # ── NPC DIALOGUE SCRIPTS ──────────────────────────────────────────
 NPC_DIALOGUES: dict[str, dict[str, list[str]]] = {
-    # content to be added
+    "warm_classmate_purnno": {
+        "greeting": [
+            "Oh, you're in the CSE program too?",
+            "I'm Purnno by the way. Just grabbed some food— this place gets crowded really fast.",
+            "Join us please!",
+        ],
+        "offer": [
+            "I found something we could work on together.",
+            "A few days of focused practice — nothing crazy.",
+            "Interested?",
+        ],
+        "farewell": [
+            "No pressure. Food's getting cold so I gotta dash.",
+            "You know where to find me.",
+        ],
+        "unavailable": [
+            "Hey — I'd love to chat but exams are coming up.",
+            "I'm basically living in the library right now.",
+            "Find me at the start of next semester, yeah?",
+        ],
+    },
 }
 
 # ── EPILOGUE TEXTS ────────────────────────────────────────────────
