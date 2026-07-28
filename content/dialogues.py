@@ -89,5 +89,9 @@ NPC_DIALOGUES: dict[str, dict[str, list[str]]] = {
 
 # ── EPILOGUE TEXTS ────────────────────────────────────────────────
 EPILOGUE_TEXTS: dict[str, list[str]] = {
-    # content to be added
+    "TOP GRADUATE": [
+        "You made it through all 140 credits—and you actually know your stuff!",
+        "Recruiters were already reaching out before you even finished updating your resume.",
+        "Turns out all that hard work was 100% worth it in the end. Time to celebrate!",
+    ],
 }
