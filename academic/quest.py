@@ -112,6 +112,25 @@ class MainQuest(Quest, TimeConsumable):
         """Return whether Q&A optimization was successful."""
         return self.__is_optimized
 
+    def get_time_cost(self) -> int:
+        """
+        Override of Quest.get_time_cost(): returns the CURRENT
+        accurate cost (10 if optimized, 14 otherwise) instead of the
+        fixed constructor-time value inherited from Quest.
+
+        FIX: GameClock.process_time_consumable() reads get_time_cost()
+        BEFORE calling execute_action() to advance the global career
+        clock. Without this override, get_time_cost() always returned
+        the base 14-day value — even after attempt_qa_optimization()
+        succeeded — so the global clock would advance by 14 days while
+        the player's own semester time pool was only deducted 10 days
+        by execute_action()'s internal logic. The two clocks would
+        drift out of sync over the course of the game. This override
+        keeps them consistent by deriving the cost from the same
+        __is_optimized flag that execute_action() already uses.
+        """
+        return 10 if self.__is_optimized else 14
+
     def attempt_qa_optimization(self, submitted_answers: Dict[str, str]) -> bool:
         """
         Run the pre-exam Q&A optimization.
