@@ -45,6 +45,36 @@ SEMESTER_INTROS: dict[int, list[str]] = {
         "Your academic history is a record of every decision you made.",
         "It does not forget. Neither does the backlog.",
     ],
+    7: [
+        "Semester 7. The grind is real now.",
+        "Skill sprints, internship shifts, exams — all competing for the same 80 days.",
+        "Something will have to give. Choose wisely what it is.",
+    ],
+    8: [
+        "Semester 8. You have seen people fall behind and come back.",
+        "You have seen people fall behind and not come back.",
+        "The difference was never talent.",
+    ],
+    9: [
+        "Semester 9. Three semesters left.",
+        "The students who are ahead know it. The ones who are behind know it too.",
+        "The clock does not slow down for either.",
+    ],
+    10: [
+        "Semester 10. Final year.",
+        "Every exam matters more than it did before.",
+        "140 credits. That is the only number that matters now.",
+    ],
+    11: [
+        "Semester 11. Second to last.",
+        "Last real chance to clear the backlog before everything converges.",
+        "Whatever you have been putting off — stop putting it off.",
+    ],
+    12: [
+        "Semester 12. This is it.",
+        "Everything you built — or failed to build — across four years ends here.",
+        "Graduate. Or carry it forward into a very different kind of fight.",
+    ],
 }
 
 DEFAULT_SEMESTER_INTRO: list[str] = [
