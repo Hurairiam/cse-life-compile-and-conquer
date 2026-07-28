@@ -105,6 +105,25 @@ NPC_DIALOGUES: dict[str, dict[str, list[str]]] = {
             "Find me at the start of next semester, yeah?",
         ],
     },
+    "overachiever_classmate_rafi": {
+        "greeting": [
+            "Hey. You're in the CSE program? Which courses did you register for?",
+            "I'm Rafi. What're your thoughts about Rukhsana ma'am's assignment?",
+            "If you need notes let me know, I have everything organized by topic.",
+        ],
+        "offer": [
+            "I'm working on something this week. You can join if you want.",
+            "Warning— I don't go slow.",
+            "A few days of proper focused work.It's totally worth it.",
+        ],
+        "farewell": [
+            "Alright. The offer stands if you change your mind.",
+        ],
+        "unavailable": [
+            "Exam week. I'm not available for anything else right now.",
+            "You should be studying too, honestly instead of loitering.",
+        ],
+    },
 }
 
 # ── EPILOGUE TEXTS ────────────────────────────────────────────────
