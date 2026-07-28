@@ -30,6 +30,21 @@ SEMESTER_INTROS: dict[int, list[str]] = {
         "Abstract classes. Inheritance. Encapsulation. Polymorphism.",
         "You will understand all four. Or you will carry them into next semester.",
     ],
+    4: [
+        "Semester 4. The career office is open for the first time.",
+        "Money enters the picture. So does pressure.",
+        "Manage both. Or let one consume the other.",
+    ],
+    5: [
+        "Semester 5. The courses are harder. The deadlines are closer.",
+        "The students who coasted are starting to feel it.",
+        "You know which one you are.",
+    ],
+    6: [
+        "Semester 6. Halfway through. No room to pretend anymore.",
+        "Your academic history is a record of every decision you made.",
+        "It does not forget. Neither does the backlog.",
+    ],
 }
 
 DEFAULT_SEMESTER_INTRO: list[str] = [
