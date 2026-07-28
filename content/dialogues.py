@@ -99,4 +99,9 @@ EPILOGUE_TEXTS: dict[str, list[str]] = {
         "You have the qualification ready, and there's still plenty of room to polish your toolkit.",
         "Now the fun part starts: learning through real projects out in the field.",
     ],
+    "DROP OUT Strong Skills": [
+        "So the formal degree didn't happen—look at how much practical skill you picked up anyway!",
+        "Even if the credits fell short this time, every project you worked on taught you something valuable.",
+        "Success doesn't only happen inside a 12-semester box. You're building your own way forward.",
+    ],
 }
