@@ -1,548 +1,365 @@
-from __future__ import annotations
+"""
+main.py
+CSE Life: Compile & Conquer
+─────────────────────────────────────────────────────────────
+Entry point — Sprint 3 screen routing + HUD integration.
+Nangiba's HUD renders on top of every gameplay screen.
+─────────────────────────────────────────────────────────────
+Sprint 3 — Abu Huraira (dev1-hurairiam-core)
+"""
 
-import json
-import os
 import sys
-
 import pygame
 
-from core.interfaces import TimeConsumable
-from core.character import Player
-from core.skill_tree import SkillTree
-from academic.quest import Quest, MainQuest, SideQuest
-from academic.academic_history import AcademicHistory
-from academic.course import Course
-from academic.course_catalog import build_course_catalog
-from content.monologues import get_monologue
 from engine.game_session import GameSession
 from engine.game_clock import GameClock
 from engine.registration_manager import RegistrationManager
-from ui.confirm_popup import ConfirmPopup
-from ui.main_menu_screen import (MainMenuScreen, START_GAME, EXIT,
-                                 MENU_LABELS)
-from ui.monologue_screen import MonologueScreen, TYPEWRITER_CPS
-from ui.registration_screen import RegistrationScreen
+from engine.screen_manager import ScreenManager, ScreenState
+from ui.hud import HUD
+from ui.registration_screen import (
+    RegistrationScreen, FIRST_ROW_Y, FOOTER_Y, ROW_PITCH
+)
+from academic.course_catalog import build_course_catalog
 
-SCREEN_W = 1280
-SCREEN_H = 720
-WINDOWED_FLAGS = pygame.SCALED
-FULLSCREEN_FLAGS = pygame.SCALED | pygame.FULLSCREEN
-FPS = 60
+# ── Constants ─────────────────────────────────────────────────────
+SCREEN_WIDTH:  int = 1280
+SCREEN_HEIGHT: int = 720
+FPS:           int = 60
+WINDOW_TITLE:  str = "CSE Life: Compile & Conquer"
 
-WINDOW_CAPTION = "CSE Life: Compile & Conquer"
-VERSION_STRING = "v0.2 — short scope"
+# Derived from RegistrationScreen's own layout constants, not
+# hand-copied — the table area sits between FIRST_ROW_Y and
+# FOOTER_Y, each row occupying ROW_PITCH px. No scrolling support
+# yet (Iteration 12 scope), so the visible catalog is simply
+# truncated to whatever physically fits without overlapping the
+# credit-total footer box. [Sprint 3 — Iteration 12, known limitation]
+MAX_VISIBLE_COURSE_ROWS: int = (FOOTER_Y - FIRST_ROW_Y) // ROW_PITCH
 
-CREDIT_LIMIT = 15
-VISIBLE_COURSE_ROWS = 7
-
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-SETTINGS_PATH = os.path.join(PROJECT_ROOT, "config", "settings.json")
-SETTINGS_SCHEMA_VERSION = 1
-DEFAULT_SETTINGS: dict = {
-    "schema_version": SETTINGS_SCHEMA_VERSION,
-    "music_volume": 80,
-    "sfx_volume": 80,
-    "fullscreen": False,
-}
-
-AUDIO_DIR = os.path.join(PROJECT_ROOT, "assets", "audio")
-# [AUDIO PLACEHOLDER: assets/audio/menu_theme.ogg -- calm chiptune loop]
-MENU_THEME_PATH = os.path.join(AUDIO_DIR, "menu_theme.ogg")
-# [AUDIO PLACEHOLDER: assets/audio/sfx_click.ogg -- UI click]
-SFX_CLICK_PATH = os.path.join(AUDIO_DIR, "sfx_click.ogg")
-# [AUDIO PLACEHOLDER: assets/audio/sfx_confirm.ogg -- confirm chime]
-SFX_CONFIRM_PATH = os.path.join(AUDIO_DIR, "sfx_confirm.ogg")
-
-STATE_MAIN_MENU = "MAIN_MENU"
-STATE_INTRO_MONOLOGUE = "INTRO_MONOLOGUE"
-STATE_REGISTRATION = "REGISTRATION"
-
-POPUP_NONE = None
-POPUP_EXIT = "EXIT"
-POPUP_RETURN_TO_MENU = "RETURN_TO_MENU"
-POPUP_OVER_LIMIT = "OVER_LIMIT"
+# ── Colours ───────────────────────────────────────────────────────
+BG_COLOUR:     tuple = (22, 22, 35)
+HUD_COLOUR:    tuple = (30, 30, 48)
+TEXT_COLOUR:   tuple = (200, 210, 255)
+ACCENT_COLOUR: tuple = (80, 130, 200)
+DIM_COLOUR:    tuple = (70, 75, 95)
 
 
-def load_settings() -> dict:
-    settings = dict(DEFAULT_SETTINGS)
-    try:
-        with open(SETTINGS_PATH, "r", encoding="utf-8") as handle:
-            stored = json.load(handle)
-    except (FileNotFoundError, OSError, ValueError):
-        save_settings(settings)
-        return settings
+# ── Screen Handler Functions ───────────────────────────────────────
 
-    if isinstance(stored, dict):
-        settings["music_volume"] = _clean_volume(
-            stored.get("music_volume"), DEFAULT_SETTINGS["music_volume"])
-        settings["sfx_volume"] = _clean_volume(
-            stored.get("sfx_volume"), DEFAULT_SETTINGS["sfx_volume"])
-        settings["fullscreen"] = bool(stored.get("fullscreen", False))
+def handle_main_menu(
+    screen: pygame.Surface,
+    screen_mgr: ScreenManager,
+    fonts: dict,
+    events: list
+) -> None:
+    """
+    Renders the main menu. SPACE starts the game.
+    HUD is NOT shown on the main menu — no gameplay data yet.
+    """
+    screen.fill(BG_COLOUR)
 
-    save_settings(settings)
-    return settings
+    cx = SCREEN_WIDTH // 2
 
+    title = fonts["title"].render(
+        "CSE Life: Compile & Conquer", True, TEXT_COLOUR)
+    sub = fonts["body"].render(
+        "An OOP Lifecycle Simulation RPG", True, ACCENT_COLOUR)
+    prompt = fonts["small"].render(
+        "Press SPACE to begin", True, DIM_COLOUR)
 
-def save_settings(settings: dict) -> bool:
-    payload = {
-        "schema_version": SETTINGS_SCHEMA_VERSION,
-        "music_volume": _clean_volume(settings.get("music_volume"),
-                                      DEFAULT_SETTINGS["music_volume"]),
-        "sfx_volume": _clean_volume(settings.get("sfx_volume"),
-                                    DEFAULT_SETTINGS["sfx_volume"]),
-        "fullscreen": bool(settings.get("fullscreen", False)),
-    }
-    try:
-        os.makedirs(os.path.dirname(SETTINGS_PATH), exist_ok=True)
-        with open(SETTINGS_PATH, "w", encoding="utf-8") as handle:
-            json.dump(payload, handle, indent=2)
-            handle.write("\n")
-        return True
-    except OSError:
-        return False
+    screen.blit(title,  (cx - title.get_width() // 2, 280))
+    screen.blit(sub,    (cx - sub.get_width() // 2, 330))
+    screen.blit(prompt, (cx - prompt.get_width() // 2, 420))
 
-
-def _clean_volume(value, fallback: int) -> int:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return fallback
-    return int(min(max(value, 0), 100))
-
-
-class GameApp:
-
-    def __init__(self) -> None:
-        self.__settings: dict = load_settings()
-        self.__is_fullscreen: bool = bool(self.__settings["fullscreen"])
-
-        pygame.init()
-        self.__window: pygame.Surface = pygame.display.set_mode(
-            (SCREEN_W, SCREEN_H), self.__display_flags())
-        pygame.display.set_caption(WINDOW_CAPTION)
-        self.__clock_tick: pygame.time.Clock = pygame.time.Clock()
-
-        self.__audio_ready: bool = self.__init_audio()
-        self.__sfx_click = self.__load_sound(SFX_CLICK_PATH)
-        self.__sfx_confirm = self.__load_sound(SFX_CONFIRM_PATH)
-
-        self.__menu_screen = MainMenuScreen(SCREEN_W, SCREEN_H)
-        self.__monologue_screen = MonologueScreen()
-        self.__registration_screen = RegistrationScreen(SCREEN_W, SCREEN_H)
-        self.__popup = ConfirmPopup(SCREEN_W, SCREEN_H)
-
-        self.__state: str = STATE_MAIN_MENU
-        self.__running: bool = True
-        self.__popup_kind = POPUP_NONE
-        self.__menu_focus: int = START_GAME
-
-        self.__session: GameSession | None = None
-        self.__game_clock: GameClock | None = None
-        self.__registration: RegistrationManager | None = None
-        self.__full_catalog: list[Course] = []
-        self.__visible_courses: list[Course] = []
-
-        self.__mono_lines: list[str] = []
-        self.__mono_index: int = 0
-        self.__mono_revealed: float = 0.0
-        self.__mono_done: bool = False
-
-        self.__start_menu_music()
-
-    def __init_audio(self) -> bool:
-        try:
-            pygame.mixer.init()
-            return True
-        except pygame.error:
-            return False
-
-    def __load_sound(self, path: str):
-        if not self.__audio_ready:
-            return None
-        try:
-            return pygame.mixer.Sound(path)
-        except (FileNotFoundError, OSError, pygame.error):
-            return None
-
-    def __start_menu_music(self) -> None:
-        if not self.__audio_ready:
-            return
-        try:
-            pygame.mixer.music.load(MENU_THEME_PATH)
-            pygame.mixer.music.set_volume(self.__settings["music_volume"] / 100)
-            pygame.mixer.music.play(-1)
-        except (FileNotFoundError, OSError, pygame.error):
-            pass
-
-    def __play_sfx(self, sound) -> None:
-        if sound is None:
-            return
-        sound.set_volume(self.__settings["sfx_volume"] / 100)
-        sound.play()
-
-    def __display_flags(self) -> int:
-        return FULLSCREEN_FLAGS if self.__is_fullscreen else WINDOWED_FLAGS
-
-    def __apply_display(self, fullscreen: bool) -> None:
-        self.__is_fullscreen = fullscreen
-        self.__settings["fullscreen"] = fullscreen
-        self.__window = pygame.display.set_mode(
-            (SCREEN_W, SCREEN_H), self.__display_flags())
-
-    def __toggle_fullscreen(self) -> None:
-        self.__apply_display(not self.__is_fullscreen)
-        save_settings(self.__settings)
-
-    def run(self) -> None:
-        while self.__running:
-            delta = self.__clock_tick.tick(FPS) / 1000.0
-
-            for event in pygame.event.get():
-                self.__handle_event(event)
-
-            self.__update(delta)
-            self.__render()
-            pygame.display.flip()
-
-        pygame.quit()
-
-    def __update(self, delta: float) -> None:
-        if self.__state != STATE_INTRO_MONOLOGUE or self.__mono_done:
-            return
-        if not self.__mono_lines:
-            return
-
-        current = self.__mono_lines[self.__mono_index]
-        self.__mono_revealed = min(
-            self.__mono_revealed + TYPEWRITER_CPS * delta, float(len(current)))
-        if (self.__mono_index == len(self.__mono_lines) - 1
-                and self.__mono_revealed >= len(current)):
-            self.__mono_done = True
-
-    def __handle_event(self, event: pygame.event.Event) -> None:
-        if event.type == pygame.QUIT:
-            self.__popup_kind = POPUP_EXIT
-            return
-
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
-            self.__toggle_fullscreen()
-            return
-
-        if self.__popup_kind is not POPUP_NONE:
-            self.__handle_popup_event(event)
-            return
-
-        if self.__state == STATE_MAIN_MENU:
-            self.__handle_menu_event(event)
-        elif self.__state == STATE_INTRO_MONOLOGUE:
-            self.__handle_monologue_event(event)
-        elif self.__state == STATE_REGISTRATION:
-            self.__handle_registration_event(event)
-
-    def __handle_popup_event(self, event: pygame.event.Event) -> None:
-        confirmed = False
-        cancelled = False
-
+    for event in events:
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                cancelled = True
-            elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
-                confirmed = True
+            if event.key == pygame.K_SPACE:
+                screen_mgr.queue_transition(ScreenState.REGISTRATION)
 
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.__popup_kind == POPUP_OVER_LIMIT:
-                confirmed = self.__popup.get_ok_rect().collidepoint(event.pos)
-            elif self.__popup.get_confirm_rect().collidepoint(event.pos):
-                confirmed = True
-            elif self.__popup.get_cancel_rect().collidepoint(event.pos):
-                cancelled = True
 
-        if not confirmed and not cancelled:
-            return
+def handle_registration(
+    screen: pygame.Surface,
+    screen_mgr: ScreenManager,
+    session: GameSession,
+    registration_manager: RegistrationManager,
+    registration_screen: RegistrationScreen,
+    full_catalog: list,
+    events: list
+) -> None:
+    """
+    Renders the real registration screen (Nangiba's RegistrationScreen)
+    driven live by RegistrationManager — no more placeholder text.
 
-        kind = self.__popup_kind
-        self.__popup_kind = POPUP_NONE
-        if cancelled:
-            return
+    Flow:
+    - The visible catalog is RegistrationManager.build_semester_catalog()
+      (prereqs-satisfied + backlog-injected), truncated to
+      MAX_VISIBLE_COURSE_ROWS since there's no scrolling yet.
+    - Clicking a course row toggles select/deselect via
+      RegistrationManager — the 15-credit cap is enforced there, not
+      here, so an over-limit click is just silently rejected (the
+      credit bar/footer visually explains why).
+    - CONFIRM calls confirm_registration(semester); on success,
+      transitions to Exploration. An empty selection is a no-op click
+      (confirm_registration() returns False and nothing happens).
+    - CANCEL clears the current selection without transitioning.
+    - "confirmed" (green/locked rows) is intentionally always passed
+      as [] this iteration — there's no partial-confirm/re-open flow
+      yet, registration confirms and immediately advances the screen.
 
-        self.__play_sfx(self.__sfx_confirm)
-        if kind == POPUP_EXIT:
-            self.__running = False
-        elif kind == POPUP_RETURN_TO_MENU:
-            self.__abandon_run()
+    [Sprint 3 — Iteration 12]
+    """
+    player = session.get_active_player()
+    semester = session.get_active_semester()
+    history = player.get_academic_history()
 
-    def __popup_content(self) -> tuple | None:
-        if self.__popup_kind == POPUP_EXIT:
-            return ("EXIT GAME?", ["Any unsaved progress will be lost."],
-                    "EXIT", "STAY")
-        if self.__popup_kind == POPUP_RETURN_TO_MENU:
-            return ("RETURN TO MAIN MENU?", ["Progress cannot be saved yet."],
-                    "RETURN", "STAY")
-        if self.__popup_kind == POPUP_OVER_LIMIT:
-            return ("TOO MANY CREDITS",
-                    ["You can register a maximum of",
-                     f"{CREDIT_LIMIT} credits per semester.",
-                     "Deselect a course and try again."],
-                    "OK", None)
-        return None
+    visible_courses = registration_manager.build_semester_catalog(
+        full_catalog, history
+    )[:MAX_VISIBLE_COURSE_ROWS]
 
-    def __handle_menu_event(self, event: pygame.event.Event) -> None:
-        rects = self.__menu_screen.get_button_rects()
+    row_rects = registration_screen.get_course_row_rects(len(visible_courses))
+    confirm_rect = registration_screen.get_confirm_rect()
+    cancel_rect = registration_screen.get_cancel_rect()
 
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                self.__menu_focus = (self.__menu_focus - 1) % len(MENU_LABELS)
-            elif event.key == pygame.K_DOWN:
-                self.__menu_focus = (self.__menu_focus + 1) % len(MENU_LABELS)
-            elif event.key == pygame.K_ESCAPE:
-                if self.__menu_focus == EXIT:
-                    self.__popup_kind = POPUP_EXIT
-                else:
-                    self.__menu_focus = EXIT
-            elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
-                self.__activate_menu_item(self.__menu_focus)
+    for event in events:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            pos = event.pos
 
-        elif event.type == pygame.MOUSEMOTION:
-            for i, rect in enumerate(rects):
-                if rect.collidepoint(event.pos):
-                    self.__menu_focus = i
-                    break
+            if confirm_rect.collidepoint(pos):
+                if registration_manager.confirm_registration(semester):
+                    screen_mgr.queue_transition(ScreenState.EXPLORATION)
 
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            for i, rect in enumerate(rects):
-                if rect.collidepoint(event.pos):
-                    self.__menu_focus = i
-                    self.__activate_menu_item(i)
-                    break
+            elif cancel_rect.collidepoint(pos):
+                registration_manager.clear_selection()
 
-    def __activate_menu_item(self, index: int) -> None:
-        self.__play_sfx(self.__sfx_click)
-
-        if index == START_GAME:
-            self.__start_new_run()
-        elif index == EXIT:
-            self.__popup_kind = POPUP_EXIT
-
-    def __start_new_run(self) -> None:
-        self.__session = GameSession()
-        player = self.__session.get_active_player()
-        player.set_academic_history(AcademicHistory())
-        player.set_skill_tree(SkillTree())
-
-        self.__game_clock = GameClock(self.__session)
-        self.__registration = RegistrationManager()
-        self.__full_catalog = build_course_catalog()
-
-        self.__enter_intro_monologue()
-
-    def __abandon_run(self) -> None:
-        self.__session = None
-        self.__game_clock = None
-        self.__registration = None
-        self.__full_catalog = []
-        self.__visible_courses = []
-        self.__menu_focus = START_GAME
-        self.__state = STATE_MAIN_MENU
-
-    def advance_to_next_semester(self) -> None:
-        if self.__game_clock is None:
-            return
-        self.__game_clock.advance_semester()
-        self.__enter_intro_monologue()
-
-    def __enter_intro_monologue(self) -> None:
-        semester = self.__session.get_active_semester()
-        semester.play_intro_monologue()
-
-        self.__mono_lines = get_monologue(semester.get_semester_number())
-        self.__mono_index = 0
-        self.__mono_revealed = 0.0
-        self.__mono_done = not self.__mono_lines
-        self.__state = STATE_INTRO_MONOLOGUE
-
-    def __handle_monologue_event(self, event: pygame.event.Event) -> None:
-        advance = (
-            (event.type == pygame.KEYDOWN
-             and event.key in (pygame.K_SPACE, pygame.K_RETURN))
-            or (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1)
-        )
-        if not advance:
-            return
-
-        if self.__mono_done:
-            self.__enter_registration()
-            return
-
-        current = self.__mono_lines[self.__mono_index]
-        if self.__mono_revealed < len(current):
-            self.__mono_revealed = float(len(current))
-        elif self.__mono_index < len(self.__mono_lines) - 1:
-            self.__mono_index += 1
-            self.__mono_revealed = 0.0
-        else:
-            self.__mono_done = True
-
-    def __visible_monologue_lines(self) -> list[str]:
-        if not self.__mono_lines:
-            return []
-        return (self.__mono_lines[:self.__mono_index]
-                + [self.__mono_lines[self.__mono_index]
-                   [:int(self.__mono_revealed)]])
-
-    def __enter_registration(self) -> None:
-        self.__play_sfx(self.__sfx_confirm)
-        self.__registration.clear_selection()
-        self.__refresh_visible_courses()
-        self.__state = STATE_REGISTRATION
-
-    def __refresh_visible_courses(self) -> None:
-        history = self.__session.get_active_player().get_academic_history()
-        catalog = self.__registration.build_semester_catalog(
-            self.__full_catalog, history)
-        self.__visible_courses = catalog[:VISIBLE_COURSE_ROWS]
-
-    def __handle_registration_event(self, event: pygame.event.Event) -> None:
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            self.__popup_kind = POPUP_RETURN_TO_MENU
-            return
-
-        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
-            return
-
-        pos = event.pos
-        screen = self.__registration_screen
-
-        if screen.get_confirm_rect().collidepoint(pos):
-            self.__play_sfx(self.__sfx_confirm)
-            self.__registration.confirm_registration(
-                self.__session.get_active_semester())
-            return
-
-        if screen.get_cancel_rect().collidepoint(pos):
-            self.__play_sfx(self.__sfx_click)
-            self.__registration.clear_selection()
-            return
-
-        row_rects = screen.get_course_row_rects(len(self.__visible_courses))
-        for i, rect in enumerate(row_rects):
-            if not rect.collidepoint(pos):
-                continue
-            course = self.__visible_courses[i]
-            if course in self.__registration.get_selected_courses():
-                self.__registration.deselect_course(course)
-                self.__play_sfx(self.__sfx_click)
-            elif self.__registration.select_course(course):
-                self.__play_sfx(self.__sfx_click)
             else:
-                self.__popup_kind = POPUP_OVER_LIMIT
-            break
+                for i, rect in enumerate(row_rects):
+                    if rect.collidepoint(pos):
+                        course = visible_courses[i]
+                        if course in registration_manager.get_selected_courses():
+                            registration_manager.deselect_course(course)
+                        else:
+                            registration_manager.select_course(course)
+                        break
 
-    def __render(self) -> None:
-        if self.__state == STATE_MAIN_MENU:
-            self.__menu_screen.render(
-                self.__window, self.__menu_focus, VERSION_STRING)
-
-        elif self.__state == STATE_INTRO_MONOLOGUE:
-            semester = self.__session.get_active_semester()
-            self.__monologue_screen.render(
-                self.__window, semester.get_semester_number(),
-                semester.get_time_pool_days(),
-                self.__visible_monologue_lines(), self.__mono_done)
-
-        elif self.__state == STATE_REGISTRATION:
-            self.__render_registration()
-
-        content = self.__popup_content()
-        if content is not None:
-            title, lines, confirm, cancel = content
-            self.__popup.render(self.__window, title, lines, confirm, cancel)
-
-    def __render_registration(self) -> None:
-        player = self.__session.get_active_player()
-        semester = self.__session.get_active_semester()
-        selected = self.__registration.get_selected_courses()
-        confirmed = semester.get_registered_courses()
-        total = (self.__registration.get_current_selected_credits()
-                 + sum(c.get_credit_value() for c in confirmed))
-
-        self.__registration_screen.render(
-            self.__window, self.__visible_courses, selected, confirmed,
-            total, CREDIT_LIMIT, player.get_display_name(),
-            player.get_character_id(), semester.get_semester_number())
+    registration_screen.render(
+        screen,
+        visible_courses=visible_courses,
+        selected=registration_manager.get_selected_courses(),
+        confirmed=[],
+        current_credits=registration_manager.get_current_selected_credits(),
+        credit_limit=registration_manager.get_max_credit_limit(),
+        player_name=player.get_display_name(),
+        student_id=player.get_character_id(),
+        semester=semester.get_semester_number()
+    )
 
 
-def run_boot_check() -> None:
-    print("=" * 55)
-    print("  CSE Life: Compile & Conquer -- Sprint 1 Boot Check")
-    print("=" * 55)
+def handle_exploration(
+    screen: pygame.Surface,
+    screen_mgr: ScreenManager,
+    session: GameSession,
+    game_clock: GameClock,
+    fonts: dict,
+    events: list
+) -> None:
+    """
+    Renders exploration phase. Checks 15-day firewall every frame.
+    E key manually enters exam phase for testing.
+    """
+    screen.fill((20, 24, 38))
 
-    # ── Prove: Player can be instantiated ─────────────────────────
-    player = Player()
-    print(f"\n[OK] Player created: '{player.get_display_name()}'")
-    print(f"     Time pool : {player.get_time_pool_days()} days")
-    print(f"     Wallet    : {player.get_wallet_balance()} BDT")
-    print(f"     Credits   : {player.get_accumulated_credits()}")
+    if not game_clock.is_eligible_for_side_activities():
+        screen_mgr.queue_transition(ScreenState.EXAM)
+        return
 
-    # ── Prove: Encapsulation works ────────────────────────────────
-    success = player.deduct_time_pool_days(10)
-    print(f"\n[OK] Deduct 10 days -> success={success}")
-    print(f"     Remaining : {player.get_time_pool_days()} days")
+    header = fonts["title"].render(
+        "Exploration Phase", True, TEXT_COLOUR)
+    screen.blit(header, (40, 60))
 
-    failed = player.deduct_time_pool_days(999)
-    print(f"\n[OK] Deduct 999 days (should fail) -> success={failed}")
-    print(f"     Remaining : {player.get_time_pool_days()} days (unchanged)")
+    placeholder = fonts["body"].render(
+        "[ Map and NPC interactions render here ]",
+        True, DIM_COLOUR)
+    screen.blit(placeholder,
+                (SCREEN_WIDTH // 2 - placeholder.get_width() // 2,
+                 SCREEN_HEIGHT // 2))
 
-    player.deposit_funds(3500.00)
-    print(
-        f"\n[OK] Deposit 3500 BDT -> balance: {player.get_wallet_balance()} BDT")
+    hint = fonts["small"].render(
+        "Press E to enter exam phase  |  ESC to quit",
+        True, DIM_COLOUR)
+    screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2,
+                       SCREEN_HEIGHT - 40))
 
-    # ── Prove: Course instantiation ───────────────────────────────
-    course = Course("CSE101", "Intro to Programming", 3)
-    print(f"\n[OK] Course created: '{course.get_course_name()}'"
-          f" ({course.get_credit_value()} credits)")
+    for event in events:
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_e:
+                screen_mgr.queue_transition(ScreenState.EXAM)
 
-    # ── Prove: MainQuest instantiation and interface check ────────
-    mq = MainQuest(quest_id="MQ_CSE101", linked_course=course)
-    print(f"\n[OK] MainQuest created: '{mq.get_quest_id()}'")
-    print(f"     Is TimeConsumable : {isinstance(mq, TimeConsumable)}")
-    print(f"     Is Quest          : {isinstance(mq, Quest)}")
-    print(f"     Base time cost    : {mq.get_time_cost()} days")
 
-    # ── Prove: SideQuest instantiation and interface check ────────
-    sq = SideQuest(quest_id="SQ_SKILL_01", time_cost=2)
-    print(f"\n[OK] SideQuest created: '{sq.get_quest_id()}'")
-    print(f"     Is TimeConsumable : {isinstance(sq, TimeConsumable)}")
-    print(f"     EXP reward        : {sq.get_exp_reward()}")
+def handle_exam(
+    screen: pygame.Surface,
+    screen_mgr: ScreenManager,
+    session: GameSession,
+    game_clock: GameClock,
+    fonts: dict,
+    events: list
+) -> None:
+    """
+    Renders exam phase placeholder.
+    SPACE simulates completing semester and advancing.
+    """
+    screen.fill((25, 18, 35))
 
-    # ── Prove: Abstract classes CANNOT be instantiated ───────────
-    print("\n[OK] Verifying abstract class enforcement...")
-    try:
-        from core.character import Character
-        _ = Character("x", "x", "x")
-        print("     [FAIL] Character was instantiated -- should not happen")
-    except TypeError:
-        print("     Character() -> TypeError raised correctly (abstract)")
+    semester = session.get_active_semester()
 
-    try:
-        _ = Quest("x", 0)
-        print("     [FAIL] Quest was instantiated -- should not happen")
-    except TypeError:
-        print("     Quest()     -> TypeError raised correctly (abstract)")
+    header = fonts["title"].render("Exam Phase", True, TEXT_COLOUR)
+    screen.blit(header, (40, 60))
 
-    # ── SkillTree check ───────────────────────────────────────────
-    tree = SkillTree()
-    tree.increment_skill("python", 10)
-    print(f"\n[OK] SkillTree: python level = {tree.get_skill_level('python')}")
-    print(f"     Is unlocked: {tree.is_skill_unlocked('python')}")
+    placeholder = fonts["body"].render(
+        "[ MainQuest Q&A and exam pipeline renders here ]",
+        True, DIM_COLOUR)
+    screen.blit(placeholder,
+                (SCREEN_WIDTH // 2 - placeholder.get_width() // 2,
+                 SCREEN_HEIGHT // 2))
 
-    print("\n" + "=" * 55)
-    print("  All Sprint 1 architecture checks passed.")
-    print("=" * 55)
+    hint = fonts["small"].render(
+        "Press SPACE to advance semester  |  ESC to quit",
+        True, DIM_COLOUR)
+    screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2,
+                       SCREEN_HEIGHT - 40))
 
+    for event in events:
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                game_clock.check_semester_end_state()
+                if session.get_is_frozen():
+                    screen_mgr.queue_transition(ScreenState.ENDGAME)
+                else:
+                    game_clock.advance_semester()
+                    screen_mgr.queue_transition(ScreenState.REGISTRATION)
+
+
+def handle_endgame(
+    screen: pygame.Surface,
+    fonts: dict,
+    events: list
+) -> None:
+    """
+    Renders endgame placeholder.
+    Saif's EndgameEvaluationManager and Nangiba's
+    EndgameScreen integrate here in Sprint 3.
+    """
+    screen.fill((8, 8, 18))
+
+    cx = SCREEN_WIDTH // 2
+
+    title = fonts["title"].render(
+        "Game Over", True, (255, 215, 70))
+    screen.blit(title, (cx - title.get_width() // 2, 200))
+
+    placeholder = fonts["body"].render(
+        "[ Endgame evaluation and epilogue renders here ]",
+        True, DIM_COLOUR)
+    screen.blit(placeholder,
+                (cx - placeholder.get_width() // 2, 300))
+
+    hint = fonts["small"].render(
+        "Press ESC to quit", True, DIM_COLOUR)
+    screen.blit(hint, (cx - hint.get_width() // 2,
+                       SCREEN_HEIGHT - 40))
+
+
+# ── Main ──────────────────────────────────────────────────────────
 
 def main() -> None:
-    run_boot_check()
-    if "--check" in sys.argv:
-        return
-    GameApp().run()
+    """
+    Initialises Pygame, creates game systems, runs main loop.
+    HUD renders on top of every screen except main menu.
+    """
+    pygame.init()
+    pygame.display.set_caption(WINDOW_TITLE)
+
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    clock = pygame.time.Clock()
+
+    # Game systems
+    session = GameSession()
+    game_clock = GameClock(session)
+    registration_manager = RegistrationManager()
+    screen_mgr = ScreenManager()
+
+    # Static content — built once, same Course instances reused every
+    # frame and across semesters (required for the backlog mechanic:
+    # a failed course is the SAME object re-offered later, not a copy).
+    full_catalog = build_course_catalog()
+
+    # Fonts
+    fonts = {
+        "title": pygame.font.SysFont("Arial", 28, bold=True),
+        "body":  pygame.font.SysFont("Arial", 16),
+        "small": pygame.font.SysFont("Arial", 13),
+    }
+
+    # UI components
+    hud = HUD()
+    registration_screen = RegistrationScreen(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+    running = True
+
+    while running:
+
+        screen_mgr.apply_pending_transition()
+
+        events = pygame.event.get()
+
+        for event in events:
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+
+        state = screen_mgr.get_current_state()
+
+        if state == ScreenState.MAIN_MENU:
+            handle_main_menu(screen, screen_mgr, fonts, events)
+
+        elif state == ScreenState.REGISTRATION:
+            handle_registration(
+                screen, screen_mgr, session, registration_manager,
+                registration_screen, full_catalog, events)
+
+        elif state == ScreenState.EXPLORATION:
+            handle_exploration(
+                screen, screen_mgr, session, game_clock, fonts, events)
+
+        elif state == ScreenState.EXAM:
+            handle_exam(
+                screen, screen_mgr, session, game_clock, fonts, events)
+
+        elif state == ScreenState.ENDGAME:
+            handle_endgame(screen, fonts, events)
+
+        # HUD renders on top of every screen except main menu.
+        # KNOWN COSMETIC ISSUE (Iteration 12): on Registration,
+        # RegistrationScreen's card starts at y=24, slightly under
+        # the 44px HUD strip — top border/corner marks get covered.
+        # Not functional, just a layout overlap — flagging for
+        # whoever does UI polish next.
+        if state != ScreenState.MAIN_MENU:
+            player = session.get_active_player()
+            semester = session.get_active_semester()
+            hud.render(
+                screen,
+                time_pool=semester.get_time_pool_days(),
+                wallet=player.get_wallet_balance(),
+                semester=semester.get_semester_number(),
+                credits=player.get_accumulated_credits()
+            )
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+    pygame.quit()
+    sys.exit()
 
 
 if __name__ == "__main__":
