@@ -50,6 +50,10 @@ class RegistrationManager:
 
     # ── Credit Validation ─────────────────────────────────────
 
+    def get_max_credit_limit(self) -> int:
+        """Return the semester credit cap (15)."""
+        return self.__MAX_CREDIT_LIMIT
+
     def get_current_selected_credits(self) -> int:
         """Return total credits currently selected this session."""
         return self.__current_selected_credits

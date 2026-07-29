@@ -16,12 +16,24 @@ from engine.game_clock import GameClock
 from engine.registration_manager import RegistrationManager
 from engine.screen_manager import ScreenManager, ScreenState
 from ui.hud import HUD
+from ui.registration_screen import (
+    RegistrationScreen, FIRST_ROW_Y, FOOTER_Y, ROW_PITCH
+)
+from academic.course_catalog import build_course_catalog
 
 # ── Constants ─────────────────────────────────────────────────────
 SCREEN_WIDTH:  int = 1280
 SCREEN_HEIGHT: int = 720
 FPS:           int = 60
 WINDOW_TITLE:  str = "CSE Life: Compile & Conquer"
+
+# Derived from RegistrationScreen's own layout constants, not
+# hand-copied — the table area sits between FIRST_ROW_Y and
+# FOOTER_Y, each row occupying ROW_PITCH px. No scrolling support
+# yet (Iteration 12 scope), so the visible catalog is simply
+# truncated to whatever physically fits without overlapping the
+# credit-total footer box. [Sprint 3 — Iteration 12, known limitation]
+MAX_VISIBLE_COURSE_ROWS: int = (FOOTER_Y - FIRST_ROW_Y) // ROW_PITCH
 
 # ── Colours ───────────────────────────────────────────────────────
 BG_COLOUR:     tuple = (22, 22, 35)
@@ -68,41 +80,77 @@ def handle_registration(
     screen: pygame.Surface,
     screen_mgr: ScreenManager,
     session: GameSession,
-    fonts: dict,
+    registration_manager: RegistrationManager,
+    registration_screen: RegistrationScreen,
+    full_catalog: list,
     events: list
 ) -> None:
     """
-    Renders the registration screen.
-    Nangiba's RegistrationScreen integrates here in Sprint 3.
-    SPACE confirms and moves to exploration.
+    Renders the real registration screen (Nangiba's RegistrationScreen)
+    driven live by RegistrationManager — no more placeholder text.
+
+    Flow:
+    - The visible catalog is RegistrationManager.build_semester_catalog()
+      (prereqs-satisfied + backlog-injected), truncated to
+      MAX_VISIBLE_COURSE_ROWS since there's no scrolling yet.
+    - Clicking a course row toggles select/deselect via
+      RegistrationManager — the 15-credit cap is enforced there, not
+      here, so an over-limit click is just silently rejected (the
+      credit bar/footer visually explains why).
+    - CONFIRM calls confirm_registration(semester); on success,
+      transitions to Exploration. An empty selection is a no-op click
+      (confirm_registration() returns False and nothing happens).
+    - CANCEL clears the current selection without transitioning.
+    - "confirmed" (green/locked rows) is intentionally always passed
+      as [] this iteration — there's no partial-confirm/re-open flow
+      yet, registration confirms and immediately advances the screen.
+
+    [Sprint 3 — Iteration 12]
     """
-    screen.fill((18, 20, 35))
-
+    player = session.get_active_player()
     semester = session.get_active_semester()
+    history = player.get_academic_history()
 
-    # Push content down to sit below the HUD strip (44px)
-    header = fonts["title"].render(
-        f"Semester {semester.get_semester_number()} — Registration",
-        True, TEXT_COLOUR)
-    screen.blit(header, (40, 60))
+    visible_courses = registration_manager.build_semester_catalog(
+        full_catalog, history
+    )[:MAX_VISIBLE_COURSE_ROWS]
 
-    placeholder = fonts["body"].render(
-        "[ Nangiba's RegistrationScreen renders here ]",
-        True, DIM_COLOUR)
-    screen.blit(placeholder,
-                (SCREEN_WIDTH // 2 - placeholder.get_width() // 2,
-                 SCREEN_HEIGHT // 2))
-
-    hint = fonts["small"].render(
-        "Press SPACE to confirm registration",
-        True, DIM_COLOUR)
-    screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2,
-                       SCREEN_HEIGHT - 40))
+    row_rects = registration_screen.get_course_row_rects(len(visible_courses))
+    confirm_rect = registration_screen.get_confirm_rect()
+    cancel_rect = registration_screen.get_cancel_rect()
 
     for event in events:
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                screen_mgr.queue_transition(ScreenState.EXPLORATION)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            pos = event.pos
+
+            if confirm_rect.collidepoint(pos):
+                if registration_manager.confirm_registration(semester):
+                    screen_mgr.queue_transition(ScreenState.EXPLORATION)
+
+            elif cancel_rect.collidepoint(pos):
+                registration_manager.clear_selection()
+
+            else:
+                for i, rect in enumerate(row_rects):
+                    if rect.collidepoint(pos):
+                        course = visible_courses[i]
+                        if course in registration_manager.get_selected_courses():
+                            registration_manager.deselect_course(course)
+                        else:
+                            registration_manager.select_course(course)
+                        break
+
+    registration_screen.render(
+        screen,
+        visible_courses=visible_courses,
+        selected=registration_manager.get_selected_courses(),
+        confirmed=[],
+        current_credits=registration_manager.get_current_selected_credits(),
+        credit_limit=registration_manager.get_max_credit_limit(),
+        player_name=player.get_display_name(),
+        student_id=player.get_character_id(),
+        semester=semester.get_semester_number()
+    )
 
 
 def handle_exploration(
@@ -119,7 +167,6 @@ def handle_exploration(
     """
     screen.fill((20, 24, 38))
 
-    # Firewall check — auto-route to exam
     if not game_clock.is_eligible_for_side_activities():
         screen_mgr.queue_transition(ScreenState.EXAM)
         return
@@ -239,6 +286,11 @@ def main() -> None:
     registration_manager = RegistrationManager()
     screen_mgr = ScreenManager()
 
+    # Static content — built once, same Course instances reused every
+    # frame and across semesters (required for the backlog mechanic:
+    # a failed course is the SAME object re-offered later, not a copy).
+    full_catalog = build_course_catalog()
+
     # Fonts
     fonts = {
         "title": pygame.font.SysFont("Arial", 28, bold=True),
@@ -248,15 +300,14 @@ def main() -> None:
 
     # UI components
     hud = HUD()
+    registration_screen = RegistrationScreen(SCREEN_WIDTH, SCREEN_HEIGHT)
 
     running = True
 
     while running:
 
-        # Apply queued transition from previous frame
         screen_mgr.apply_pending_transition()
 
-        # Collect events once
         events = pygame.event.get()
 
         for event in events:
@@ -266,7 +317,6 @@ def main() -> None:
                 if event.key == pygame.K_ESCAPE:
                     running = False
 
-        # Route to correct screen handler
         state = screen_mgr.get_current_state()
 
         if state == ScreenState.MAIN_MENU:
@@ -274,7 +324,8 @@ def main() -> None:
 
         elif state == ScreenState.REGISTRATION:
             handle_registration(
-                screen, screen_mgr, session, fonts, events)
+                screen, screen_mgr, session, registration_manager,
+                registration_screen, full_catalog, events)
 
         elif state == ScreenState.EXPLORATION:
             handle_exploration(
@@ -287,7 +338,12 @@ def main() -> None:
         elif state == ScreenState.ENDGAME:
             handle_endgame(screen, fonts, events)
 
-        # HUD renders on top of every screen except main menu
+        # HUD renders on top of every screen except main menu.
+        # KNOWN COSMETIC ISSUE (Iteration 12): on Registration,
+        # RegistrationScreen's card starts at y=24, slightly under
+        # the 44px HUD strip — top border/corner marks get covered.
+        # Not functional, just a layout overlap — flagging for
+        # whoever does UI polish next.
         if state != ScreenState.MAIN_MENU:
             player = session.get_active_player()
             semester = session.get_active_semester()
