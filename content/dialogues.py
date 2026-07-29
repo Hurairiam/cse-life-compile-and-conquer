@@ -143,6 +143,25 @@ NPC_DIALOGUES: dict[str, dict[str, list[str]]] = {
             "Let's meet up sometime again later. Maybe I'll have my life together by then.",
         ],
     },
+    "late_bloomer_kabir": {
+        "greeting": [
+            "I'm Kabir. I've been here a while.",
+            "Don't make the same mistakes I did. That's all I'll say.",
+        ],
+        "offer": [
+            "There's something I wish someone had shown me earlier.",
+            "It's a few days of work. Probably saves you more than that later.",
+            "Up to you.",
+        ],
+        "farewell": [
+            "No rush. You still have time.",
+        ],
+        "unavailable": [
+            "I'm deep in exam prep right now.",
+            "I've failed enough courses to know not to skip this part.",
+            "Find me at the start of next semester.",
+        ],
+    },
 }
 
 # ── EPILOGUE TEXTS ────────────────────────────────────────────────
