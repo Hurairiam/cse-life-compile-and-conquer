@@ -112,6 +112,25 @@ class MainQuest(Quest, TimeConsumable):
         """Return whether Q&A optimization was successful."""
         return self.__is_optimized
 
+    def get_time_cost(self) -> int:
+        """
+        Override of Quest.get_time_cost(): returns the CURRENT
+        accurate cost (10 if optimized, 14 otherwise) instead of the
+        fixed constructor-time value inherited from Quest.
+
+        FIX: GameClock.process_time_consumable() reads get_time_cost()
+        BEFORE calling execute_action() to advance the global career
+        clock. Without this override, get_time_cost() always returned
+        the base 14-day value — even after attempt_qa_optimization()
+        succeeded — so the global clock would advance by 14 days while
+        the player's own semester time pool was only deducted 10 days
+        by execute_action()'s internal logic. The two clocks would
+        drift out of sync over the course of the game. This override
+        keeps them consistent by deriving the cost from the same
+        __is_optimized flag that execute_action() already uses.
+        """
+        return 10 if self.__is_optimized else 14
+
     def attempt_qa_optimization(self, submitted_answers: Dict[str, str]) -> bool:
         """
         Run the pre-exam Q&A optimization.
@@ -197,10 +216,26 @@ class SideQuest(Quest, TimeConsumable):
     For this iteration, SideQuest is concrete and generic.
     """
 
-    def __init__(self, quest_id: str, time_cost: int) -> None:
+    def __init__(
+        self,
+        quest_id: str,
+        time_cost: int,
+        title: str = "",
+        description: str = "",
+    ) -> None:
         super().__init__(quest_id=quest_id, time_cost=time_cost)
         self.__exp_reward: int = 10
         self.__academic_gate_dependency_flag: str = ""
+        self.__title: str = title
+        self.__description: str = description
+
+    def get_title(self) -> str:
+        """Return the player-facing name of this side quest."""
+        return self.__title
+
+    def get_description(self) -> str:
+        """Return the one-line flavour/explanation text for this side quest."""
+        return self.__description
 
     def get_exp_reward(self) -> int:
         """Return the EXP awarded on completion."""
