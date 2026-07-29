@@ -162,6 +162,67 @@ NPC_DIALOGUES: dict[str, dict[str, list[str]]] = {
             "Find me at the start of next semester.",
         ],
     },
+    "professor_rahman": {
+        "greeting": [
+            "Ah, a student who actually comes to office hours.",
+            "Prof. Rahman here"
+            ". Sit down — I don't bite.",
+            "Tell me what you're struggling with. That's what I'm here for.",
+        ],
+        "offer": [
+            "There is a study group forming this week.",
+            "I think it would help you. A few days of focused work.",
+            "Think about it.",
+        ],
+        "farewell": [
+            "My door is open. Remember that.",
+        ],
+        "unavailable": [
+            "I'm preparing exam papers right now.",
+            "Come see me at the start of next semester.",
+            "And please — don't leave it this late next time.",
+        ],
+    },
+    "professor_hoque": {
+        "greeting": [
+            "You are registered in my course.",
+            "I am Prof. Hoque. I do not repeat instructions.",
+            "Come prepared. Every single time.",
+        ],
+        "offer": [
+            "There is an activity this week.",
+            "It will be difficult. That is the point.",
+            "If you are serious about this field — show up.",
+        ],
+        "farewell": [
+            "Your choice. The work still needs to be done.",
+        ],
+        "unavailable": [
+            "The semester is almost over.",
+            "Whatever you needed to do — you should have done it earlier.",
+        ],
+    },
+    "career_advisor_roya": {
+        "greeting": [
+            "Oh, a student! Come in, come in.",
+            "I'm Ms. Roya — I run the career office.",
+            "You're here earlier than most. That's already a good sign.",
+        ],
+        "offer": [
+            "I have an internship shift available this week.",
+            "It pays a stipend — not much, but real experience.",
+            "Interested? It won't take long.",
+        ],
+        "farewell": [
+            "No worries at all. My door is always open.",
+            "Come back any time — even just to talk through your options.",
+        ],
+        "unavailable": [
+            "I'm a bit swamped right now ,end of semester is always hectic.",
+            "Come find me at the beginning of next semester.",
+            "We'll have more options then anyway.",
+        ],
+    },
 }
 
 # ── EPILOGUE TEXTS ────────────────────────────────────────────────
