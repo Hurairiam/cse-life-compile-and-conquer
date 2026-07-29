@@ -18,6 +18,8 @@ if TYPE_CHECKING:
     from engine.endgame_manager import EndgameEvaluationManager
 
 from core.character import Player
+from core.skill_tree import SkillTree
+from academic.academic_history import AcademicHistory
 from academic.semester import Semester
 
 
@@ -39,6 +41,17 @@ class GameSession:
         self.__is_frozen: bool = False
         self.__active_player: Player = Player()
         self.__active_semester: Semester = Semester(1)
+
+        # BUG FIX (Iteration 11): Player.set_academic_history() and
+        # set_skill_tree() already existed with docstrings saying
+        # "Called once during GameSession initialisation" — but
+        # nothing actually called them, so both fields stayed None.
+        # RegistrationManager.build_semester_catalog() calls
+        # history.get_backlog_courses() with no None-guard, so this
+        # would crash the moment Registration got wired. Fixing at
+        # the source rather than defensive-guarding every call site.
+        self.__active_player.set_academic_history(AcademicHistory())
+        self.__active_player.set_skill_tree(SkillTree())
 
     # ── GlobalCareerClock ─────────────────────────────────────
 
