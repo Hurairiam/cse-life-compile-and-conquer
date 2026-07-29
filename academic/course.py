@@ -152,6 +152,15 @@ class Course:
     # keep working without modification. The real, canonical methods are
     # get_course_code() and is_completed() — use those in any new code.
     # Both aliases simply delegate; there is only one source of truth.
+    #
+    # RESTORED: get_course_id() was briefly removed in an attempt to
+    # standardize on get_course_code() everywhere, but that change was
+    # paused before engine/registration_manager.py (which still calls
+    # get_course_id() in 3 places on main/dev1-hurairiam-core) got
+    # updated to match. Keeping this alias here so the current shared
+    # main branch keeps working without needing a coordinated change
+    # on Huraira's side right now. Revisit the full rename later if
+    # the team decides to standardize.
 
     def get_course_id(self) -> str:
         """Alias for get_course_code() — engine/ layer compatibility."""
