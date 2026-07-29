@@ -124,6 +124,25 @@ NPC_DIALOGUES: dict[str, dict[str, list[str]]] = {
             "You should be studying too, honestly instead of loitering.",
         ],
     },
+    "struggling_friend_zayan": {
+        "greeting": [
+            "Oh hey. We met in class before.",
+            "I'm Zayan. Been sitting out here avoiding the library.",
+            "Don't tell me you actually did the readings.",
+        ],
+        "offer": [
+            "Okay so I found this thing we could work on.",
+            "I'm probably not going to do it alone if I'm honest.",
+            "You in?",
+        ],
+        "farewell": [
+            "Fair enough. I'll probably just sit here a bit longer.",
+        ],
+        "unavailable": [
+            "Bro I haven't even started studying yet.",
+            "Let's meet up sometime again later. Maybe I'll have my life together by then.",
+        ],
+    },
 }
 
 # ── EPILOGUE TEXTS ────────────────────────────────────────────────
