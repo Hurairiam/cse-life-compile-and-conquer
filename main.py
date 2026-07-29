@@ -2,10 +2,8 @@
 main.py
 CSE Life: Compile & Conquer
 ─────────────────────────────────────────────────────────────
-Entry point — Sprint 3 screen routing implementation.
-Adds ScreenManager to route between game screens.
-Each screen state delegates to its own handler function.
-Asset and UI integration added as teammate branches merge.
+Entry point — Sprint 3 screen routing + HUD integration.
+Nangiba's HUD renders on top of every gameplay screen.
 ─────────────────────────────────────────────────────────────
 Sprint 3 — Abu Huraira (dev1-hurairiam-core)
 """
@@ -17,6 +15,7 @@ from engine.game_session import GameSession
 from engine.game_clock import GameClock
 from engine.registration_manager import RegistrationManager
 from engine.screen_manager import ScreenManager, ScreenState
+from ui.hud import HUD
 
 # ── Constants ─────────────────────────────────────────────────────
 SCREEN_WIDTH:  int = 1280
@@ -41,11 +40,12 @@ def handle_main_menu(
     events: list
 ) -> None:
     """
-    Renders the main menu and handles input.
-    SPACE advances to registration screen.
-    [Sprint 3 — placeholder until full menu art is added]
+    Renders the main menu. SPACE starts the game.
+    HUD is NOT shown on the main menu — no gameplay data yet.
     """
     screen.fill(BG_COLOUR)
+
+    cx = SCREEN_WIDTH // 2
 
     title = fonts["title"].render(
         "CSE Life: Compile & Conquer", True, TEXT_COLOUR)
@@ -54,9 +54,8 @@ def handle_main_menu(
     prompt = fonts["small"].render(
         "Press SPACE to begin", True, DIM_COLOUR)
 
-    cx = SCREEN_WIDTH // 2
-    screen.blit(title, (cx - title.get_width() // 2, 280))
-    screen.blit(sub,   (cx - sub.get_width() // 2, 330))
+    screen.blit(title,  (cx - title.get_width() // 2, 280))
+    screen.blit(sub,    (cx - sub.get_width() // 2, 330))
     screen.blit(prompt, (cx - prompt.get_width() // 2, 420))
 
     for event in events:
@@ -73,36 +72,29 @@ def handle_registration(
     events: list
 ) -> None:
     """
-    Renders the registration screen placeholder.
-    Nangiba's RegistrationScreen renders here in Sprint 3 integration.
-    SPACE confirms registration and moves to exploration.
-    [Sprint 3 — UI integration pending]
+    Renders the registration screen.
+    Nangiba's RegistrationScreen integrates here in Sprint 3.
+    SPACE confirms and moves to exploration.
     """
     screen.fill((18, 20, 35))
 
     semester = session.get_active_semester()
-    player = session.get_active_player()
 
+    # Push content down to sit below the HUD strip (44px)
     header = fonts["title"].render(
-        f"Semester {semester.get_semester_number()} — Course Registration",
+        f"Semester {semester.get_semester_number()} — Registration",
         True, TEXT_COLOUR)
-    screen.blit(header, (40, 30))
-
-    info = fonts["body"].render(
-        f"Credits: {player.get_accumulated_credits()} / 140   "
-        f"Wallet: {player.get_wallet_balance():,.0f} BDT",
-        True, ACCENT_COLOUR)
-    screen.blit(info, (40, 75))
+    screen.blit(header, (40, 60))
 
     placeholder = fonts["body"].render(
-        "[ Course catalog renders here — Nangiba's RegistrationScreen ]",
+        "[ Nangiba's RegistrationScreen renders here ]",
         True, DIM_COLOUR)
     screen.blit(placeholder,
                 (SCREEN_WIDTH // 2 - placeholder.get_width() // 2,
                  SCREEN_HEIGHT // 2))
 
     hint = fonts["small"].render(
-        "Press SPACE to confirm registration and begin semester",
+        "Press SPACE to confirm registration",
         True, DIM_COLOUR)
     screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2,
                        SCREEN_HEIGHT - 40))
@@ -122,32 +114,19 @@ def handle_exploration(
     events: list
 ) -> None:
     """
-    Renders the exploration phase placeholder.
-    Checks the 15-day firewall every frame.
-    E key simulates entering exam phase for testing.
-    [Sprint 3 — map and NPC rendering pending]
+    Renders exploration phase. Checks 15-day firewall every frame.
+    E key manually enters exam phase for testing.
     """
     screen.fill((20, 24, 38))
 
-    semester = session.get_active_semester()
-
-    # Check 15-day firewall
+    # Firewall check — auto-route to exam
     if not game_clock.is_eligible_for_side_activities():
         screen_mgr.queue_transition(ScreenState.EXAM)
         return
 
-    header = fonts["title"].render("Exploration Phase", True, TEXT_COLOUR)
-    screen.blit(header, (40, 30))
-
-    days_left = semester.get_time_pool_days()
-    day_colour = (
-        (70, 180, 70) if days_left > 30 else
-        (220, 160, 40) if days_left > 15 else
-        (210, 55, 55)
-    )
-    days_text = fonts["body"].render(
-        f"Days remaining: {days_left} / 80", True, day_colour)
-    screen.blit(days_text, (40, 75))
+    header = fonts["title"].render(
+        "Exploration Phase", True, TEXT_COLOUR)
+    screen.blit(header, (40, 60))
 
     placeholder = fonts["body"].render(
         "[ Map and NPC interactions render here ]",
@@ -177,22 +156,15 @@ def handle_exam(
     events: list
 ) -> None:
     """
-    Renders the exam phase placeholder.
-    SPACE simulates completing a semester and advancing.
-    [Sprint 3 — MainQuest pipeline integration pending]
+    Renders exam phase placeholder.
+    SPACE simulates completing semester and advancing.
     """
     screen.fill((25, 18, 35))
 
     semester = session.get_active_semester()
 
     header = fonts["title"].render("Exam Phase", True, TEXT_COLOUR)
-    screen.blit(header, (40, 30))
-
-    info = fonts["body"].render(
-        f"Semester {semester.get_semester_number()}   "
-        f"Days left: {semester.get_time_pool_days()}",
-        True, ACCENT_COLOUR)
-    screen.blit(info, (40, 75))
+    screen.blit(header, (40, 60))
 
     placeholder = fonts["body"].render(
         "[ MainQuest Q&A and exam pipeline renders here ]",
@@ -224,25 +196,27 @@ def handle_endgame(
     events: list
 ) -> None:
     """
-    Renders the endgame screen placeholder.
-    Nangiba's EndgameScreen and Saif's EndgameEvaluationManager
-    integrate here in Sprint 3.
-    [Sprint 3 — pending integration]
+    Renders endgame placeholder.
+    Saif's EndgameEvaluationManager and Nangiba's
+    EndgameScreen integrate here in Sprint 3.
     """
     screen.fill((8, 8, 18))
 
-    title = fonts["title"].render("Game Over", True, (255, 215, 70))
-    screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 200))
+    cx = SCREEN_WIDTH // 2
+
+    title = fonts["title"].render(
+        "Game Over", True, (255, 215, 70))
+    screen.blit(title, (cx - title.get_width() // 2, 200))
 
     placeholder = fonts["body"].render(
         "[ Endgame evaluation and epilogue renders here ]",
         True, DIM_COLOUR)
     screen.blit(placeholder,
-                (SCREEN_WIDTH // 2 - placeholder.get_width() // 2, 300))
+                (cx - placeholder.get_width() // 2, 300))
 
     hint = fonts["small"].render(
         "Press ESC to quit", True, DIM_COLOUR)
-    screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2,
+    screen.blit(hint, (cx - hint.get_width() // 2,
                        SCREEN_HEIGHT - 40))
 
 
@@ -250,8 +224,8 @@ def handle_endgame(
 
 def main() -> None:
     """
-    Initialises Pygame and runs the main game loop.
-    ScreenManager routes each frame to the correct handler.
+    Initialises Pygame, creates game systems, runs main loop.
+    HUD renders on top of every screen except main menu.
     """
     pygame.init()
     pygame.display.set_caption(WINDOW_TITLE)
@@ -262,7 +236,7 @@ def main() -> None:
     # Game systems
     session = GameSession()
     game_clock = GameClock(session)
-    _registration_manager = RegistrationManager()
+    registration_manager = RegistrationManager()
     screen_mgr = ScreenManager()
 
     # Fonts
@@ -272,14 +246,17 @@ def main() -> None:
         "small": pygame.font.SysFont("Arial", 13),
     }
 
+    # UI components
+    hud = HUD()
+
     running = True
 
     while running:
 
-        # Apply any queued state transition from previous frame
+        # Apply queued transition from previous frame
         screen_mgr.apply_pending_transition()
 
-        # Collect events once per frame
+        # Collect events once
         events = pygame.event.get()
 
         for event in events:
@@ -309,6 +286,18 @@ def main() -> None:
 
         elif state == ScreenState.ENDGAME:
             handle_endgame(screen, fonts, events)
+
+        # HUD renders on top of every screen except main menu
+        if state != ScreenState.MAIN_MENU:
+            player = session.get_active_player()
+            semester = session.get_active_semester()
+            hud.render(
+                screen,
+                time_pool=semester.get_time_pool_days(),
+                wallet=player.get_wallet_balance(),
+                semester=semester.get_semester_number(),
+                credits=player.get_accumulated_credits()
+            )
 
         pygame.display.flip()
         clock.tick(FPS)
