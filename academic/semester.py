@@ -37,6 +37,7 @@ class Semester:
         self.__max_time_pool_days: int = _DEFAULT_TIME_POOL_DAYS
         self.__registered_courses: list[Course] = []
         self.__active_quest_pool: list[Quest] = []
+        self.__intro_monologue_played: bool = False
 
     # ── Getters & Identity ────────────────────────────────────────
 
@@ -118,11 +119,12 @@ class Semester:
     # ── Lifecycle Methods ──────────────────────────────────────────
 
     def play_intro_monologue(self) -> None:
-        """Trigger the semester opening narrative beat."""
-        print(
-            f"\n--- Semester {self.__semester_number} begins. "
-            f"{self.__time_pool_days} days on the clock. ---\n"
-        )
+        """Mark the semester opening narrative beat as played."""
+        self.__intro_monologue_played = True
+
+    def has_played_intro_monologue(self) -> bool:
+        """Return whether this term's opening beat has already run."""
+        return self.__intro_monologue_played
 
     def terminate(self) -> None:
         """Close out this semester instance by clearing local trackers."""
