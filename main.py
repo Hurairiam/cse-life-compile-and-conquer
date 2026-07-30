@@ -21,6 +21,7 @@ from ui.hud import HUD
 from ui.registration_screen import (
     RegistrationScreen, FIRST_ROW_Y, FOOTER_Y, ROW_PITCH
 )
+from ui.endgame_screen import EndgameScreen
 from academic.course_catalog import build_course_catalog
 from academic.quest import MainQuest
 from content.npc_roster import NPC_ROSTER
@@ -457,32 +458,45 @@ def handle_exam(
 
 def handle_endgame(
     screen: pygame.Surface,
-    fonts: dict,
+    session: GameSession,
+    endgame_screen: EndgameScreen,
+    endgame_state: dict,
     events: list
 ) -> None:
     """
-    Renders endgame placeholder.
-    Saif's EndgameEvaluationManager and Nangiba's
-    EndgameScreen integrate here in Sprint 3.
+    Wires Saif's EndgameEvaluationManager into Nangiba's already-built
+    EndgameScreen — both classes already existed fully working, this
+    just connects them, same as every other Iteration since 12.
+
+    The evaluation is computed ONCE and cached in endgame_state
+    (a small dict, {"result": None}, created once in main() — same
+    pattern as exam_state) rather than every frame: evaluate() is
+    deterministic for a given player, and the session is already
+    frozen by the time this screen is reached, so nothing about the
+    player changes here that would need re-evaluating.
+
+    KNOWN, NOT MINE TO FIX: EndgameEvaluationManager currently pulls
+    epilogue text from content/epilogue_text.py (Saif's placeholder
+    prose), not content/dialogues.py's EPILOGUE_TEXTS (Ayesha's real
+    narrative) — that reconciliation is a content-ownership decision
+    between the two of them, not something to silently change here.
+    Both dicts use matching, correct key names, so this works
+    correctly either way — it's just placeholder prose for now.
+
+    events is accepted for signature consistency with every other
+    screen handler and to leave room for a future "play again"/
+    "return to menu" input — not consumed yet, this screen is
+    currently a dead end once reached (matches short scope: the
+    playthrough ending here is the intended final state).
+
+    [Sprint 3 — Iteration 15]
     """
-    screen.fill((8, 8, 18))
+    if endgame_state["result"] is None:
+        player = session.get_active_player()
+        manager = session.trigger_endgame_evaluation()
+        endgame_state["result"] = manager.evaluate(player)
 
-    cx = SCREEN_WIDTH // 2
-
-    title = fonts["title"].render(
-        "Game Over", True, (255, 215, 70))
-    screen.blit(title, (cx - title.get_width() // 2, 200))
-
-    placeholder = fonts["body"].render(
-        "[ Endgame evaluation and epilogue renders here ]",
-        True, DIM_COLOUR)
-    screen.blit(placeholder,
-                (cx - placeholder.get_width() // 2, 300))
-
-    hint = fonts["small"].render(
-        "Press ESC to quit", True, DIM_COLOUR)
-    screen.blit(hint, (cx - hint.get_width() // 2,
-                       SCREEN_HEIGHT - 40))
+    endgame_screen.render(screen, **endgame_state["result"])
 
 
 # ── Main ──────────────────────────────────────────────────────────
@@ -490,7 +504,7 @@ def handle_endgame(
 def main() -> None:
     """
     Initialises Pygame, creates game systems, runs main loop.
-    HUD renders on top of every screen except main menu.
+    HUD renders on top of every screen except main menu and endgame.
     """
     pygame.init()
     pygame.display.set_caption(WINDOW_TITLE)
@@ -519,6 +533,7 @@ def main() -> None:
     # UI components
     hud = HUD()
     registration_screen = RegistrationScreen(SCREEN_WIDTH, SCREEN_HEIGHT)
+    endgame_screen = EndgameScreen()
     dialogue_manager = DialogueManager(SCREEN_WIDTH, SCREEN_HEIGHT)
 
     # NPC roster — built once, same NPC instances reused every frame
@@ -536,6 +551,10 @@ def main() -> None:
         "answers": {},
         "result_message": None,
     }
+
+    # Cached endgame evaluation result — computed once, on first
+    # reaching the Endgame screen (see handle_endgame()'s docstring).
+    endgame_state = {"result": None}
 
     running = True
 
@@ -576,15 +595,24 @@ def main() -> None:
                 fonts, events)
 
         elif state == ScreenState.ENDGAME:
-            handle_endgame(screen, fonts, events)
+            handle_endgame(screen, session, endgame_screen,
+                           endgame_state, events)
 
-        # HUD renders on top of every screen except main menu.
-        # KNOWN COSMETIC ISSUE (Iteration 12): on Registration,
-        # RegistrationScreen's card starts at y=24, slightly under
-        # the 44px HUD strip — top border/corner marks get covered.
-        # Not functional, just a layout overlap — flagging for
-        # whoever does UI polish next.
-        if state != ScreenState.MAIN_MENU:
+        # HUD renders on top of every gameplay screen except Main
+        # Menu and Endgame. Endgame exclusion RESTORED (Iteration 15)
+        # — Iteration 10 originally excluded it intentionally ("HUD
+        # hidden on MAIN_MENU and ENDGAME"), but that got dropped
+        # somewhere in a later main.py rewrite. Now that Endgame is
+        # Nangiba's real themed epilogue screen (not placeholder
+        # text), a generic tan HUD strip on top of it doesn't make
+        # sense — there's no more time pool to show once frozen.
+        #
+        # KNOWN COSMETIC ISSUE (Iteration 12, still unresolved): on
+        # Registration, RegistrationScreen's card starts at y=24,
+        # slightly under the 44px HUD strip — top border/corner
+        # marks get covered. Not functional, just a layout overlap —
+        # flagging for whoever does UI polish next.
+        if state not in (ScreenState.MAIN_MENU, ScreenState.ENDGAME):
             player = session.get_active_player()
             semester = session.get_active_semester()
             hud.render(
