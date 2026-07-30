@@ -22,6 +22,7 @@ from ui.registration_screen import (
     RegistrationScreen, FIRST_ROW_Y, FOOTER_Y, ROW_PITCH
 )
 from academic.course_catalog import build_course_catalog
+from academic.quest import MainQuest
 from content.npc_roster import NPC_ROSTER
 
 # ── Constants ─────────────────────────────────────────────────────
@@ -276,47 +277,182 @@ def handle_dialogue(
     dialogue_manager.render(screen)
 
 
+EXAM_TIERS: list = ["easy", "medium", "hard"]
+EXAM_OPTION_KEYS: dict = {
+    pygame.K_a: "A", pygame.K_b: "B", pygame.K_c: "C", pygame.K_d: "D",
+}
+
+
 def handle_exam(
     screen: pygame.Surface,
     screen_mgr: ScreenManager,
     session: GameSession,
     game_clock: GameClock,
+    exam_state: dict,
     fonts: dict,
     events: list
 ) -> None:
     """
-    Renders exam phase placeholder.
-    SPACE simulates completing semester and advancing.
+    Plain-text exam flow — same non-designed style as Exploration's
+    placeholder (this isn't Nangiba's real Exam screen, just the
+    dev1/engine-layer wiring underneath it).
+
+    Walks every course in the active Semester's registered list, one
+    at a time: shows its 3 MCQ tiers (easy/medium/hard) one at a
+    time, letter keys A-D answer each. Once all 3 tiers are
+    answered, builds a real MainQuest for that course and runs it
+    through game_clock.process_time_consumable() — the SAME pipeline
+    every other TimeConsumable action goes through (polymorphism,
+    not a special case for exams). Shows a brief PASS/FAIL message,
+    SPACE continues to the next course.
+
+    Once every registered course has been attempted,
+    check_semester_end_state() runs and the screen transitions to
+    Endgame (if frozen) or back to Registration for the next
+    semester — same logic the old SPACE-skips-everything placeholder
+    used to do manually, now driven by the real result.
+
+    exam_state is a small mutable dict ({"course_index": 0,
+    "tier_index": 0, "answers": {}, "result_message": None}) created
+    once in main() — needed because, unlike Exploration/Dialogue,
+    this screen has real multi-step state (which course, which
+    question, answers collected so far) that must persist frame to
+    frame within a single semester's exam session. Reset to its
+    initial values right before transitioning out, so the next
+    semester's exam session starts clean.
+
+    [Sprint 3 — Iteration 14]
     """
     screen.fill((25, 18, 35))
 
     semester = session.get_active_semester()
+    registered_courses = semester.get_registered_courses()
 
     header = fonts["title"].render("Exam Phase", True, TEXT_COLOUR)
     screen.blit(header, (40, 60))
 
-    placeholder = fonts["body"].render(
-        "[ MainQuest Q&A and exam pipeline renders here ]",
-        True, DIM_COLOUR)
-    screen.blit(placeholder,
-                (SCREEN_WIDTH // 2 - placeholder.get_width() // 2,
-                 SCREEN_HEIGHT // 2))
+    # All courses attempted -> close out the semester for real.
+    if exam_state["course_index"] >= len(registered_courses):
+        info = fonts["body"].render(
+            "All exams attempted for this semester.", True, ACCENT_COLOUR)
+        screen.blit(info, (40, 100))
+        hint = fonts["small"].render(
+            "Press SPACE to continue  |  ESC to quit", True, DIM_COLOUR)
+        screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2,
+                           SCREEN_HEIGHT - 40))
 
-    hint = fonts["small"].render(
-        "Press SPACE to advance semester  |  ESC to quit",
-        True, DIM_COLOUR)
-    screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2,
-                       SCREEN_HEIGHT - 40))
-
-    for event in events:
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
+        for event in events:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 game_clock.check_semester_end_state()
+                exam_state["course_index"] = 0
+                exam_state["tier_index"] = 0
+                exam_state["answers"] = {}
+                exam_state["result_message"] = None
                 if session.get_is_frozen():
                     screen_mgr.queue_transition(ScreenState.ENDGAME)
                 else:
                     game_clock.advance_semester()
                     screen_mgr.queue_transition(ScreenState.REGISTRATION)
+        return
+
+    course = registered_courses[exam_state["course_index"]]
+
+    course_info = fonts["body"].render(
+        f"{course.get_course_code()} — {course.get_course_name()} "
+        f"({exam_state['course_index'] + 1}/{len(registered_courses)})",
+        True, ACCENT_COLOUR)
+    screen.blit(course_info, (40, 100))
+
+    # A result is showing -- wait for SPACE before moving on.
+    if exam_state["result_message"] is not None:
+        result = fonts["title"].render(
+            exam_state["result_message"], True, TEXT_COLOUR)
+        screen.blit(result, (40, 160))
+        hint = fonts["small"].render(
+            "Press SPACE to continue", True, DIM_COLOUR)
+        screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2,
+                           SCREEN_HEIGHT - 40))
+
+        for event in events:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                exam_state["course_index"] += 1
+                exam_state["tier_index"] = 0
+                exam_state["answers"] = {}
+                exam_state["result_message"] = None
+        return
+
+    # Still answering this course's 3 tiers.
+    if not course.is_question_set_complete():
+        # Defensive fallback -- shouldn't happen with the real
+        # catalog (every course loads all 3 tiers), but course.
+        # check_answers() already handles an incomplete set safely
+        # (returns False), so this just skips straight to running
+        # the quest with whatever answers (none) were collected.
+        placeholder = fonts["small"].render(
+            "[ No question data loaded for this course — skipping ]",
+            True, DIM_COLOUR)
+        screen.blit(placeholder, (40, 160))
+        exam_state["tier_index"] = len(EXAM_TIERS)
+    else:
+        tier = EXAM_TIERS[exam_state["tier_index"]]
+        question = course.get_question(tier)
+
+        tier_label = fonts["small"].render(
+            f"[{tier.upper()}] question "
+            f"{exam_state['tier_index'] + 1}/{len(EXAM_TIERS)}",
+            True, DIM_COLOUR)
+        screen.blit(tier_label, (40, 150))
+
+        q_text = fonts["body"].render(
+            question["question_text"], True, TEXT_COLOUR)
+        screen.blit(q_text, (40, 180))
+
+        y = 220
+        for letter, option_text in question["options"].items():
+            option_line = fonts["body"].render(
+                f"{letter}) {option_text}", True, TEXT_COLOUR)
+            screen.blit(option_line, (60, y))
+            y += 30
+
+        hint = fonts["small"].render(
+            "Press A / B / C / D to answer  |  ESC to quit",
+            True, DIM_COLOUR)
+        screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2,
+                           SCREEN_HEIGHT - 40))
+
+        for event in events:
+            if event.type == pygame.KEYDOWN and event.key in EXAM_OPTION_KEYS:
+                exam_state["answers"][tier] = EXAM_OPTION_KEYS[event.key]
+                exam_state["tier_index"] += 1
+
+    # All 3 tiers answered (or skipped) -- run the real MainQuest.
+    if exam_state["tier_index"] >= len(EXAM_TIERS):
+        main_quest = MainQuest(
+            quest_id=f"MQ_{course.get_course_code()}",
+            linked_course=course,
+        )
+        main_quest.attempt_qa_optimization(exam_state["answers"])
+        game_clock.process_time_consumable(main_quest)
+
+        if not main_quest.get_is_completed():
+            # execute_action() no-opped: not enough days left in the
+            # player's own time pool to cover this exam's cost. No
+            # credit/backlog bookkeeping happened here — but
+            # check_semester_end_state() (called once every course
+            # has been attempted) already backlogs any course whose
+            # is_completed() is still False, so this still resolves
+            # correctly without any special-casing needed there.
+            exam_state["result_message"] = (
+                "Not enough time left this semester — course carries "
+                "over to next semester."
+            )
+        else:
+            passed = main_quest.evaluate_exam_result()
+            exam_state["result_message"] = (
+                f"PASSED — {course.get_credit_value()} credits awarded!"
+                if passed else
+                "FAILED — course backlogged for next semester."
+            )
 
 
 def handle_endgame(
@@ -390,6 +526,17 @@ def main() -> None:
     # to persist across frames the same way Course instances do).
     npc_manager = NPCManager()
 
+    # Multi-step state for the Exam screen (which course, which
+    # question tier, answers collected so far) — needs to persist
+    # frame to frame within one semester's exam session, reset right
+    # before transitioning out. See handle_exam()'s docstring.
+    exam_state = {
+        "course_index": 0,
+        "tier_index": 0,
+        "answers": {},
+        "result_message": None,
+    }
+
     running = True
 
     while running:
@@ -425,7 +572,8 @@ def main() -> None:
 
         elif state == ScreenState.EXAM:
             handle_exam(
-                screen, screen_mgr, session, game_clock, fonts, events)
+                screen, screen_mgr, session, game_clock, exam_state,
+                fonts, events)
 
         elif state == ScreenState.ENDGAME:
             handle_endgame(screen, fonts, events)

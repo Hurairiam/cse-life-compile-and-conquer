@@ -58,9 +58,26 @@ class GameClock:
         Order of operations:
         1. Guard: do nothing if session is frozen
         2. Read the time cost before execution (for clock increment)
-        3. Call execute_action() on the action — deducts time, awards
-           credits or EXP, marks quest complete etc.
+        3. Call execute_action() on the action — deducts time from
+           the PLAYER's own pool, awards credits or EXP, marks quest
+           complete etc.
         4. Increment the GlobalCareerClock by the same day cost
+        5. Deduct the same day cost from the active Semester's own
+           time pool
+
+        BUG FIX (Iteration 14): step 5 was missing. Player and
+        Semester each keep an independent __time_pool_days counter —
+        execute_action() only ever deducted the Player's copy, and
+        nothing anywhere called Semester.deduct_time(). That meant
+        is_eligible_for_side_activities() (which reads the SEMESTER's
+        counter) and HUD's displayed day count never moved no matter
+        how much time actions actually cost — the 15-day firewall
+        could never trigger through real gameplay. Caught this by
+        testing an exam attempt end-to-end and noticing the displayed
+        day count hadn't changed. GameClock is the one place that
+        already touches both objects every time an action runs, so
+        it's the natural synchronization point — no change needed to
+        the TimeConsumable interface or to MainQuest/SideQuest at all.
         """
         if self.__session.get_is_frozen():
             return
@@ -69,6 +86,7 @@ class GameClock:
         days_cost: int = action.get_time_cost()
         action.execute_action(player)
         self.__session.increment_global_clock(days_cost)
+        self.__current_semester.deduct_time(days_cost)
 
     # ── Firewall ──────────────────────────────────────────────
 
