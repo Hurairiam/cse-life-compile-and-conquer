@@ -20,6 +20,16 @@ The over-limit warning popup lives entirely in the stub test below, so
 this class stays a pure drawing layer.
 
 Base idea from Abu Huraira (engine). Layout, styling + test by Nangiba.
+
+CHANGE LOG (dev3):
+    * Nudged the whole card + its contents DOWN by HUD_CLEARANCE pixels so
+      the card's top border and corner marks are no longer hidden behind
+      the 44px HUD strip that renders on top of this screen. Every
+      absolute Y coordinate below is written as `<old value> + HUD_CLEARANCE`
+      so the change is easy to see (and easy to undo). Crucially, both
+      FIRST_ROW_Y and FOOTER_Y move by the SAME amount, so the difference
+      between them is unchanged -- main.py imports those two plus ROW_PITCH
+      to work out how many rows fit, and that number stays exactly the same.
 """
 from __future__ import annotations
 import pygame
@@ -54,19 +64,24 @@ FONT_PATH     = "assets/ui/PressStart2P.ttf"
 # -------------------------------------------------------------
 # LAYOUT  (positions and sizes, all in pixels)
 # -------------------------------------------------------------
-CARD_MARGIN   = 24          # gap between screen edge and the card
+# How far to drop the card so it clears the 44px HUD strip drawn on top
+# of it by the main loop. 28 leaves a small breathing gap under the HUD.
+HUD_CLEARANCE = 28
+
+CARD_MARGIN   = 24          # gap between screen edge and the card (L/R/bottom)
+CARD_TOP      = CARD_MARGIN + HUD_CLEARANCE   # the card's top edge, dropped
 CARD_PAD      = 14          # gap between the card and its inner border
 CORNER_LEN    = 22          # length of each corner mark arm
 
-TITLE_Y       = 50
-LIMIT_Y       = 112
+TITLE_Y       = 50 + HUD_CLEARANCE
+LIMIT_Y       = 112 + HUD_CLEARANCE
 
 # left column -- the course table
 TABLE_X       = 60
 TABLE_W       = 740
-HEADER_Y      = 148
+HEADER_Y      = 148 + HUD_CLEARANCE
 HEADER_H      = 34
-FIRST_ROW_Y   = 190
+FIRST_ROW_Y   = 190 + HUD_CLEARANCE
 ROW_H         = 38
 ROW_PITCH     = 44          # row height + the gap below it
 
@@ -78,7 +93,7 @@ SEP_2_X       = TABLE_X + 605   # divider between NAME and CREDITS
 
 # left column -- the boxed credit total underneath the table
 FOOTER_X      = TABLE_X
-FOOTER_Y      = 496
+FOOTER_Y      = 496 + HUD_CLEARANCE
 FOOTER_W      = TABLE_W
 FOOTER_H      = 112
 BAR_W         = 420
@@ -91,8 +106,8 @@ PORTRAIT_Y    = HEADER_Y            # photo top lines up with the table top
 PORTRAIT_SIZE = RIGHT_W
 INFO_Y        = PORTRAIT_Y + PORTRAIT_SIZE + 22
 INFO_PITCH    = 30
-CONFIRM_Y     = 512
-CANCEL_Y      = 564
+CONFIRM_Y     = 512 + HUD_CLEARANCE
+CANCEL_Y      = 564 + HUD_CLEARANCE
 BTN_H         = 44
 
 TITLE_SIZE    = 28
@@ -214,9 +229,11 @@ class RegistrationScreen:
     # -- piece-by-piece drawing -------------------------------
     def __draw_card(self, screen: pygame.Surface) -> None:
         """Draw the framed card panel, inner border, and corner marks."""
-        card = pygame.Rect(CARD_MARGIN, CARD_MARGIN,
+        # Top edge dropped to CARD_TOP so the frame clears the HUD strip;
+        # bottom still sits CARD_MARGIN from the screen edge.
+        card = pygame.Rect(CARD_MARGIN, CARD_TOP,
                            screen.get_width() - CARD_MARGIN * 2,
-                           screen.get_height() - CARD_MARGIN * 2)
+                           screen.get_height() - CARD_TOP - CARD_MARGIN)
         pygame.draw.rect(screen, CARD_TAN, card)
         pygame.draw.rect(screen, BORDER_BROWN, card, 3)
 

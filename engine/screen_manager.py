@@ -10,6 +10,14 @@ to decide what to render and what events to handle.
 No game logic lives here — only routing decisions.
 ─────────────────────────────────────────────────────────────
 Sprint 3 — Created by Abu Huraira (dev1-hurairiam-core)
+
+── dev3 / Nangiba addition ──────────────────────────────────
+Added two new screen states — MONOLOGUE and RESULTS — for the
+per-semester opening monologue and the post-exam results recap.
+Nothing else in this file changed. (See the two tagged lines in
+the enum below.) These pair with ui/monologue_screen.py and
+ui/results_screen.py, wired up in main.py.
+─────────────────────────────────────────────────────────────
 """
 
 from __future__ import annotations
@@ -22,9 +30,11 @@ class ScreenState(Enum):
     One value per distinct view the player can be on.
     """
     MAIN_MENU = auto()
+    MONOLOGUE = auto()      # dev3: per-semester opening monologue
     REGISTRATION = auto()
     EXPLORATION = auto()
     EXAM = auto()
+    RESULTS = auto()        # dev3: end-of-semester results recap
     DIALOGUE = auto()
     ENDGAME = auto()
 

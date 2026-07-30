@@ -1,3 +1,26 @@
+"""
+ui/monologue_screen.py
+CSE Life: Compile & Conquer
+Created by: Nangiba Tasnim (Dev 3)
+
+Two things live here:
+
+1. MonologueScreen -- a PURE renderer. Given a semester number, the days
+   on the clock, the lines to show so far, and whether the "continue"
+   hint should blink, it draws the framed monologue card. No game logic,
+   no state of its own.
+
+2. MonologueController -- a tiny state helper that runs the typewriter
+   effect (revealing text a few characters at a time) and tracks which
+   line we are on. The main loop drives it with start()/update()/advance()
+   and reads back visible_lines()/is_done(). Pulling this state out of
+   main.py keeps Abu Huraira's file thin -- he only calls a handful of
+   methods here instead of hand-managing indices and timers.
+
+Both are import-clean (only pygame). The actual monologue TEXT comes from
+content/monologues.py (get_monologue), which the main loop looks up and
+feeds into the controller -- this file never reaches for it itself.
+"""
 from __future__ import annotations
 
 import os
@@ -13,7 +36,7 @@ CREDIT_HL = (155, 110, 70)
 STAT_BROWN = (140, 110, 85)
 BAR_AMBER = (217, 169, 106)
 
-TYPEWRITER_CPS = 30
+TYPEWRITER_CPS = 30      # characters revealed per second
 
 FONT_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -44,6 +67,96 @@ BODY_SIZE = 13
 LABEL_SIZE = 10
 
 HINT_TEXT = "PRESS ANY KEY TO CONTINUE"
+
+
+class MonologueController:
+    """
+    Runs the typewriter animation for one semester's monologue and tracks
+    reading progress. Holds no Pygame surfaces -- it is pure state, safe
+    to keep alive across frames in the main loop.
+
+    Usage from the main loop:
+        controller.start(semester_number, lines)   # once, on entering
+        controller.update(dt)                       # every frame
+        controller.advance()                        # on key/click
+        controller.visible_lines()                  # feed into render()
+        controller.is_done()                        # all lines revealed?
+    """
+
+    def __init__(self) -> None:
+        self.__semester: int | None = None
+        self.__lines: list[str] = []
+        self.__line_index: int = 0
+        self.__revealed: float = 0.0     # chars shown of the current line
+        self.__done: bool = False
+
+    def start(self, semester_number: int, lines: list[str]) -> None:
+        """Begin a fresh monologue for the given semester."""
+        self.__semester = semester_number
+        # Guard against an empty list so indexing is always safe.
+        self.__lines = list(lines) if lines else [""]
+        self.__line_index = 0
+        self.__revealed = 0.0
+        self.__done = False
+
+    def is_started_for(self, semester_number: int) -> bool:
+        """True if this controller is already running that semester's text."""
+        return self.__semester == semester_number
+
+    def update(self, dt: float) -> None:
+        """
+        Reveal more characters based on elapsed time dt (seconds).
+        Marks the whole monologue done once the last line is fully shown.
+        """
+        if self.__done or not self.__lines:
+            return
+        current_len = len(self.__lines[self.__line_index])
+        self.__revealed = min(self.__revealed + TYPEWRITER_CPS * dt,
+                              float(current_len))
+        if (self.__line_index == len(self.__lines) - 1
+                and self.__revealed >= current_len):
+            self.__done = True
+
+    def advance(self) -> None:
+        """
+        Player pressed a key / clicked:
+        - if the current line is still typing, finish it instantly
+        - else move to the next line
+        - on the last line, mark the monologue done
+        """
+        if self.__done or not self.__lines:
+            return
+        current = self.__lines[self.__line_index]
+        if self.__revealed < len(current):
+            self.__revealed = float(len(current))
+        elif self.__line_index < len(self.__lines) - 1:
+            self.__line_index += 1
+            self.__revealed = 0.0
+        else:
+            self.__done = True
+
+    def is_done(self) -> bool:
+        """True once every line has been fully revealed."""
+        return self.__done
+
+    def visible_lines(self) -> list[str]:
+        """
+        The lines to draw right now: every finished line in full, plus the
+        current line truncated to however many characters have been typed.
+        """
+        if not self.__lines:
+            return []
+        shown = self.__lines[:self.__line_index]
+        shown.append(self.__lines[self.__line_index][:int(self.__revealed)])
+        return shown
+
+    def reset(self) -> None:
+        """Forget the current semester so the next start() always runs."""
+        self.__semester = None
+        self.__lines = []
+        self.__line_index = 0
+        self.__revealed = 0.0
+        self.__done = False
 
 
 class MonologueScreen:
@@ -134,6 +247,12 @@ class MonologueScreen:
         screen.blit(surface, (centre_x - surface.get_width() // 2, y))
 
 
+# -------------------------------------------------------------
+# STUB TEST -- run this file on its own to see the monologue.
+# Now driven by MonologueController, exactly like the real main loop.
+#   SPACE / click -> advance     R -> next semester's text
+#   F11 -> fullscreen            ESC -> quit
+# -------------------------------------------------------------
 if __name__ == "__main__":
 
     FAKE_MONOLOGUES: dict[int, list[str]] = {
@@ -163,34 +282,12 @@ if __name__ == "__main__":
     window = pygame.display.set_mode(SIZE, WINDOWED_FLAGS)
     pygame.display.set_caption("Monologue screen test")
     scene = MonologueScreen()
+    controller = MonologueController()
     clock = pygame.time.Clock()
     hint_font = pygame.font.SysFont("Courier", 13)
 
     semester = 1
-    lines = get_monologue(semester)
-    line_index = 0
-    revealed = 0.0
-    done = False
-
-    def start(term: int) -> None:
-        global semester, lines, line_index, revealed, done
-        semester = term
-        lines = get_monologue(term)
-        line_index = 0
-        revealed = 0.0
-        done = False
-
-    def advance() -> None:
-        global line_index, revealed, done
-        if done:
-            return
-        if revealed < len(lines[line_index]):
-            revealed = float(len(lines[line_index]))
-        elif line_index < len(lines) - 1:
-            line_index += 1
-            revealed = 0.0
-        else:
-            done = True
+    controller.start(semester, get_monologue(semester))
 
     running = True
     while running:
@@ -209,23 +306,18 @@ if __name__ == "__main__":
                              else WINDOWED_FLAGS)
                     window = pygame.display.set_mode(SIZE, flags)
                 elif event.key == pygame.K_r:
-                    start(semester % 6 + 1)
+                    semester = semester % 6 + 1
+                    controller.start(semester, get_monologue(semester))
                 elif event.key in (pygame.K_SPACE, pygame.K_RETURN):
-                    advance()
+                    controller.advance()
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                advance()
+                controller.advance()
 
-        if not done:
-            revealed = min(revealed + TYPEWRITER_CPS * dt,
-                           float(len(lines[line_index])))
-            if (line_index == len(lines) - 1
-                    and revealed >= len(lines[line_index])):
-                done = True
+        controller.update(dt)
 
-        visible = lines[:line_index] + [lines[line_index][:int(revealed)]]
-
-        scene.render(window, semester, 80, visible, done)
+        scene.render(window, semester, 80, controller.visible_lines(),
+                     controller.is_done())
 
         hint = hint_font.render(
             "SPACE = advance  |  R = next semester  |  F11 fullscreen"

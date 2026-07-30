@@ -6,6 +6,23 @@ Entry point — Sprint 3 screen routing + HUD integration.
 Nangiba's HUD renders on top of every gameplay screen.
 ─────────────────────────────────────────────────────────────
 Sprint 3 — Abu Huraira (dev1-hurairiam-core)
+
+── dev3 / Nangiba integration pass ──────────────────────────
+This version wires Nangiba's finished screens into the routing that
+Abu Huraira built. Every change is tagged with a "[dev3]" banner so
+it's easy to see what was added vs. Abu's original. Summary of the
+additions:
+  * SCALED windowed / SCALED|FULLSCREEN window + F11 toggle
+  * MainMenuScreen driving handle_main_menu()
+  * new MONOLOGUE state — per-semester opening monologue
+  * new RESULTS state — end-of-semester recap after exams
+  * EndgameScreen + EndgameEvaluationManager driving handle_endgame()
+  * ESC opens a ConfirmPopup (exit / return-to-menu) instead of an
+    instant quit
+  * HUD now also shows the backlog count
+None of Abu's engine logic changed — only the routing/presentation
+layer around it.
+─────────────────────────────────────────────────────────────
 """
 
 import sys
@@ -21,11 +38,27 @@ from ui.registration_screen import (
 )
 from academic.course_catalog import build_course_catalog
 
+# ── [dev3] Screens + content wired in this pass ───────────────────
+from ui.main_menu_screen import MainMenuScreen, START_GAME, EXIT
+from ui.monologue_screen import MonologueScreen, MonologueController
+from ui.results_screen import ResultsScreen
+from ui.endgame_screen import EndgameScreen
+from ui.confirm_popup import ConfirmPopup
+from content.monologues import get_monologue
+
 # ── Constants ─────────────────────────────────────────────────────
 SCREEN_WIDTH:  int = 1280
 SCREEN_HEIGHT: int = 720
 FPS:           int = 60
 WINDOW_TITLE:  str = "CSE Life: Compile & Conquer"
+
+# ── [dev3] Display flags — SCALED keeps the pixel art crisp; F11
+# toggles between these two at runtime (the same pattern every one of
+# my screen stub-tests used, now living in the real entry point).
+SIZE:             tuple = (SCREEN_WIDTH, SCREEN_HEIGHT)
+WINDOWED_FLAGS:   int = pygame.SCALED
+FULLSCREEN_FLAGS: int = pygame.SCALED | pygame.FULLSCREEN
+VERSION_STRING:   str = "v0.3 — short scope"
 
 # Derived from RegistrationScreen's own layout constants, not
 # hand-copied — the table area sits between FIRST_ROW_Y and
@@ -35,6 +68,16 @@ WINDOW_TITLE:  str = "CSE Life: Compile & Conquer"
 # credit-total footer box. [Sprint 3 — Iteration 12, known limitation]
 MAX_VISIBLE_COURSE_ROWS: int = (FOOTER_Y - FIRST_ROW_Y) // ROW_PITCH
 
+# ── [dev3] Which states show the HUD strip. Full-card screens
+# (main menu, monologue, results recap, endgame) draw their own framed
+# panel edge-to-edge, so the HUD would clash with them — it only shows
+# during the three interactive gameplay states.
+HUD_STATES = {
+    ScreenState.REGISTRATION,
+    ScreenState.EXPLORATION,
+    ScreenState.EXAM,
+}
+
 # ── Colours ───────────────────────────────────────────────────────
 BG_COLOUR:     tuple = (22, 22, 35)
 HUD_COLOUR:    tuple = (30, 30, 48)
@@ -43,37 +86,126 @@ ACCENT_COLOUR: tuple = (80, 130, 200)
 DIM_COLOUR:    tuple = (70, 75, 95)
 
 
+# ── [dev3] Helper: snapshot this semester's exam outcomes ─────────
+def build_results_snapshot(semester) -> list:
+    """
+    Turn the semester's registered courses into the plain tuple list
+    ResultsScreen.render() expects: (code, name, credits, status).
+
+    Called the instant we leave the exam phase — before advance_semester()
+    clears the course list — so the recap reflects what just happened.
+    A course is PASSED if its lifecycle flag says completed, BACKLOG if it
+    was carried over, or PENDING if the exam pipeline hasn't marked it yet
+    (the exam phase is still a placeholder until Saif's MainQuest pipeline
+    is plugged in — this stays honest until then).
+    """
+    snapshot = []
+    for course in semester.get_registered_courses():
+        if course.is_completed():
+            status = "PASSED"
+        elif course.is_backlogged():
+            status = "BACKLOG"
+        else:
+            status = "PENDING"
+        snapshot.append((
+            course.get_course_code(),
+            course.get_course_name(),
+            course.get_credit_value(),
+            status,
+        ))
+    return snapshot
+
+
 # ── Screen Handler Functions ───────────────────────────────────────
 
+# ── [dev3] Rewritten to drive Nangiba's MainMenuScreen ────────────
 def handle_main_menu(
     screen: pygame.Surface,
     screen_mgr: ScreenManager,
-    fonts: dict,
+    main_menu_screen: MainMenuScreen,
+    ui: dict,
     events: list
 ) -> None:
     """
-    Renders the main menu. SPACE starts the game.
-    HUD is NOT shown on the main menu — no gameplay data yet.
+    Renders the animated main menu (START GAME / EXIT) and handles
+    keyboard + mouse focus. START GAME routes into the semester-1
+    monologue; EXIT raises the exit-confirm popup (handled centrally
+    in the main loop). HUD is NOT shown here — no gameplay data yet.
     """
-    screen.fill(BG_COLOUR)
+    focus = ui["menu_focus"]
+    button_rects = main_menu_screen.get_button_rects()
 
-    cx = SCREEN_WIDTH // 2
-
-    title = fonts["title"].render(
-        "CSE Life: Compile & Conquer", True, TEXT_COLOUR)
-    sub = fonts["body"].render(
-        "An OOP Lifecycle Simulation RPG", True, ACCENT_COLOUR)
-    prompt = fonts["small"].render(
-        "Press SPACE to begin", True, DIM_COLOUR)
-
-    screen.blit(title,  (cx - title.get_width() // 2, 280))
-    screen.blit(sub,    (cx - sub.get_width() // 2, 330))
-    screen.blit(prompt, (cx - prompt.get_width() // 2, 420))
+    def activate(index: int) -> None:
+        if index == START_GAME:
+            screen_mgr.queue_transition(ScreenState.MONOLOGUE)
+        elif index == EXIT:
+            ui["popup"] = "exit"
 
     for event in events:
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
+            if event.key == pygame.K_UP:
+                focus = (focus - 1) % len(button_rects)
+            elif event.key == pygame.K_DOWN:
+                focus = (focus + 1) % len(button_rects)
+            elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                activate(focus)
+        elif event.type == pygame.MOUSEMOTION:
+            for i, rect in enumerate(button_rects):
+                if rect.collidepoint(event.pos):
+                    focus = i
+                    break
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            for i, rect in enumerate(button_rects):
+                if rect.collidepoint(event.pos):
+                    activate(i)
+                    break
+
+    ui["menu_focus"] = focus
+    main_menu_screen.render(screen, focus, VERSION_STRING)
+
+
+# ── [dev3] New handler: per-semester opening monologue ────────────
+def handle_monologue(
+    screen: pygame.Surface,
+    screen_mgr: ScreenManager,
+    session: GameSession,
+    monologue_screen: MonologueScreen,
+    monologue: MonologueController,
+    dt: float,
+    events: list
+) -> None:
+    """
+    Plays the opening monologue for the current semester using the
+    typewriter effect in MonologueController. A key/click finishes the
+    current line, then advances; once every line is revealed, the next
+    key/click marks the semester's intro as played and routes into
+    registration.
+    """
+    semester = session.get_active_semester()
+    sem_no = semester.get_semester_number()
+
+    # Start (once) for whichever semester we're on. is_started_for()
+    # keeps re-entry from restarting the text mid-read.
+    if not monologue.is_started_for(sem_no):
+        monologue.start(sem_no, get_monologue(sem_no))
+
+    for event in events:
+        advanced = (
+            (event.type == pygame.KEYDOWN
+             and event.key not in (pygame.K_F11, pygame.K_ESCAPE))
+            or (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1)
+        )
+        if advanced:
+            if monologue.is_done():
+                semester.play_intro_monologue()
                 screen_mgr.queue_transition(ScreenState.REGISTRATION)
+            else:
+                monologue.advance()
+
+    monologue.update(dt)
+    monologue_screen.render(
+        screen, sem_no, semester.get_time_pool_days(),
+        monologue.visible_lines(), monologue.is_done())
 
 
 def handle_registration(
@@ -182,8 +314,9 @@ def handle_exploration(
                 (SCREEN_WIDTH // 2 - placeholder.get_width() // 2,
                  SCREEN_HEIGHT // 2))
 
+    # [dev3] hint updated: ESC now opens a menu popup, not an instant quit.
     hint = fonts["small"].render(
-        "Press E to enter exam phase  |  ESC to quit",
+        "Press E to enter exam phase  |  ESC for menu",
         True, DIM_COLOUR)
     screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2,
                        SCREEN_HEIGHT - 40))
@@ -199,12 +332,16 @@ def handle_exam(
     screen_mgr: ScreenManager,
     session: GameSession,
     game_clock: GameClock,
+    ui: dict,
     fonts: dict,
     events: list
 ) -> None:
     """
     Renders exam phase placeholder.
-    SPACE simulates completing semester and advancing.
+    SPACE finishes the semester: it runs the end-of-semester state check
+    (which carries incomplete courses to backlog and freezes the session
+    if graduation / the year cap is reached), snapshots the outcomes for
+    the recap screen, then routes to the new RESULTS state.
     """
     screen.fill((25, 18, 35))
 
@@ -220,8 +357,9 @@ def handle_exam(
                 (SCREEN_WIDTH // 2 - placeholder.get_width() // 2,
                  SCREEN_HEIGHT // 2))
 
+    # [dev3] hint updated for the new results step + menu popup.
     hint = fonts["small"].render(
-        "Press SPACE to advance semester  |  ESC to quit",
+        "Press SPACE to finish semester  |  ESC for menu",
         True, DIM_COLOUR)
     screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2,
                        SCREEN_HEIGHT - 40))
@@ -229,42 +367,137 @@ def handle_exam(
     for event in events:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
+                # [dev3] End the semester, then show the recap. Advancing
+                # the semester now happens AFTER the results screen, so the
+                # recap can read this term's courses before they're cleared.
                 game_clock.check_semester_end_state()
-                if session.get_is_frozen():
-                    screen_mgr.queue_transition(ScreenState.ENDGAME)
-                else:
-                    game_clock.advance_semester()
-                    screen_mgr.queue_transition(ScreenState.REGISTRATION)
+                ui["results"] = build_results_snapshot(semester)
+                screen_mgr.queue_transition(ScreenState.RESULTS)
 
 
-def handle_endgame(
+# ── [dev3] New handler: end-of-semester results recap ─────────────
+def handle_results(
     screen: pygame.Surface,
-    fonts: dict,
+    screen_mgr: ScreenManager,
+    session: GameSession,
+    game_clock: GameClock,
+    results_screen: ResultsScreen,
+    ui: dict,
     events: list
 ) -> None:
     """
-    Renders endgame placeholder.
-    Saif's EndgameEvaluationManager and Nangiba's
-    EndgameScreen integrate here in Sprint 3.
+    Shows the recap of the semester that just ended: which courses passed
+    or went to backlog, credits earned this term, running total, and the
+    backlog count. A key/click then either routes to the endgame (if the
+    session froze — graduation or year cap) or advances to the next
+    semester's monologue.
     """
-    screen.fill((8, 8, 18))
+    semester = session.get_active_semester()
+    player = session.get_active_player()
+    results = ui["results"]
 
-    cx = SCREEN_WIDTH // 2
+    credits_earned = sum(credits for (_code, _name, credits, status)
+                         in results if status == "PASSED")
+    history = player.get_academic_history()
+    backlog_count = len(history.get_backlog_courses()) if history else 0
 
-    title = fonts["title"].render(
-        "Game Over", True, (255, 215, 70))
-    screen.blit(title, (cx - title.get_width() // 2, 200))
+    for event in events:
+        advanced = (
+            (event.type == pygame.KEYDOWN
+             and event.key not in (pygame.K_F11, pygame.K_ESCAPE))
+            or (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1)
+        )
+        if advanced:
+            if session.get_is_frozen():
+                screen_mgr.queue_transition(ScreenState.ENDGAME)
+            else:
+                game_clock.advance_semester()
+                screen_mgr.queue_transition(ScreenState.MONOLOGUE)
 
-    placeholder = fonts["body"].render(
-        "[ Endgame evaluation and epilogue renders here ]",
-        True, DIM_COLOUR)
-    screen.blit(placeholder,
-                (cx - placeholder.get_width() // 2, 300))
+    results_screen.render(
+        screen,
+        semester_number=semester.get_semester_number(),
+        results=results,
+        credits_earned=credits_earned,
+        total_credits=player.get_accumulated_credits(),
+        backlog_count=backlog_count,
+        hint_visible=True)
 
-    hint = fonts["small"].render(
-        "Press ESC to quit", True, DIM_COLOUR)
-    screen.blit(hint, (cx - hint.get_width() // 2,
-                       SCREEN_HEIGHT - 40))
+
+# ── [dev3] Rewritten to drive Nangiba's EndgameScreen ─────────────
+def handle_endgame(
+    screen: pygame.Surface,
+    session: GameSession,
+    endgame_screen: EndgameScreen,
+    ui: dict,
+    events: list
+) -> None:
+    """
+    Runs Saif's EndgameEvaluationManager once (the first frame we land
+    here) to decide the ending + epilogue, caches the result, and hands
+    it to Nangiba's EndgameScreen to render. evaluate() returns a dict
+    shaped exactly to EndgameScreen.render()'s keyword arguments, so the
+    two plug together directly. ESC (handled in the main loop) exits.
+    """
+    if ui["endgame"] is None:
+        manager = session.trigger_endgame_evaluation()
+        ui["endgame"] = manager.evaluate(session.get_active_player())
+
+    endgame_screen.render(screen, **ui["endgame"])
+
+
+# ── [dev3] Central popup handling (ESC → confirm) ─────────────────
+def handle_popup_events(
+    screen_mgr: ScreenManager,
+    confirm_popup: ConfirmPopup,
+    monologue: MonologueController,
+    ui: dict,
+    events: list,
+    running: bool
+) -> bool:
+    """
+    While a popup is open it swallows all gameplay input. Clicking the
+    confirm button acts on the popup's mode ("exit" quits the game,
+    "menu" returns to the main menu); the cancel button or ESC closes it
+    (STAY). Returns the possibly-updated `running` flag.
+    """
+    mode = ui["popup"]
+    for event in events:
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            ui["popup"] = None                       # ESC = STAY / close
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if confirm_popup.get_confirm_rect().collidepoint(event.pos):
+                if mode == "exit":
+                    running = False
+                elif mode == "menu":
+                    # Soft return to the title screen. NOTE: this does not
+                    # reset the session — a full "new game" reset is a
+                    # follow-up for whoever owns GameSession. For now the
+                    # menu re-appears and START resumes the current run.
+                    ui["popup"] = None
+                    ui["endgame"] = None
+                    ui["menu_focus"] = START_GAME
+                    monologue.reset()
+                    screen_mgr.queue_transition(ScreenState.MAIN_MENU)
+            elif confirm_popup.get_cancel_rect().collidepoint(event.pos):
+                ui["popup"] = None                   # STAY
+    return running
+
+
+def draw_popup(screen: pygame.Surface, confirm_popup: ConfirmPopup,
+               ui: dict) -> None:
+    """Draw the open popup on top of the frozen screen underneath it."""
+    mode = ui["popup"]
+    if mode == "exit":
+        confirm_popup.render(
+            screen, "EXIT GAME?",
+            ["Any unsaved progress will be lost."],
+            "EXIT", "STAY")
+    elif mode == "menu":
+        confirm_popup.render(
+            screen, "RETURN TO MAIN MENU?",
+            ["Progress cannot be saved yet."],
+            "RETURN", "STAY")
 
 
 # ── Main ──────────────────────────────────────────────────────────
@@ -272,12 +505,14 @@ def handle_endgame(
 def main() -> None:
     """
     Initialises Pygame, creates game systems, runs main loop.
-    HUD renders on top of every screen except main menu.
+    HUD renders on top of the interactive gameplay screens.
     """
     pygame.init()
     pygame.display.set_caption(WINDOW_TITLE)
 
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    # [dev3] SCALED window + fullscreen toggle state.
+    is_fullscreen = False
+    screen = pygame.display.set_mode(SIZE, WINDOWED_FLAGS)
     clock = pygame.time.Clock()
 
     # Game systems
@@ -291,7 +526,7 @@ def main() -> None:
     # a failed course is the SAME object re-offered later, not a copy).
     full_catalog = build_course_catalog()
 
-    # Fonts
+    # Fonts (used by the placeholder exploration/exam screens)
     fonts = {
         "title": pygame.font.SysFont("Arial", 28, bold=True),
         "body":  pygame.font.SysFont("Arial", 16),
@@ -301,6 +536,25 @@ def main() -> None:
     # UI components
     hud = HUD()
     registration_screen = RegistrationScreen(SCREEN_WIDTH, SCREEN_HEIGHT)
+    # [dev3] Nangiba's screens, instantiated once.
+    main_menu_screen = MainMenuScreen(SCREEN_WIDTH, SCREEN_HEIGHT)
+    monologue_screen = MonologueScreen()
+    monologue = MonologueController()
+    results_screen = ResultsScreen()
+    endgame_screen = EndgameScreen()
+    confirm_popup = ConfirmPopup(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+    # [dev3] Transient UI state that doesn't belong to any single screen:
+    #   popup      : None | "exit" | "menu"  — which confirm box is open
+    #   menu_focus : which main-menu button is highlighted
+    #   results    : snapshot of the last semester's outcomes (for RESULTS)
+    #   endgame    : cached EndgameEvaluationManager.evaluate() result
+    ui = {
+        "popup": None,
+        "menu_focus": START_GAME,
+        "results": [],
+        "endgame": None,
+    }
 
     running = True
 
@@ -308,55 +562,97 @@ def main() -> None:
 
         screen_mgr.apply_pending_transition()
 
+        dt = clock.tick(FPS) / 1000.0
         events = pygame.event.get()
+        state = screen_mgr.get_current_state()
 
+        # ── Global input: quit + fullscreen (always active) ───────
         for event in events:
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    running = False
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+                is_fullscreen = not is_fullscreen
+                flags = FULLSCREEN_FLAGS if is_fullscreen else WINDOWED_FLAGS
+                screen = pygame.display.set_mode(SIZE, flags)
 
-        state = screen_mgr.get_current_state()
+        # ── [dev3] Popup gate: an open popup swallows input; otherwise
+        # ESC opens the right popup (exit on menu/endgame, return-to-menu
+        # during gameplay). When the popup is (or just became) open, the
+        # screen underneath renders but receives no input this frame.
+        if ui["popup"] is not None:
+            running = handle_popup_events(
+                screen_mgr, confirm_popup, monologue, ui, events, running)
+            dispatch_events: list = []
+            frame_dt = 0.0
+        else:
+            opened_popup = False
+            for event in events:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    ui["popup"] = ("exit"
+                                   if state in (ScreenState.MAIN_MENU,
+                                                ScreenState.ENDGAME)
+                                   else "menu")
+                    opened_popup = True
+            dispatch_events = [] if opened_popup else events
+            frame_dt = 0.0 if opened_popup else dt
 
+        # ── Dispatch to the active screen ─────────────────────────
         if state == ScreenState.MAIN_MENU:
-            handle_main_menu(screen, screen_mgr, fonts, events)
+            handle_main_menu(
+                screen, screen_mgr, main_menu_screen, ui, dispatch_events)
+
+        elif state == ScreenState.MONOLOGUE:
+            handle_monologue(
+                screen, screen_mgr, session, monologue_screen, monologue,
+                frame_dt, dispatch_events)
 
         elif state == ScreenState.REGISTRATION:
             handle_registration(
                 screen, screen_mgr, session, registration_manager,
-                registration_screen, full_catalog, events)
+                registration_screen, full_catalog, dispatch_events)
 
         elif state == ScreenState.EXPLORATION:
             handle_exploration(
-                screen, screen_mgr, session, game_clock, fonts, events)
+                screen, screen_mgr, session, game_clock, fonts,
+                dispatch_events)
 
         elif state == ScreenState.EXAM:
             handle_exam(
-                screen, screen_mgr, session, game_clock, fonts, events)
+                screen, screen_mgr, session, game_clock, ui, fonts,
+                dispatch_events)
+
+        elif state == ScreenState.RESULTS:
+            handle_results(
+                screen, screen_mgr, session, game_clock, results_screen,
+                ui, dispatch_events)
 
         elif state == ScreenState.ENDGAME:
-            handle_endgame(screen, fonts, events)
+            handle_endgame(
+                screen, session, endgame_screen, ui, dispatch_events)
 
-        # HUD renders on top of every screen except main menu.
-        # KNOWN COSMETIC ISSUE (Iteration 12): on Registration,
-        # RegistrationScreen's card starts at y=24, slightly under
-        # the 44px HUD strip — top border/corner marks get covered.
-        # Not functional, just a layout overlap — flagging for
-        # whoever does UI polish next.
-        if state != ScreenState.MAIN_MENU:
+        # ── HUD on the interactive gameplay screens ───────────────
+        # [dev3] Now also passes the backlog count. The registration card
+        # was nudged down in ui/registration_screen.py so this 44px strip
+        # no longer covers its top border.
+        if state in HUD_STATES:
             player = session.get_active_player()
             semester = session.get_active_semester()
+            history = player.get_academic_history()
+            backlog_count = len(history.get_backlog_courses()) if history else 0
             hud.render(
                 screen,
                 time_pool=semester.get_time_pool_days(),
                 wallet=player.get_wallet_balance(),
                 semester=semester.get_semester_number(),
-                credits=player.get_accumulated_credits()
+                credits=player.get_accumulated_credits(),
+                backlog=backlog_count
             )
 
+        # ── [dev3] Popup draws last, on top of everything ─────────
+        if ui["popup"] is not None:
+            draw_popup(screen, confirm_popup, ui)
+
         pygame.display.flip()
-        clock.tick(FPS)
 
     pygame.quit()
     sys.exit()

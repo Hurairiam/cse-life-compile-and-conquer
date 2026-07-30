@@ -3,7 +3,8 @@ CSE Life: Compile & Conquer
 Created by: Nangiba Tasnim (Dev 3)
 
 The HUD (Heads-Up Display) is the info strip across the top of the
-screen during gameplay: days left, money, semester, and credits.
+screen during gameplay: days left, money, semester, credits, and now
+the number of backlogged courses.
 
 Style: neutral brown pastel, pixel font, with a small icon next to each
 stat. Everything sits packed together on the left side of the strip.
@@ -12,6 +13,7 @@ This file has NO game logic. It only draws the numbers passed into
 render(). Abu Huraira's main loop calls render() every frame and gives
 it the current values. Icons and font load with a safety net, so the
 game still runs even if an art file is missing.
+
 """
 from __future__ import annotations
 import pygame
@@ -50,7 +52,7 @@ class HUD:
     """
 
     def __init__(self) -> None:
-        """Load the pixel font and the four stat icons once, up front."""
+        """Load the pixel font and the five stat icons once, up front."""
         self.__font: pygame.font.Font = self.__load_font()
         # A small dictionary: stat name -> its icon image (or None).
         self.__icons: dict[str, pygame.Surface | None] = {
@@ -58,6 +60,10 @@ class HUD:
             "wallet":   self.__load_icon("assets/ui/icon_wallet.png"),
             "semester": self.__load_icon("assets/ui/icon_semester.png"),
             "credits":  self.__load_icon("assets/ui/icon_credits.png"),
+            # [IMAGE PLACEHOLDER: assets/ui/icon_backlog.png -- 24x24 icon,
+            #  e.g. a small stack of papers / warning tag. Falls back to a
+            #  placeholder square until the PNG is added.]
+            "backlog":  self.__load_icon("assets/ui/icon_backlog.png"),
         }
 
     # -- loading helpers --------------------------------------
@@ -84,11 +90,16 @@ class HUD:
 
     # -- main drawing -----------------------------------------
     def render(self, screen: pygame.Surface, time_pool: int,
-               wallet: float, semester: int, credits: int) -> None:
+               wallet: float, semester: int, credits: int,
+               backlog: int = 0) -> None:
         """
         Draw the whole HUD strip.
         time_pool : days left (0-80)     wallet : money in BDT
         semester  : current semester     credits: credits earned (goal 140)
+        backlog   : how many failed courses are waiting to be retaken.
+                    Optional (defaults to 0) so an un-updated call site
+                    still works -- but the main loop should pass the real
+                    value: len(history.get_backlog_courses()).
         """
         width: int = screen.get_width()
 
@@ -98,14 +109,20 @@ class HUD:
         pygame.draw.rect(screen, BORDER_BROWN,
                          pygame.Rect(0, STRIP_HEIGHT - 4, width, 4))
 
-        # 2) the four stats, drawn left to right. Each helper returns the
-        #    x position where the NEXT stat should start, so they pack
+        # 2) the stats, drawn left to right. Each helper returns the x
+        #    position where the NEXT stat should start, so they pack
         #    tightly together instead of being spread across the screen.
         x = START_X
         x = self.__draw_days(screen, time_pool, x) + GAP
         x = self.__draw_stat(screen, "wallet",   f"{wallet:,.0f} BDT", x) + GAP
         x = self.__draw_stat(screen, "semester", f"Sem {semester}", x) + GAP
-        x = self.__draw_stat(screen, "credits",  f"{credits}/140",  x)
+        x = self.__draw_stat(screen, "credits",  f"{credits}/140",  x) + GAP
+
+        # Backlog turns red the moment there is anything to retake, so it
+        # reads as a warning rather than just another number.
+        backlog_colour = BAR_RED if backlog > 0 else TEXT_COFFEE
+        x = self.__draw_stat(screen, "backlog", f"Backlog {backlog}", x,
+                             text_colour=backlog_colour)
 
     # -- piece-by-piece drawing -------------------------------
     def __draw_days(self, screen: pygame.Surface, time_pool: int,
@@ -142,14 +159,16 @@ class HUD:
         return number_x + self.__font.size(days_text)[0]
 
     def __draw_stat(self, screen: pygame.Surface, icon_key: str,
-                    text: str, x: int) -> int:
+                    text: str, x: int,
+                    text_colour: tuple = TEXT_COFFEE) -> int:
         """
-        Draw one icon followed by its text (wallet / semester / credits).
-        Returns the x position just past the text.
+        Draw one icon followed by its text (wallet / semester / credits /
+        backlog). `text_colour` lets a stat (like backlog) go red without
+        adding a whole new method. Returns the x position just past the text.
         """
         self.__draw_icon(screen, icon_key, x)
         text_x = x + ICON_SIZE + ICON_TEXT_GAP
-        self.__draw_text(screen, text, text_x)
+        self.__draw_text(screen, text, text_x, text_colour)
         return text_x + self.__font.size(text)[0]
 
     def __draw_icon(self, screen: pygame.Surface, icon_key: str,
@@ -163,9 +182,10 @@ class HUD:
             pygame.draw.rect(screen, PLACEHOLDER,
                              pygame.Rect(x, y, ICON_SIZE, ICON_SIZE))
 
-    def __draw_text(self, screen: pygame.Surface, text: str, x: int) -> None:
+    def __draw_text(self, screen: pygame.Surface, text: str, x: int,
+                    colour: tuple = TEXT_COFFEE) -> None:
         """Draw text vertically centred in the strip."""
-        surface = self.__font.render(text, True, TEXT_COFFEE)
+        surface = self.__font.render(text, True, colour)
         y = (STRIP_HEIGHT - self.__font.get_height()) // 2
         screen.blit(surface, (x, y))
 
@@ -189,7 +209,8 @@ if __name__ == "__main__":
     hud = HUD()
     clock = pygame.time.Clock()
 
-    fake_days = [45, 20, 8]   # green, amber, red
+    # (days, backlog) pairs so I can eyeball the backlog colour too
+    fake_states = [(45, 0), (20, 1), (8, 3)]   # green/none, amber/1, red/3
     index = 0
 
     running = True
@@ -204,14 +225,16 @@ if __name__ == "__main__":
                     flags = FULLSCREEN_FLAGS if is_fullscreen else WINDOWED_FLAGS
                     window = pygame.display.set_mode(SIZE, flags)
                 else:
-                    index = (index + 1) % len(fake_days)   # switch colour state
+                    index = (index + 1) % len(fake_states)   # switch state
 
+        days, backlog = fake_states[index]
         window.fill((203, 191, 166))       # neutral background
         hud.render(window,
-                   time_pool=fake_days[index],
-                   wallet=0.0,
-                   semester=1,
-                   credits=0)
+                   time_pool=days,
+                   wallet=12000.0,
+                   semester=3,
+                   credits=27,
+                   backlog=backlog)
         pygame.display.flip()
         clock.tick(60)
 
