@@ -15,11 +15,14 @@ from engine.game_session import GameSession
 from engine.game_clock import GameClock
 from engine.registration_manager import RegistrationManager
 from engine.screen_manager import ScreenManager, ScreenState
+from engine.npc_manager import NPCManager
+from engine.dialogue_manager import DialogueManager
 from ui.hud import HUD
 from ui.registration_screen import (
     RegistrationScreen, FIRST_ROW_Y, FOOTER_Y, ROW_PITCH
 )
 from academic.course_catalog import build_course_catalog
+from content.npc_roster import NPC_ROSTER
 
 # ── Constants ─────────────────────────────────────────────────────
 SCREEN_WIDTH:  int = 1280
@@ -158,14 +161,31 @@ def handle_exploration(
     screen_mgr: ScreenManager,
     session: GameSession,
     game_clock: GameClock,
+    npc_manager: NPCManager,
+    dialogue_manager: DialogueManager,
     fonts: dict,
     events: list
 ) -> None:
     """
-    Renders exploration phase. Checks 15-day firewall every frame.
-    E key manually enters exam phase for testing.
+    Plain-text placeholder for the Exploration screen — same style
+    as handle_exam()/handle_endgame(), NOT a designed UI. The real
+    styled screen (art, layout, click regions) is Nangiba's to build
+    on dev3-nangiba-gui-assets, same as RegistrationScreen/HUD were.
+
+    What IS wired here (this is the dev1/engine-layer part of the
+    job): the NPC list is real data from NPCManager, not a fake
+    placeholder string, and selecting one actually loads real
+    dialogue through DialogueManager. Selection is number-key driven
+    (1-7) rather than mouse+Rect click detection, since building
+    clickable row regions with visual feedback is exactly the kind
+    of UI polish that belongs in ui/, not here.
+
+    [Sprint 3 — Iteration 13]
     """
     screen.fill((20, 24, 38))
+
+    player = session.get_active_player()
+    semester = session.get_active_semester()
 
     if not game_clock.is_eligible_for_side_activities():
         screen_mgr.queue_transition(ScreenState.EXAM)
@@ -175,23 +195,85 @@ def handle_exploration(
         "Exploration Phase", True, TEXT_COLOUR)
     screen.blit(header, (40, 60))
 
-    placeholder = fonts["body"].render(
-        "[ Map and NPC interactions render here ]",
-        True, DIM_COLOUR)
-    screen.blit(placeholder,
-                (SCREEN_WIDTH // 2 - placeholder.get_width() // 2,
-                 SCREEN_HEIGHT // 2))
+    available_npcs = npc_manager.get_available_npcs(
+        semester.get_semester_number()
+    )
+
+    placeholder = fonts["small"].render(
+        "[ Nangiba's map/NPC art renders here — list below is real "
+        "data, plain text until then ]", True, DIM_COLOUR)
+    screen.blit(placeholder, (40, 100))
+
+    y = 140
+    for i, npc in enumerate(available_npcs):
+        available = npc.is_within_availability_window(player)
+        colour = TEXT_COLOUR if available else DIM_COLOUR
+        suffix = "" if available else "  (unavailable right now)"
+        line = fonts["body"].render(
+            f"[{i + 1}] {npc.get_display_name()}{suffix}", True, colour)
+        screen.blit(line, (60, y))
+        y += 28
 
     hint = fonts["small"].render(
-        "Press E to enter exam phase  |  ESC to quit",
+        "Press 1-7 to talk to someone  |  E: exam phase  |  ESC: quit",
         True, DIM_COLOUR)
     screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2,
                        SCREEN_HEIGHT - 40))
+
+    number_keys = [
+        pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4,
+        pygame.K_5, pygame.K_6, pygame.K_7,
+    ]
 
     for event in events:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_e:
                 screen_mgr.queue_transition(ScreenState.EXAM)
+            elif event.key in number_keys:
+                index = number_keys.index(event.key)
+                if index < len(available_npcs):
+                    npc = available_npcs[index]
+                    npc_id = npc.get_character_id()
+                    lines = npc_manager.get_dialogue_lines(npc_id, player)
+                    if not lines:
+                        continue
+
+                    variants = NPC_ROSTER[npc_id]["portrait_variants"]
+                    portrait_path = None
+                    if "neutral" in variants:
+                        portrait_path = NPC_ROSTER[npc_id][
+                            "portrait_file"
+                        ].format(emotion="neutral")
+
+                    dialogue_manager.load_dialogue(lines, portrait_path)
+                    screen_mgr.queue_transition(ScreenState.DIALOGUE)
+
+
+def handle_dialogue(
+    screen: pygame.Surface,
+    screen_mgr: ScreenManager,
+    dialogue_manager: DialogueManager,
+    events: list
+) -> None:
+    """
+    DialogueManager (Ayesha's file, engine/ layer — it only imports
+    Pygame to draw a text box, not to design a screen) renders on a
+    plain dark background here — same reasoning as above, this isn't
+    trying to be Exploration's real background art.
+
+    [Sprint 3 — Iteration 13]
+    """
+    screen.fill((20, 24, 38))
+
+    for event in events:
+        advance = (
+            (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE)
+            or (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1)
+        )
+        if advance and not dialogue_manager.advance():
+            screen_mgr.queue_transition(ScreenState.EXPLORATION)
+
+    dialogue_manager.render(screen)
 
 
 def handle_exam(
@@ -301,6 +383,12 @@ def main() -> None:
     # UI components
     hud = HUD()
     registration_screen = RegistrationScreen(SCREEN_WIDTH, SCREEN_HEIGHT)
+    dialogue_manager = DialogueManager(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+    # NPC roster — built once, same NPC instances reused every frame
+    # (their accessibility state, e.g. expire_for_semester(), needs
+    # to persist across frames the same way Course instances do).
+    npc_manager = NPCManager()
 
     running = True
 
@@ -329,7 +417,11 @@ def main() -> None:
 
         elif state == ScreenState.EXPLORATION:
             handle_exploration(
-                screen, screen_mgr, session, game_clock, fonts, events)
+                screen, screen_mgr, session, game_clock, npc_manager,
+                dialogue_manager, fonts, events)
+
+        elif state == ScreenState.DIALOGUE:
+            handle_dialogue(screen, screen_mgr, dialogue_manager, events)
 
         elif state == ScreenState.EXAM:
             handle_exam(
