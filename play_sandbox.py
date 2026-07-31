@@ -20,10 +20,13 @@ WHAT LIVES WHERE (Build Plan §0.7, Style Guide §6.1)
     ui/interaction_prompt.py draws the [E] chip; makes no decisions
     engine/dialogue_manager.py + ui/dialog_box.py   the conversation
     ui/popup.py              the reward / notice modal
+    engine/gate_evaluator.py weighs a locked door against the player (F8)
+    ui/gate_notice.py        the requirement table + entry confirmation (F8)
+    engine/game_clock.py     charges a paid entry through the ONE pipeline
     ui/hud.py                the real HUD, imported and never edited
     THIS FILE                the decisions: where the player may step,
                              which cell they face, what E does there,
-                             and what a reward is worth
+                             what a reward is worth, and which gate applies
 
 Movement and the fake player state sit here on purpose. A ui/ class
 may not decide anything, and the sandbox must not construct real game
@@ -52,8 +55,20 @@ from content.level_registry import (          # noqa: E402  (after sys.path)
     get_npc_display_name,
     get_npc_portrait_path,
 )
+from content.level_schema import GateData               # noqa: E402
 from engine.dialogue_manager import DialogueManager      # noqa: E402
-from engine.level_loader import Level, LevelLoadError, load_level  # noqa: E402
+from engine.game_clock import GameClock                  # noqa: E402
+from engine.gate_evaluator import (                      # noqa: E402
+    GateEntryAction,
+    GateEvaluator,
+)
+from engine.level_loader import (                        # noqa: E402
+    NPC_SEMESTER_EXPIRY_DAY,
+    Level,
+    LevelLoadError,
+    load_level,
+)
+from ui.gate_notice import MODE_CONFIRM, MODE_LOCKED, GateNotice  # noqa: E402
 from ui.hud import HUD                                   # noqa: E402
 from ui.interaction_prompt import (                      # noqa: E402
     LABEL_ENTER,
@@ -63,7 +78,12 @@ from ui.interaction_prompt import (                      # noqa: E402
     InteractionPrompt,
 )
 from ui.map_screen import MapScreen                      # noqa: E402
-from ui.popup import SEVERITY_INFO, SEVERITY_WARNING, MessagePopup  # noqa: E402
+from ui.popup import (                                   # noqa: E402
+    RESULT_CONFIRM,
+    SEVERITY_INFO,
+    SEVERITY_WARNING,
+    MessagePopup,
+)
 
 # -- palette --------------------------------------------------
 # The runner draws only debug chrome, so it needs three colours from
@@ -114,6 +134,16 @@ WALLET_STEP = 500.0
 DEBUG_LINE_PITCH = 18
 PLATE_PAD = 8                   # padding inside a dev-text plate
 PLATE_BORDER_W = 2
+
+# The sandbox seeds two demo gates onto campus_main so a tester can cross
+# every F8 branch with the debug keys, WITHOUT hand-editing the fixture
+# (levels/campus_main.json must stay byte-identical — Build Plan §0.1).
+# They live only in this runner, exactly like FakePlayerState; a real
+# gate authored in the level editor drives the identical code path. Both
+# sit on the open corridor at spawn row y=12 (verified walkable x=1..39).
+DEMO_GATE_LEVEL = "campus_main"
+DEMO_GATE_FREE_CELL = (12, 12)   # requirements only, no toll
+DEMO_GATE_COST_CELL = (18, 12)   # requirements + a days/money toll
 
 
 # ─────────────────────────────────────────────────────────────
@@ -221,6 +251,28 @@ class FakePlayerState:
         """The transcript, for `get_completed_course_codes()`."""
         return self.__history
 
+    # -- the two the paid-entry action writes -----------------
+    # These mirror core.character.Player.withdraw_funds() /
+    # deduct_time_pool_days() byte-for-byte, so GateEntryAction charges
+    # the fake exactly as it will charge a real Player at integration.
+    def withdraw_funds(self, amount: float) -> bool:
+        """Debit the wallet. False, unchanged, if short or negative."""
+        if amount < 0:
+            return False
+        if self.__wallet >= amount:
+            self.__wallet -= amount
+            return True
+        return False
+
+    def deduct_time_pool_days(self, days: int) -> bool:
+        """Debit the day pool. False, unchanged, if short or negative."""
+        if days < 0:
+            return False
+        if self.__days >= days:
+            self.__days -= days
+            return True
+        return False
+
     # -- debug mutators (sandbox only) ------------------------
     def nudge_semester(self, delta: int) -> None:
         """Step the semester, clamped to 1-12."""
@@ -246,6 +298,72 @@ class FakePlayerState:
     def add_skill(self, skill_id: str, amount: int) -> None:
         """Apply a prop's skill reward."""
         self.__skills.increment_skill(skill_id, amount)
+
+
+class FakeSemester:
+    """
+    Stands in for `academic.semester.Semester`, for GameClock's day sync.
+
+    GameClock deducts the day cost from BOTH the player and the active
+    semester (the Iteration-14 fix in game_clock.py). The sandbox only
+    shows the player's pool on the HUD, so this counter exists purely so
+    the real GameClock has the second object it expects to touch.
+    """
+
+    def __init__(self, days: int = 80) -> None:
+        self.__days: int = int(days)
+
+    def deduct_time(self, days: int) -> None:
+        """Debit the semester's own day pool, never below zero."""
+        self.__days = max(0, self.__days - max(0, int(days)))
+
+    def get_time_pool_days(self) -> int:
+        """Days left in the semester pool."""
+        return self.__days
+
+
+class FakeGameSession:
+    """
+    The minimal stand-in for `engine.game_session.GameSession` that lets a
+    REAL `engine.game_clock.GameClock` run a GateEntryAction through its
+    single pipeline in the sandbox.
+
+    F8 requires a paid entry to be charged through
+    GameClock.process_time_consumable() and nowhere else
+    (IMPLEMENTATION_PLAN §2.2). GameClock only ever calls interface
+    methods on its session, so these four doubles are enough to exercise
+    the real pipeline end to end without the sandbox constructing a real
+    Player, Semester or save file — the same test-double philosophy as
+    FakePlayerState.
+    """
+
+    def __init__(self, player: FakePlayerState,
+                 semester: FakeSemester) -> None:
+        self.__player: FakePlayerState = player
+        self.__semester: FakeSemester = semester
+        self.__global_days: int = 0
+        self.__frozen: bool = False
+
+    def get_active_player(self) -> FakePlayerState:
+        """The player GameClock charges."""
+        return self.__player
+
+    def get_active_semester(self) -> FakeSemester:
+        """The semester GameClock keeps in sync."""
+        return self.__semester
+
+    def get_is_frozen(self) -> bool:
+        """Never frozen in the sandbox — there is no year cap to hit here."""
+        return self.__frozen
+
+    def increment_global_clock(self, days: int) -> None:
+        """Advance the global career clock, matching GameSession's guard."""
+        if not self.__frozen and days > 0:
+            self.__global_days += int(days)
+
+    def get_global_career_clock_days(self) -> int:
+        """Total days charged this run — shown in the F1 debug overlay."""
+        return self.__global_days
 
 
 # ─────────────────────────────────────────────────────────────
@@ -425,6 +543,7 @@ class Sandbox:
         self.__prompt: InteractionPrompt = InteractionPrompt()
         self.__hud: HUD = HUD()
         self.__popup: MessagePopup = MessagePopup(*SCREEN_SIZE)
+        self.__gate_notice: GateNotice = GateNotice(*SCREEN_SIZE)
         self.__dialogue: DialogueManager = DialogueManager(*SCREEN_SIZE)
         self.__audio: Optional[Any] = self.__start_audio()
 
@@ -432,6 +551,19 @@ class Sandbox:
         self.__level: Level = load_level(level_id)
         self.__walker: PlayerWalker = PlayerWalker(self.__level.get_spawn())
         self.__camera: Tuple[int, int] = (0, 0)
+
+        # F8: the evaluator weighs a gate, and a real GameClock (over fake
+        # session/semester doubles) charges a paid entry through the ONE
+        # action pipeline — never by deducting days directly.
+        self.__evaluator: GateEvaluator = GateEvaluator()
+        self.__session: FakeGameSession = FakeGameSession(
+            self.__state, FakeSemester())
+        self.__game_clock: GameClock = GameClock(self.__session)
+        self.__demo_gates: Dict[Tuple[str, Tuple[int, int]], GateData] = \
+            self.__build_demo_gates()
+        self.__gate_cleared: set = set()
+        self.__pending_gate: Optional[Tuple[Tuple[int, int], GateData]] = None
+        self.__gate_view: Dict[str, Any] = {}
 
         self.__chain_index: Dict[Tuple[str, str], int] = {}
         self.__trigger_count: Dict[Tuple[str, str], int] = {}
@@ -494,6 +626,12 @@ class Sandbox:
                 continue
             if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
                 self.__toggle_fullscreen()
+                continue
+            if self.__gate_notice.consumes_input():
+                if self.__gate_notice.handle_event(event):
+                    result = self.__gate_notice.take_result()
+                    if result is not None:
+                        self.__on_gate_result(result)
                 continue
             if self.__popup.consumes_input():
                 self.__popup.handle_event(event)
@@ -558,13 +696,15 @@ class Sandbox:
     def __update(self, dt: float) -> None:
         """Advance movement, the typewriter and the camera."""
         self.__dialogue.update(dt)
-        if self.__popup.consumes_input() or self.__dialogue.is_active():
+        if (self.__popup.consumes_input()
+                or self.__gate_notice.consumes_input()
+                or self.__dialogue.is_active()):
             self.__walker.update(dt, 0.0, 0.0, self.__level)
         else:
             dx, dy = self.__read_movement_input()
             self.__walker.update(dt, dx, dy, self.__level)
             self.__step_footsteps(dt)
-            self.__check_portal()
+            self.__check_cell_transition()
         self.__camera = self.__map.compute_camera(
             self.__level, self.__walker.get_position(), self.__window)
 
@@ -594,13 +734,14 @@ class Sandbox:
         E on the facing cell. Precedence: gate, NPC, portal, prop.
 
         The gate comes first because a locked door is a locked door
-        whatever is behind it — and it is the branch F8 replaces with
-        engine/gate_evaluator.py + ui/gate_notice.py.
+        whatever is behind it — F8 replaced the old "read the authored
+        text" stub with the real evaluator + ui/gate_notice.py, which
+        weighs the gate against the player and can let them through.
         """
         cell = self.__walker.get_facing_cell()
-        gate = self.__level.get_gate_at(*cell)
-        if gate is not None:
-            self.__show_gate_notice(gate)
+        gate = self.__gate_at(*cell)
+        if gate is not None and not self.__gate_cleared_at(cell):
+            self.__resolve_gate(cell, gate)
             return
         npc = self.__level.get_npc_at(*cell)
         if npc is not None and npc.get_interactable():
@@ -614,19 +755,133 @@ class Sandbox:
         if prop is not None:
             self.__trigger_prop(prop)
 
-    def __show_gate_notice(self, gate: Any) -> None:
+    # -- gates (F8) -------------------------------------------
+    def __build_demo_gates(self) -> Dict[Tuple[str, Tuple[int, int]], GateData]:
         """
-        Show the gate's AUTHORED refusal text.
+        Two authored-in-code gates on campus_main, so every branch is
+        reachable with the debug keys (Build Plan §F8).
 
-        F7 only reads what the level file says; it judges nothing. F8
-        swaps this for GateEvaluator + ui/gate_notice.py, which weighs
-        the requirements against the player and can let them through.
+        FREE gate: reach semester 4 and 45 credits and it opens with no
+        toll — the "straight through" branch.  COST gate: reach semester 5
+        and it opens but charges 10 days + 1,000 BDT, routed through
+        GameClock — the confirmation branch.  Neither touches the fixture
+        on disk; a gate authored in the editor drives the same code.
         """
-        lines = gate.get_locked_lines() or \
-            ["This way is not open to you yet."]
-        self.__popup.open(gate.get_locked_title(), lines, SEVERITY_WARNING)
+        free_gate = GateData()
+        free_gate.set_min_semester(4)
+        free_gate.set_min_credits(45)
+        free_gate.set_locked_title("LAB WING SEALED")
+        free_gate.set_locked_lines([
+            "The second-year lab wing stays shut for first-years.",
+            "Earn your credits and come back."])
+
+        cost_gate = GateData()
+        cost_gate.set_min_semester(5)
+        cost_gate.set_cost_days(10)
+        cost_gate.set_cost_money(1000.0)
+        cost_gate.set_locked_title("DEAN'S OFFICE")
+        cost_gate.set_locked_lines([
+            "The dean sees final-year students by appointment.",
+            "An appointment is neither quick nor free."])
+
+        return {
+            (DEMO_GATE_LEVEL, DEMO_GATE_FREE_CELL): free_gate,
+            (DEMO_GATE_LEVEL, DEMO_GATE_COST_CELL): cost_gate,
+        }
+
+    def __gate_at(self, x: int, y: int) -> Optional[GateData]:
+        """
+        The gate guarding a cell: the level's first, then a demo gate.
+
+        A real level gate always wins, so authoring one in the editor
+        overrides the sandbox scaffolding on the same cell.
+        """
+        level_gate = self.__level.get_gate_at(x, y)
+        if level_gate is not None:
+            return level_gate
+        return self.__demo_gates.get(
+            (self.__level.get_level_id(), (x, y)))
+
+    def __gate_cleared_at(self, cell: Tuple[int, int]) -> bool:
+        """True once the player has passed this cell's gate this run."""
+        return (self.__level.get_level_id(), cell) in self.__gate_cleared
+
+    def __resolve_gate(self, cell: Tuple[int, int], gate: GateData) -> bool:
+        """
+        Run the evaluator on a gate and act on the verdict.
+
+        Returns True when the player must be held back (locked, or a paid
+        door awaiting confirmation) and False when the door is open and
+        free so the caller may let them pass. This is the single decision
+        point both stepping onto a gate and pressing E route through.
+        """
+        result = self.__evaluator.evaluate(gate, self.__state)
+
+        if not result.is_open():
+            self.__open_gate_notice(gate, result, MODE_LOCKED)
+            self.__play("gate_locked")
+            return True
+
+        if result.has_cost():
+            if self.__evaluator.can_afford_costs(gate, self.__state):
+                self.__pending_gate = (cell, gate)
+                self.__open_gate_notice(gate, result, MODE_CONFIRM)
+                return True
+            # Requirements met, but the wallet or the day pool is short:
+            # show it as a locked door naming the toll it cannot pay.
+            self.__open_gate_notice(gate, result, MODE_LOCKED,
+                                    unaffordable=True)
+            self.__play("gate_locked")
+            return True
+
+        # Open and free — straight through.
+        self.__gate_cleared.add((self.__level.get_level_id(), cell))
+        self.__play("confirm")
+        return False
+
+    def __open_gate_notice(self, gate: GateData, result: Any, mode: str,
+                           unaffordable: bool = False) -> None:
+        """Stash the notice's drawn values (§6.1) and open it in `mode`."""
+        flavour = list(gate.get_locked_lines())
+        if unaffordable:
+            days, money = result.get_costs()
+            flavour = [f"You cannot pay the toll: {days} days, "
+                       f"{money:,.0f} BDT."] + flavour
+        self.__gate_view = {
+            "title": gate.get_locked_title(),
+            "rows": result.get_rows(),
+            "flavour": flavour,
+            "costs": result.get_costs(),
+            "mode": mode,
+        }
+        self.__gate_notice.open(mode)
+
+    def __on_gate_result(self, result: str) -> None:
+        """
+        Act on the button the gate notice reported.
+
+        CONFIRM on a paid door charges the toll through
+        GameClock.process_time_consumable() — the one pipeline — then
+        marks the gate cleared and steps the player onto it. CANCEL (or a
+        closed locked notice) simply drops any pending entry.
+        """
+        pending = self.__pending_gate
+        self.__pending_gate = None
+        if result != RESULT_CONFIRM or pending is None:
+            return
+        cell, gate = pending
+        action = GateEntryAction.for_gate(gate)
+        if action is not None:
+            self.__game_clock.process_time_consumable(action)
+        self.__gate_cleared.add((self.__level.get_level_id(), cell))
+        self.__walker.place(cell)
+        self.__last_cell = self.__walker.get_cell()
+        self.__play("confirm")
+
+    def __play(self, key: str) -> None:
+        """Fire one SFX if audio is available — a guarded no-op otherwise."""
         if self.__audio:
-            self.__audio.play_sfx("gate_locked")
+            self.__audio.play_sfx(key)
 
     def __start_conversation(self, npc: Any) -> None:
         """
@@ -709,21 +964,37 @@ class Sandbox:
         if self.__audio:
             self.__audio.play_sfx("confirm")
 
-    def __check_portal(self) -> None:
+    def __check_cell_transition(self) -> None:
         """
-        Stepping ONTO a portal travels — the classic RPG rule.
+        React the frame the player steps into a NEW cell: a portal, or a
+        gate.
 
-        Only on the frame the player enters the cell, not on every frame
-        they stand in it: a portal whose target is missing would
-        otherwise reopen its error popup the instant the player closed it.
+        A portal travels (the classic RPG rule). A gate that is not open
+        holds the player back — they are bounced to the cell they came
+        from and shown the notice, so a locked door genuinely blocks the
+        way instead of only talking about it. An open, free gate is
+        cleared and walked through. Only on entry, never every frame, so a
+        held-back player does not re-fire the notice while standing still.
         """
         cell = self.__walker.get_cell()
         if cell == self.__last_cell:
             return
-        self.__last_cell = cell
+        previous = self.__last_cell
+
         portal = self.__level.get_portal_at(*cell)
         if portal is not None:
+            self.__last_cell = cell
             self.__travel(portal)
+            return
+
+        gate = self.__gate_at(*cell)
+        if gate is not None and not self.__gate_cleared_at(cell):
+            if self.__resolve_gate(cell, gate):     # held back
+                self.__walker.place(previous)
+                self.__last_cell = previous
+                return
+
+        self.__last_cell = cell
 
     def __travel(self, portal: Any) -> None:
         """
@@ -765,7 +1036,8 @@ class Sandbox:
                           self.__walker.get_position(),
                           self.__walker.get_facing(),
                           self.__walker.get_frame(), dt=dt)
-        if not self.__dialogue.is_active() and not self.__popup.is_open():
+        if (not self.__dialogue.is_active() and not self.__popup.is_open()
+                and not self.__gate_notice.is_open()):
             self.__draw_prompt()
         self.__hud.render(self.__window,
                           time_pool=self.__state.get_time_pool_days(),
@@ -774,6 +1046,13 @@ class Sandbox:
                           credits=self.__state.get_accumulated_credits())
         self.__dialogue.render(self.__window)
         self.__popup.render(self.__window)
+        if self.__gate_notice.is_open():
+            self.__gate_notice.render(
+                self.__window, self.__gate_view.get("title", ""),
+                self.__gate_view.get("rows", ()),
+                self.__gate_view.get("flavour", ()),
+                self.__gate_view.get("costs", (0, 0.0)),
+                self.__gate_view.get("mode", MODE_LOCKED))
         if self.__show_debug:
             self.__draw_debug()
         self.__draw_hint()
@@ -795,7 +1074,8 @@ class Sandbox:
         (label, is_locked) for a cell — the same precedence __interact()
         uses, so the chip never promises something E will not do.
         """
-        if self.__level.get_gate_at(*cell) is not None:
+        if (self.__gate_at(*cell) is not None
+                and not self.__gate_cleared_at(cell)):
             return (LABEL_LOCKED, True)
         npc = self.__level.get_npc_at(*cell)
         if npc is not None and npc.get_interactable():
@@ -834,10 +1114,32 @@ class Sandbox:
             f"under      prop {prop.get_uid() if prop else '-'}  "
             f"npc {npc.get_uid() if npc else '-'}  "
             f"zone {zone.get_uid() if zone else '-'}  "
-            f"gate {'yes' if self.__level.get_gate_at(*cursor) else 'no'}",
+            f"gate {'yes' if self.__gate_at(*cursor) else 'no'}",
+            f"npc vis    {self.__npc_visibility(npc)}  "
+            f"career +{self.__session.get_global_career_clock_days()}d "
+            f"charged",
             f"fps        {self.__clock.get_fps():.0f}",
         ]
         self.__draw_plate(lines, (12, 54), TEXT_COFFEE)
+
+    def __npc_visibility(self, npc_data: Any) -> str:
+        """
+        The three-way NPC visibility for the NPC under the cursor, or '-'.
+
+        Reuses core.character.npc.NPC's 0.75-1.00 availability rule rather
+        than reimplementing it (Build Plan §F8): a throwaway NPC answers
+        the window question, and gate_evaluator folds that together with
+        the effective min-semester into visible / semester_locked /
+        window_closed.
+        """
+        if npc_data is None:
+            return "-"
+        from core.character.npc import NPC       # local: debug-only cost
+        probe = NPC("probe", "", self.__level.get_level_id(),
+                    NPC_SEMESTER_EXPIRY_DAY)
+        ratio_ok = probe.is_within_availability_window(self.__state)
+        return self.__evaluator.evaluate_npc_visibility(
+            npc_data, self.__state, ratio_ok)
 
     def __draw_hint(self) -> None:
         """The muted bottom-right key hint every stub screen carries."""
@@ -899,7 +1201,13 @@ class Sandbox:
 #   , / .         -> days                     9 / 0 -> wallet
 #   F1            -> debug overlay
 #   F11           -> toggle windowed / fullscreen
-#   ESC           -> leave a conversation, or quit
+#   ESC           -> leave a conversation, close a notice, or quit
+#
+#   F8 gates (campus_main): walk right along the spawn row. The LAB WING
+#   door at (12,12) refuses a first-year and opens at semester 4 / 45 cr;
+#   the DEAN'S OFFICE at (18,12) opens at semester 5 and charges 10 days
+#   + 1,000 BDT through GameClock. Nudge state with [ ] - = , . 9 0 to
+#   cross every branch.
 # -------------------------------------------------------------
 if __name__ == "__main__":
     requested = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_LEVEL_ID
