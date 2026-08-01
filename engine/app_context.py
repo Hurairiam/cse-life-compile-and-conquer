@@ -77,9 +77,12 @@ class AppContext:
         self.pending_save_slot = None
 
         # -- STAGE 4: narrative -------------------------------------
+        from ui.choice_box import ChoiceBox
         self.monologue = None
-        self.dialog_box = None
-        self.choice_box = None
+        self.dialog_box = None            # owned by DialogueManager
+        self.choice_box = ChoiceBox(screen_w, screen_h)
+        self.choice_options = []
+        self.choice_result = None
         self.monologue_title = ""
         self.monologue_subtitle = ""
         self.monologue_lines = []

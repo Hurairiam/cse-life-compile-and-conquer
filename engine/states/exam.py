@@ -62,7 +62,11 @@ def handle_events(ctx, events):
                     ctx.go(ScreenState.ENDGAME)
                 else:
                     ctx.game_clock.advance_semester()
-                    ctx.go(ScreenState.REGISTRATION)
+                    from engine.states import monologue
+                    monologue.start_semester(
+                        ctx, ctx.semester().get_semester_number(),
+                        ScreenState.REGISTRATION)
+                    ctx.go(ScreenState.MONOLOGUE)
             continue
         if s["message"] is not None:
             if event.key == pygame.K_SPACE:
