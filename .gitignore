@@ -16,3 +16,6 @@ docs
 __pycache__/
 *.pyc
 .idea/
+
+# Local game configuration & state
+settings.json

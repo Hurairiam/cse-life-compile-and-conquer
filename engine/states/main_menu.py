@@ -13,6 +13,9 @@ def handle_events(ctx, events):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 ctx.go(ScreenState.REGISTRATION)
+            elif event.key == pygame.K_s:
+                ctx.return_state = ScreenState.MAIN_MENU
+                ctx.go(ScreenState.SETTINGS)
             elif event.key == pygame.K_ESCAPE:
                 ctx.quit()
 
@@ -22,7 +25,4 @@ def render(ctx, screen):
     cx = ctx.screen_w // 2
     rows = ((ctx.fonts["title"], "CSE Life: Compile & Conquer", TEXT, 280),
             (ctx.fonts["body"], "An OOP Lifecycle Simulation RPG", ACCENT, 330),
-            (ctx.fonts["small"], "Press SPACE to begin", DIM, 420))
-    for font, text, colour, y in rows:
-        surf = font.render(text, True, colour)
-        screen.blit(surf, (cx - surf.get_width() // 2, y))
+            (ctx.fonts["small"], "SPACE begin   |   S settings", DIM, 420))

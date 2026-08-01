@@ -18,6 +18,8 @@ from engine.npc_manager import NPCManager
 from engine.dialogue_manager import DialogueManager
 from academic.course_catalog import build_course_catalog
 from ui.hud import HUD
+from engine.audio_manager import AudioManager
+from engine import settings_store
 
 VERSION: str = "v1.0"
 
@@ -51,10 +53,14 @@ class AppContext:
                      "answers": {}, "message": None}
 
         # -- STAGE 2: audio + settings ------------------------------
-        self.audio = None
-        self.music_volume = 70
-        self.sfx_volume = 80
-        self.text_speed = "NORMAL"
+        prefs = settings_store.load()
+        self.music_volume = prefs["music_volume"]
+        self.sfx_volume = prefs["sfx_volume"]
+        self.text_speed = prefs["text_speed"]
+        self.is_fullscreen = prefs["fullscreen"]
+        self.audio = AudioManager(music_volume=self.music_volume,
+                                  sfx_volume=self.sfx_volume)
+        settings_store.apply_all(self)
 
         # -- STAGE 3: title / save / load ---------------------------
         self.saves = None
