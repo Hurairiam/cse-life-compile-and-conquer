@@ -91,11 +91,18 @@ class AppContext:
         self.dialogue_portrait = None
 
         # -- STAGE 5: world -----------------------------------------
+        from ui.interaction_prompt import InteractionPrompt
+        from ui.map_screen import MapScreen
         self.level = None
-        self.level_id = ""
+        self.level_id = "campus_main"
         self.walker = None
-        self.map_screen = None
-        self.prompt = None
+        self.map_screen = MapScreen()
+        self.prompt = InteractionPrompt()
+        self.prop_trigger_counts = {}
+        self.npc_chain_index = {}
+        self.last_cell = (0, 0)
+        self.pulse = 0.0
+        self.level_error = ""
         self.camera = (0, 0)
         self.npc_frames = {}
         self.anim_time = 0.0
