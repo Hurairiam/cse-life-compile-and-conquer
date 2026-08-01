@@ -1,28 +1,74 @@
-"""Title screen. STAGE 3 replaces the body with ui/main_menu_screen.py."""
+"""Title screen — ui/main_menu_screen.py driven."""
 import pygame
-from engine.screen_manager import ScreenState
 
-BG = (22, 22, 35)
-TEXT = (200, 210, 255)
-ACCENT = (80, 130, 200)
-DIM = (70, 75, 95)
+from engine import save_bridge
+from engine.app_context import VERSION
+from engine.screen_manager import ScreenState
+from ui.main_menu_screen import (
+    MainMenuScreen, START_GAME, LOAD_GAME, SETTINGS, EXIT)
+
+__screen = None
+
+
+def __ui(ctx):
+    global __screen
+    if __screen is None:
+        __screen = MainMenuScreen(ctx.screen_w, ctx.screen_h, audio=ctx.audio)
+    return __screen
+
+
+def enter(ctx):
+    __ui(ctx)
+    ctx.play_music("main_menu")
+
+
+def __activate(ctx, index):
+    ui = __ui(ctx)
+    ui.notify_activated()
+    if index == START_GAME:
+        save_bridge.new_game(ctx)
+        # TEMPORARY (Iteration 3 only): ScreenState.MONOLOGUE has no
+        # module until Iteration 4, so START GAME goes straight to
+        # REGISTRATION for now. Iteration 4 swaps this back to
+        # ScreenState.MONOLOGUE with ctx.monologue_next = REGISTRATION.
+        ctx.go(ScreenState.REGISTRATION)
+    elif index == LOAD_GAME:
+        ctx.return_state = ScreenState.MAIN_MENU
+        ctx.go(ScreenState.LOAD_GAME)
+    elif index == SETTINGS:
+        ctx.return_state = ScreenState.MAIN_MENU
+        ctx.go(ScreenState.SETTINGS)
+    elif index == EXIT:
+        ctx.quit()
 
 
 def handle_events(ctx, events):
+    ui = __ui(ctx)
+    count = len(ui.get_button_rects())
     for event in events:
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                ctx.go(ScreenState.REGISTRATION)
-            elif event.key == pygame.K_s:
-                ctx.return_state = ScreenState.MAIN_MENU
-                ctx.go(ScreenState.SETTINGS)
+            if event.key in (pygame.K_DOWN, pygame.K_s):
+                ctx.menu_focus = (ctx.menu_focus + 1) % count
+                ctx.play_sfx("select")
+            elif event.key in (pygame.K_UP, pygame.K_w):
+                ctx.menu_focus = (ctx.menu_focus - 1) % count
+                ctx.play_sfx("select")
+            elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                __activate(ctx, ctx.menu_focus)
+                return
             elif event.key == pygame.K_ESCAPE:
                 ctx.quit()
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            index = ui.get_button_index_at(event.pos)
+            if index >= 0:
+                ctx.menu_focus = index
+                __activate(ctx, index)
+                return
+        elif event.type == pygame.MOUSEMOTION:
+            index = ui.get_button_index_at(event.pos)
+            if index >= 0 and index != ctx.menu_focus:
+                ctx.menu_focus = index
 
 
 def render(ctx, screen):
-    screen.fill(BG)
-    cx = ctx.screen_w // 2
-    rows = ((ctx.fonts["title"], "CSE Life: Compile & Conquer", TEXT, 280),
-            (ctx.fonts["body"], "An OOP Lifecycle Simulation RPG", ACCENT, 330),
-            (ctx.fonts["small"], "SPACE begin   |   S settings", DIM, 420))
+    __ui(ctx).render(screen, ctx.menu_focus, VERSION)

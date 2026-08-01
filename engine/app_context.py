@@ -63,15 +63,17 @@ class AppContext:
         settings_store.apply_all(self)
 
         # -- STAGE 3: title / save / load ---------------------------
-        self.saves = None
+        from engine.save_manager import SaveManager
+        from ui.popup import ConfirmPopup, MessagePopup
+        self.saves = SaveManager()
+        self.popup = ConfirmPopup(screen_w, screen_h)
+        self.message_popup = MessagePopup(screen_w, screen_h)
         self.main_menu = None
         self.settings_screen = None
         self.load_screen = None
-        self.popup = None              # ConfirmPopup: yes/no decisions
-        self.message_popup = None      # MessagePopup: information only
         self.menu_focus = 0
         self.load_selected = 0
-        self.return_state = None       # where SETTINGS/LOAD go back to
+        self.return_state = None
         self.pending_save_slot = None
 
         # -- STAGE 4: narrative -------------------------------------
