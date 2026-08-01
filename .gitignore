@@ -10,3 +10,9 @@ __pycache__/
 # OS & Editor specific files
 .DS_Store
 .vscode/
+_previous_uncommits
+_special_docs
+docs
+__pycache__/
+*.pyc
+.idea/
