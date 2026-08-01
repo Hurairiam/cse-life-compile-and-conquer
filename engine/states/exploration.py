@@ -1,7 +1,6 @@
 """Text placeholder. STAGE 5 replaces this with the real map."""
 import pygame
 from engine.screen_manager import ScreenState
-from content.npc_roster import NPC_ROSTER
 
 BG = (20, 24, 38)
 TEXT = (200, 210, 255)
@@ -33,15 +32,18 @@ def handle_events(ctx, events):
             index = NUM_KEYS.index(event.key)
             if index >= len(npcs):
                 continue
-            npc_id = npcs[index].get_character_id()
-            lines = ctx.npc_manager.get_dialogue_lines(npc_id, ctx.player())
-            if not lines:
-                continue
-            entry = NPC_ROSTER[npc_id]
-            portrait = None
-            if "neutral" in entry["portrait_variants"]:
-                portrait = entry["portrait_file"].format(emotion="neutral")
-            ctx.dialogue_manager.load_dialogue(lines, portrait)
+            npc = npcs[index]
+            npc_id = npc.get_character_id()
+            available = npc.is_within_availability_window(ctx.player())
+            section = "greeting" if available else "unavailable"
+            if not ctx.dialogue_manager.load_npc_dialogue(npc_id, section):
+                lines = ctx.npc_manager.get_dialogue_lines(
+                    npc_id, ctx.player())
+                if not lines:
+                    ctx.play_sfx("error")
+                    continue
+                ctx.dialogue_manager.load_dialogue(lines, None)
+            ctx.talked_npc_uids.add(npc_id)
             ctx.dialogue_return = ScreenState.EXPLORATION
             ctx.go(ScreenState.DIALOGUE)
 

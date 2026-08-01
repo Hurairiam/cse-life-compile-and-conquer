@@ -27,11 +27,9 @@ def __activate(ctx, index):
     ui.notify_activated()
     if index == START_GAME:
         save_bridge.new_game(ctx)
-        # TEMPORARY (Iteration 3 only): ScreenState.MONOLOGUE has no
-        # module until Iteration 4, so START GAME goes straight to
-        # REGISTRATION for now. Iteration 4 swaps this back to
-        # ScreenState.MONOLOGUE with ctx.monologue_next = REGISTRATION.
-        ctx.go(ScreenState.REGISTRATION)
+        from engine.states import monologue
+        monologue.start_opening(ctx, ScreenState.REGISTRATION)
+        ctx.go(ScreenState.MONOLOGUE)
     elif index == LOAD_GAME:
         ctx.return_state = ScreenState.MAIN_MENU
         ctx.go(ScreenState.LOAD_GAME)
