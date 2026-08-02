@@ -79,6 +79,9 @@ def restore(ctx, state: dict) -> bool:
     ctx.session = GameSession()
     ctx.game_clock = GameClock(ctx.session)
     ctx.registration_manager = RegistrationManager()
+    from engine.catalog_builder import SemesterCatalogBuilder
+    ctx.catalog_builder = SemesterCatalogBuilder(ctx.registration_manager)
+    ctx.reg_scroll = 0
     player = ctx.session.get_active_player()
 
     # -- semester number (advance_semester is the only mutator) --

@@ -142,11 +142,15 @@ class AppContext:
         self.selected_skill_id = ""
 
         # -- STAGE 9: registration / endgame ------------------------
-        self.catalog_builder = None
+        from engine.catalog_builder import SemesterCatalogBuilder
+        from ui.certificate_screen import CertificateScreen
+        from ui.endgame_screen import EndgameScreen
+        self.catalog_builder = SemesterCatalogBuilder(
+            self.registration_manager)
         self.reg_scroll = 0
         self.endgame_result = None
-        self.endgame_screen = None
-        self.certificate = None
+        self.endgame_screen = EndgameScreen()
+        self.certificate = CertificateScreen()
 
     # -- shortcuts ---------------------------------------------------
     def player(self):
