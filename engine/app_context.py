@@ -131,10 +131,13 @@ class AppContext:
         self.exam_focus = -1
 
         # -- STAGE 8: skills / pause / stats ------------------------
-        self.pause_menu = None
+        from ui.pause_menu import PauseMenu
+        from ui.skill_tree_screen import SkillTreeScreen
+        from ui.stats_screen import StatsScreen
+        self.pause_menu = PauseMenu(screen_w, screen_h)
         self.pause_focus = 0
-        self.skill_tree_screen = None
-        self.stats_screen = None
+        self.skill_tree_screen = SkillTreeScreen()
+        self.stats_screen = StatsScreen()
         self.skill_points = 0
         self.selected_skill_id = ""
 

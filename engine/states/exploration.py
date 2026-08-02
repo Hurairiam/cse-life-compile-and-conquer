@@ -66,7 +66,8 @@ def handle_events(ctx, events):
         if event.type != pygame.KEYDOWN:
             continue
         if event.key == pygame.K_ESCAPE:
-            ctx.quit()                       # STAGE 8 turns this into PAUSE
+            from engine import progression
+            progression.open_pause(ctx)
             return
         if event.key == pygame.K_e:
             __interact(ctx)
@@ -112,6 +113,8 @@ def update(ctx, dt):
     else:
         ctx.anim_time = 0.0
 
+    from engine import progression
+    progression.resolve_pause(ctx)
     gate_service.resolve_pending(ctx)
     __check_cell_transition(ctx)
     ctx.gate_states = gate_service.badge_states(ctx)
