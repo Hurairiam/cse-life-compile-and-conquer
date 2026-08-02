@@ -111,11 +111,13 @@ class AppContext:
         self.pending_spawn = None
 
         # -- STAGE 6: gates -----------------------------------------
-        self.gate_evaluator = None
-        self.gate_notice = None
+        from ui.gate_notice import GateNotice
+        self.gate_evaluator = None            # built lazily by gate_service
+        self.gate_notice = GateNotice(screen_w, screen_h)
         self.gate_args = {}
         self.pending_gate = None
-        self.gate_states = {}
+        self.gate_states = {}                 # {(x,y): met} for map badges
+        self.gates_cleared = set()            # cells already passed this run
 
         # -- STAGE 7: exam ------------------------------------------
         self.exam_session = None
