@@ -8,6 +8,7 @@ never promises something E will not do:
 """
 import pygame
 
+from engine import gate_service
 from engine.level_loader import LevelLoadError, load_level
 from engine.player_mover import PlayerMover
 from engine.screen_manager import ScreenState
@@ -111,33 +112,62 @@ def update(ctx, dt):
     else:
         ctx.anim_time = 0.0
 
+    gate_service.resolve_pending(ctx)
     __check_cell_transition(ctx)
+    ctx.gate_states = gate_service.badge_states(ctx)
     ctx.camera = ctx.map_screen.compute_camera(
         ctx.level, ctx.walker.get_position(), pygame.display.get_surface())
 
 
 def __check_cell_transition(ctx):
-    """React the frame the player steps into a NEW cell."""
+    """
+    React the frame the player steps into a NEW cell.
+
+    A gate that is not open bounces the player back to the cell they
+    came from, so a locked door genuinely blocks the way instead of
+    only talking about it. Fired on ENTRY only, so a held-back player
+    does not re-open the notice every frame while standing still.
+    """
     cell = ctx.walker.get_cell()
     if cell == ctx.last_cell:
         return
-    ctx.last_cell = cell
+    previous = ctx.last_cell
+
     portal = ctx.level.get_portal_at(*cell)
     if portal is not None:
+        ctx.last_cell = cell
         __travel(ctx, portal)
+        return
+
+    gate = gate_at(ctx, *cell)
+    if gate is not None and not gate_service.is_cleared(ctx, cell):
+        if gate_service.present(ctx, cell, gate):
+            ctx.walker.place(previous)
+            ctx.last_cell = previous
+            return
+
+    ctx.last_cell = cell
 
 
 # ── interaction ────────────────────────────────────────────────
 
 def gate_at(ctx, x, y):
-    """Overridden in STAGE 6. Here: whatever the level authored."""
+    """
+    The gate guarding a cell, or None. get_gate_at() already applies
+    prop-over-zone precedence and already returns None for an open
+    default gate, so no is_default() check is needed here.
+    """
+    if ctx.level is None:
+        return None
     return ctx.level.get_gate_at(x, y)
 
 
 def verb_for(ctx, cell):
     """(label, is_locked) — same precedence as __interact."""
-    if gate_at(ctx, *cell) is not None and cell not in ctx.gate_states:
-        return (LABEL_LOCKED, True)
+    gate = gate_at(ctx, *cell)
+    if gate is not None and not gate_service.is_cleared(ctx, cell):
+        outcome, _ = gate_service.classify(ctx, gate)
+        return (LABEL_LOCKED, outcome == gate_service.BLOCKED)
     npc = ctx.level.get_npc_at(*cell)
     if npc is not None and npc.get_interactable():
         return (LABEL_TALK, False)
@@ -153,8 +183,8 @@ def __interact(ctx):
         return
     cell = ctx.walker.get_facing_cell()
     gate = gate_at(ctx, *cell)
-    if gate is not None and cell not in ctx.gate_states:
-        __on_locked(ctx, cell, gate)
+    if gate is not None and not gate_service.is_cleared(ctx, cell):
+        gate_service.present(ctx, cell, gate)
         return
     npc = ctx.level.get_npc_at(*cell)
     if npc is not None and npc.get_interactable():
@@ -167,15 +197,6 @@ def __interact(ctx):
     prop = ctx.level.get_interactable_at(*cell)
     if prop is not None:
         __trigger_prop(ctx, prop)
-
-
-def __on_locked(ctx, cell, gate):
-    """Replaced in STAGE 6 by the real evaluator + gate notice."""
-    ctx.play_sfx("gate_locked")
-    ctx.message_popup.open(
-        gate.get_locked_title() or "LOCKED",
-        list(gate.get_locked_lines())[:3] or ["This way is shut."],
-        SEVERITY_WARNING)
 
 
 def __talk(ctx, npc_data):
