@@ -120,8 +120,11 @@ class AppContext:
         self.gates_cleared = set()            # cells already passed this run
 
         # -- STAGE 7: exam ------------------------------------------
+        from ui.exam_screen import ExamScreen
+        from ui.exam_result_screen import ExamResultScreen
         self.exam_session = None
-        self.exam_screen = None
+        self.exam_screen = ExamScreen()
+        # built in the state (needs audio)
         self.exam_result_screen = None
         self.exam_result = None
         self.exam_quest = None
