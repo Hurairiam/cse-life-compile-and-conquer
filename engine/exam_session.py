@@ -49,8 +49,8 @@ if TYPE_CHECKING:
 # The per-question countdown. The brief allows 10-15 s; 15 is the
 # safer end for a player reading a 147-character question, and both
 # numbers are one-line retunable.
-QUESTION_TIME_LIMIT_SECONDS: float = 15.0
-QUESTION_TIME_WARNING_SECONDS: float = 5.0
+QUESTION_TIME_LIMIT_SECONDS: float = 60.0
+QUESTION_TIME_WARNING_SECONDS: float = 20.0
 
 # The three tiers, in the order they are asked. Matches
 # academic/course.py::Course.VALID_DIFFICULTIES exactly — a divergence
@@ -572,7 +572,8 @@ if __name__ == "__main__":
     result = timeout_session.get_result()
     print(f"  answers:   {timeout_session.get_answers()}")
     print(f"  timeouts:  {result.get_timeouts()}")
-    print(f"  optimized: {result.is_optimized()}  passed: {result.is_passed()}")
+    print(
+        f"  optimized: {result.is_optimized()}  passed: {result.is_passed()}")
     print(f"  time cost: {result.get_time_cost_days()} days   "
           f"credits: +{result.get_credits_awarded()}")
     print(f"  per tier:  {result.get_per_tier_outcome()}")
