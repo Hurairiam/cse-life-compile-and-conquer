@@ -42,7 +42,7 @@
       ],
       [
         1,
-        0,
+        1,
         118,
         113,
         114,
@@ -2183,6 +2183,53 @@
       },
       "target_level_id": "lakeside",
       "target_spawn": null
+    },
+    {
+      "uid": "prop_0038",
+      "type_id": "yellowarrow",
+      "x": 21,
+      "y": 1,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0039",
+      "type_id": "yellowarrow",
+      "x": 0,
+      "y": 1,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0040",
+      "type_id": "yellowarrow",
+      "x": 1,
+      "y": 16,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
     }
   ],
   "npcs": [],
