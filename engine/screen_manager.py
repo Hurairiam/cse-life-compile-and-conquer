@@ -34,6 +34,7 @@ class ScreenState(Enum):
     STATS = auto()
     EXAM_RESULT = auto()
     CERTIFICATE = auto()
+    LECTURE = auto()    
 
 
 class ScreenManager:
