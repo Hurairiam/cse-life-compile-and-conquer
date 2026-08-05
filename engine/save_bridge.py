@@ -145,6 +145,7 @@ def restore(ctx, state: dict) -> bool:
     ctx.playtime_seconds = float(state.get("playtime_seconds", 0) or 0)
     ctx.exam = {"course_index": 0, "tier_index": 0,
                 "answers": {}, "message": None}
+    ctx.lecture = {"course_index": 0, "message": None}   
     ctx.endgame_result = None
     ctx.reg_scroll = 0
     return True
