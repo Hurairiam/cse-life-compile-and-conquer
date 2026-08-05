@@ -21,10 +21,14 @@ Layout (Spec §3.1):
     │            CANVAS                   │    280 px    │
     └─────────────────────────────────────┴──────────────┘
 
-Hotkeys (Spec §8): 1-4 tabs · LMB paint · RMB entity settings ·
+Hotkeys (Spec §8): 1-5 tabs · LMB paint · RMB entity settings ·
 X+LMB erase · MMB/arrows pan · +/- zoom · Ctrl+S/O/N ·
-Ctrl+Z/Y undo/redo · G grid · B badges · F11 fullscreen ·
-ESC close popup / clear selection.
+Ctrl+Z/Y undo/redo · G grid · B badges · R randomise variants ·
+F11 fullscreen · ESC close popup / clear selection.
+
+Tiles, props and NPCs are read from content/level_registry.py, which
+tops itself up from whatever is sitting in assets/ — so new art shows
+up in the palette on the next launch with no edit here.
 ─────────────────────────────────────────────────────────────
 """
 
@@ -55,8 +59,12 @@ from content.level_registry import (
     get_npc_type_ids,
     get_prop_type_ids,
     get_tile_def,
+    get_tile_family,
     get_tile_indices,
     get_tile_layer,
+    get_tile_variants,
+    has_tile_variants,
+    pick_tile_variant,
 )
 from content.level_schema import (
     LEVELS_DIR,
@@ -119,7 +127,12 @@ TAB_COLUMNS = 3          # 3 tabs on the first row, the rest on the second
 TAB_ROWS = (len(TAB_NAMES) + TAB_COLUMNS - 1) // TAB_COLUMNS
 PANEL_PAD = 10
 SECTION_Y = TAB_Y + TAB_ROWS * (TAB_H + 4) + 12
-FOOTER_H = 76
+# Four label lines plus the panel status line beneath them: an
+# optional hovered-item name, then walkable / layer / variants. Was 76
+# when it held two, and every growth since has been because a line
+# printed straight through "ZOOM ... GRID ON" — re-measure before
+# adding a fifth.
+FOOTER_H = 106
 
 # Pixel size of one cell on screen. Every step is an integer multiple
 # of the 16 px source art, so the pixels stay crisp (Spec §3.3); 48 is
@@ -132,6 +145,10 @@ UNDO_LIMIT = 60          # Spec §3.3 asks for >= 50
 TOOL_NONE = ""
 TOOL_ERASER = "eraser"
 ERASER_KEY = "__eraser__"
+
+# The RANDOMISE strip sits above the palette on the TILES tab only, so
+# the other tabs keep every pixel of grid they had before.
+RANDOM_ROW_H = 44
 
 
 # ─────────────────────────────────────────────────────────────
@@ -236,6 +253,13 @@ class LevelEditorApp:
         self.__spawn_arm: bool = False
         self.__hover_cell: Optional[Tuple[int, int]] = None
         self.__editing_uid: str = ""
+
+        # Variant randomising. `__stroke_cells` remembers what the
+        # current drag has already painted: without it, dragging back
+        # over a cell would re-roll it, so a slow hand would visibly
+        # shimmer the tiles it had just placed.
+        self.__randomise: bool = False
+        self.__stroke_cells: set = set()
 
         # zone tool (F6): the in-progress drag, and which zone the
         # gate popup is currently editing
@@ -397,10 +421,45 @@ class LevelEditorApp:
     # ─────────────────────────────────────────────────────────
 
     def __palette_rect(self) -> pygame.Rect:
-        """Where the palette grid lives inside the side panel."""
-        return pygame.Rect(SIDE_PANEL.x + PANEL_PAD, SECTION_Y,
+        """
+        Where the palette grid lives inside the side panel.
+
+        The TILES tab gives up its top strip to the RANDOMISE toggle;
+        every other tab keeps the full height it always had.
+        """
+        top = SECTION_Y + (RANDOM_ROW_H if self.__tab == TAB_TILES else 0)
+        return pygame.Rect(SIDE_PANEL.x + PANEL_PAD, top,
                            SIDE_PANEL.w - PANEL_PAD * 2,
-                           SIDE_PANEL.bottom - SECTION_Y - FOOTER_H)
+                           SIDE_PANEL.bottom - top - FOOTER_H)
+
+    def __random_toggle_rect(self) -> pygame.Rect:
+        """The RANDOMISE VARIANTS button above the TILES palette."""
+        return pygame.Rect(SIDE_PANEL.x + PANEL_PAD, SECTION_Y + 16,
+                           SIDE_PANEL.w - PANEL_PAD * 2, 24)
+
+    def __toggle_randomise(self) -> None:
+        """
+        Flip variant randomising and say what it will actually do.
+
+        The status line names the family because "RANDOMISE: ON" alone
+        is a lie on a tile that has no siblings — road_0 with the
+        toggle on still paints road_0 every time, and the author
+        deserves to know that before they wonder why.
+        """
+        self.__randomise = not self.__randomise
+        if not self.__randomise:
+            self.__set_status("Randomise off")
+            return
+        if self.__selection_kind != "tile":
+            self.__set_status("Randomise on — pick a tile with variants")
+            return
+        index = int(self.__selection_key)
+        family = get_tile_family(index)
+        count = len(get_tile_variants(index))
+        if count > 1:
+            self.__set_status(f"Randomise on — {family} x{count}")
+        else:
+            self.__set_status("Randomise on — this tile has no variants")
 
     def __rebuild_palette(self) -> None:
         """Fill the palette with the active tab's registry entries."""
@@ -597,6 +656,8 @@ class LevelEditorApp:
             return
         if self.__selection_kind == "tile":
             index = int(self.__selection_key)
+            if self.__randomise:
+                index = pick_tile_variant(index)
             self.__level.set_tile(get_tile_layer(index), x, y, index)
         elif self.__selection_kind == "prop":
             self.__level.add_prop(self.__selection_key, x, y)
@@ -779,6 +840,7 @@ class LevelEditorApp:
         if self.__tab == TAB_ZONES:
             self.__begin_zone_drag(cell)
             return
+        self.__stroke_cells = {cell}
         if self.__is_erasing():
             self.__record()
             self.__painting = True
@@ -790,13 +852,27 @@ class LevelEditorApp:
             self.__apply_tool(cell)
 
     def __continue_stroke(self, cell: Tuple[int, int]) -> None:
-        """Keep painting while the button is held."""
+        """
+        Keep painting while the button is held.
+
+        A cell already PAINTED by this stroke is skipped. Repainting it
+        is a no-op for a plain tile, but with randomising on it would
+        roll a fresh variant every time the cursor wandered back — the
+        tiles under your hand would flicker as you drew.
+
+        The eraser is deliberately left out of that guard: it strips
+        one layer per pass (NPC > prop > overlay > ground), so holding
+        it over a cell to peel the next layer is how it already works.
+        """
         if not self.__painting:
             return
         if self.__is_erasing():
             self.__erase(cell)
-        else:
-            self.__apply_tool(cell)
+            return
+        if cell in self.__stroke_cells:
+            return
+        self.__stroke_cells.add(cell)
+        self.__apply_tool(cell)
 
     def __undo_step(self) -> None:
         """Ctrl+Z."""
@@ -914,6 +990,8 @@ class LevelEditorApp:
             self.__show_grid = not self.__show_grid
         elif event.key == pygame.K_b:
             self.__show_badges = not self.__show_badges
+        elif event.key == pygame.K_r:
+            self.__toggle_randomise()
 
     def __handle_mouse_down(self, event: pygame.event.Event) -> None:
         """Clicks on the top bar, the side panel or the canvas."""
@@ -958,6 +1036,10 @@ class LevelEditorApp:
         if self.__tab == TAB_ZONES:
             self.__handle_zone_panel_click(pos)
             return
+        if self.__tab == TAB_TILES and \
+                self.__random_toggle_rect().collidepoint(pos):
+            self.__toggle_randomise()
+            return
         item = self.__palette.item_at(pos)
         if item is not None:
             self.__select(item)
@@ -990,10 +1072,13 @@ class LevelEditorApp:
             self.__continue_stroke(self.__hover_cell)
 
     def __set_tab(self, index: int) -> None:
-        """Switch side-panel section (hotkeys 1-4)."""
+        """Switch side-panel section (hotkeys 1-5)."""
         if not 0 <= index < len(TAB_NAMES):
             return
         self.__tab = index
+        # The TILES tab is shorter than the others (the RANDOMISE
+        # strip), so the grid has to be re-measured on every switch.
+        self.__palette.set_rect(self.__palette_rect())
         self.__rebuild_palette()
 
     def __open_entity_settings(self, cell: Tuple[int, int]) -> None:
@@ -1182,11 +1267,18 @@ class LevelEditorApp:
             if not (first_x <= x < last_x and first_y <= y < last_y):
                 continue
             rect = self.__cell_screen_rect(x, y)
-            sprite = self.__assets.get_prop(prop.get_type_id(), cell_px)
-            if sprite is not None:
-                surface.blit(sprite, rect.topleft)
+            # Portals are invisible in game, so this marker is the ONLY
+            # place they can be seen. It never falls back to the generic
+            # missing-art square: "portal with no art" is the normal,
+            # permanent state, not something for an artist to fix.
+            if prop.is_portal():
+                self.__render_portal_marker(prop, rect)
             else:
-                th.draw_placeholder(surface, rect, prop.get_type_id())
+                sprite = self.__assets.get_prop(prop.get_type_id(), cell_px)
+                if sprite is not None:
+                    surface.blit(sprite, rect.topleft)
+                else:
+                    th.draw_placeholder(surface, rect, prop.get_type_id())
             if self.__show_badges:
                 self.__render_prop_badges(prop, rect)
 
@@ -1202,6 +1294,56 @@ class LevelEditorApp:
                 th.draw_placeholder(surface, rect, npc.get_type_id())
             if self.__show_badges:
                 self.__render_npc_badges(npc, rect)
+
+    def __render_portal_marker(self, prop, rect: pygame.Rect) -> None:
+        """
+        Editor-only doorway marker for a portal, with its destination.
+
+        Drawn as an arch rather than a filled square so it reads as a
+        way THROUGH at a glance and does not hide the tiles it stands
+        on — an author needs to see the doorway they painted underneath.
+
+        Amber when the target level is set, red when it is not: a
+        portal with no target is the one authoring mistake that leaves
+        a player stuck, and the validator only warns about it.
+        """
+        surface = self.__window
+        target = prop.get_target_level_id()
+        accent = th.BAR_AMBER if target else th.BAR_RED
+
+        inset = max(2, rect.w // 8)
+        arch = pygame.Rect(rect.x + inset, rect.y + inset,
+                           rect.w - inset * 2, rect.h - inset)
+        thickness = max(2, rect.w // 12)
+        pygame.draw.rect(surface, th.TITLE_SLATE, arch, thickness)
+        pygame.draw.rect(surface, accent, arch.inflate(-thickness * 2,
+                                                       -thickness * 2))
+
+        # A chevron pointing into the doorway — the "you go this way"
+        # cue that tells a portal apart from a decorative arch.
+        cx = arch.centerx
+        top = arch.y + thickness + max(2, rect.h // 10)
+        size = max(3, rect.w // 6)
+        pygame.draw.polygon(surface, th.TITLE_SLATE,
+                            [(cx - size, top), (cx + size, top),
+                             (cx, top + size)])
+
+        # The destination is drawn on hover, on its own plate BELOW the
+        # cell rather than inside it. A level id does not fit in a cell
+        # at any zoom the editor offers — "campus_lab" needs 100 px and
+        # the largest cell is 96, so an in-cell label truncated to
+        # "CAMPUS..." at best and "C..." at the default zoom.
+        if self.__hover_cell != prop.get_position():
+            return
+        font = th.load_font(th.SIZE_LABEL)
+        text = f"-> {target}".upper() if target else "NO TARGET"
+        width = font.size(text)[0] + 10
+        plate = pygame.Rect(rect.centerx - width // 2, rect.bottom + 2,
+                            width, font.get_height() + 4)
+        plate.clamp_ip(CANVAS)
+        th.draw_panel(surface, plate, th.CARD_TAN, th.BORDER_ROW)
+        th.draw_text_centered(surface, font, text, plate,
+                              th.TITLE_SLATE if target else th.BAR_RED)
 
     def __render_prop_badges(self, prop, rect: pygame.Rect) -> None:
         """
@@ -1452,12 +1594,61 @@ class LevelEditorApp:
             th.draw_button(surface, self.__zone_delete_rect(), "DELETE ZONE",
                            th.BTN_CANCEL, th.load_font(th.SIZE_LABEL))
 
+    def __render_random_toggle(self) -> None:
+        """
+        The RANDOMISE VARIANTS switch above the TILES palette.
+
+        Drawn amber when live and tan when not, matching the tab row,
+        so the one piece of editor state that silently changes what a
+        click paints is never invisible.
+        """
+        surface = self.__window
+        label = th.load_font(th.SIZE_LABEL)
+        x = SIDE_PANEL.x + PANEL_PAD
+        th.draw_text(surface, label, "VARIANT BRUSH", (x, SECTION_Y),
+                     th.CREDIT_HL)
+
+        rect = self.__random_toggle_rect()
+        th.draw_panel(surface, rect,
+                      th.BAR_AMBER if self.__randomise else th.HEADER_TAN,
+                      th.BORDER_ROW)
+        state = "ON" if self.__randomise else "OFF"
+        th.draw_text_centered(surface, label, f"RANDOMISE: {state}  [R]",
+                              rect, th.TEXT_COFFEE)
+
+    def __render_hover_name(self, x: int, y: int,
+                            font: pygame.font.Font) -> bool:
+        """
+        Full name of the palette cell under the cursor. True if drawn.
+
+        The cells are 4-to-a-row and the labels under them are cut to
+        fit, which was harmless with seven tiles and useless with
+        thirty-six: nine of the props read "bo..." and three read
+        "so...". Rather than redesign the grid, the one item you are
+        actually pointing at gets its whole name spelled out here.
+        """
+        item = self.__palette.item_at(pygame.mouse.get_pos())
+        if item is None or item.get_kind() == TOOL_ERASER:
+            return False
+        th.draw_text(self.__window, font,
+                     th.truncate(font, item.get_label().upper(),
+                                 SIDE_PANEL.w - PANEL_PAD * 2),
+                     (x, y), th.ROW_BLUE)
+        return True
+
     def __render_palette_section(self) -> None:
         """The palette grid plus the selected item's property footer."""
+        if self.__tab == TAB_TILES:
+            self.__render_random_toggle()
         self.__palette.render(self.__window, self.__selection_key or None,
                               self.__palette_sprite)
 
         footer_y = SIDE_PANEL.bottom - FOOTER_H + 4
+        # Hovering beats the static help text: it is the only way to
+        # tell two same-prefix entries apart, and it is transient.
+        if self.__render_hover_name(SIDE_PANEL.x + PANEL_PAD, footer_y,
+                                    th.load_font(th.SIZE_LABEL)):
+            footer_y += 16
         x = SIDE_PANEL.x + PANEL_PAD
         font = th.load_font(th.SIZE_LABEL)
         if self.__selection_kind == TOOL_ERASER:
@@ -1466,19 +1657,43 @@ class LevelEditorApp:
             th.draw_text(self.__window, font, "NPC > PROP > OVERLAY > GROUND",
                          (x, footer_y + 14), th.STAT_BROWN)
         elif self.__selection_kind == "tile":
-            entry = get_tile_def(int(self.__selection_key))
+            index = int(self.__selection_key)
+            entry = get_tile_def(index)
             walkable = "yes" if entry and entry["walkable"] else "no"
             layer = entry["layer"] if entry else "-"
             th.draw_text(self.__window, font, f"WALKABLE: {walkable}",
                          (x, footer_y), th.CREDIT_HL)
             th.draw_text(self.__window, font, f"PAINTS INTO: {layer}",
                          (x, footer_y + 14), th.STAT_BROWN)
+            self.__render_variant_line(x, footer_y + 28, font, index)
         elif self.__selection_kind in ("prop", "npc"):
             th.draw_text(self.__window, font, "RIGHT-CLICK A PLACED",
                          (x, footer_y), th.CREDIT_HL)
             th.draw_text(self.__window, font,
                          f"{self.__selection_kind.upper()} TO EDIT IT",
                          (x, footer_y + 14), th.STAT_BROWN)
+
+    def __render_variant_line(self, x: int, y: int, font: pygame.font.Font,
+                              tile_index: int) -> None:
+        """
+        The third footer line: what randomising will do to THIS tile.
+
+        Green while it is actually going to vary the brush, brown when
+        the toggle is on but the tile has no siblings to vary with —
+        the difference matters and is otherwise invisible.
+        """
+        family = get_tile_family(tile_index)
+        count = len(get_tile_variants(tile_index))
+        if not has_tile_variants(tile_index):
+            text = "NO VARIANTS"
+            colour = th.STAT_BROWN
+        elif self.__randomise:
+            text = f"RANDOM FROM {family.upper()} x{count}"
+            colour = th.ROW_GREEN
+        else:
+            text = f"VARIANTS: {family} x{count}"
+            colour = th.STAT_BROWN
+        th.draw_text(self.__window, font, text, (x, y), colour)
 
     def __render_settings_section(self) -> None:
         """The level settings form (Spec §4.4)."""

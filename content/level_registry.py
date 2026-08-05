@@ -30,7 +30,15 @@ Guide PLACEHOLDER square (§5.2 placeholder protocol).
 from __future__ import annotations
 
 import os
+import random
 from typing import Any, Dict, List, Optional
+
+from content.asset_scanner import (
+    family_of_path,
+    scan_npcs,
+    scan_props,
+    scan_tiles,
+)
 
 # ─────────────────────────────────────────────────────────────
 # PATHS
@@ -265,6 +273,129 @@ NPC_REGISTRY: Dict[str, Dict[str, Any]] = {
 }
 
 # ─────────────────────────────────────────────────────────────
+# ASSET AUTO-DISCOVERY
+# ─────────────────────────────────────────────────────────────
+# Everything above is CURATED: hand-written names, hand-chosen
+# walkability, hand-chosen indices. Everything found in assets/ that
+# those entries do not already claim is folded in here, so dropping a
+# PNG into assets/tiles, assets/props or assets/npcs is enough to make
+# it paintable — no Python edit, no restart of anything but the editor.
+#
+# Curated entries ALWAYS win. Discovery only ever ADDS keys; it never
+# rewrites one, so "grass" stays "grass" and wall_0 stays unwalkable.
+# Discovered entries carry "discovered": True so the editor can label
+# them and the tests can tell the two sources apart.
+#
+# Discovered tiles take their index from content/tile_ids.json, which
+# pins a name to a number permanently. Levels store those ints, so an
+# index that moved between runs would silently repaint finished maps.
+# ─────────────────────────────────────────────────────────────
+
+
+def _merge_discovered() -> None:
+    """
+    Top the three registries up from assets/. Run once at import.
+
+    Deliberately additive and deliberately silent: a missing assets
+    folder, an unreadable PNG or a malformed override file all mean
+    "nothing extra to add", never an exception. The editor opening is
+    worth more than a strict scan.
+    """
+    claimed_tile_paths = {str(entry.get("sheet", ""))
+                          for entry in TILE_REGISTRY.values()}
+    for index, entry in scan_tiles(claimed_tile_paths,
+                                   list(TILE_REGISTRY)).items():
+        TILE_REGISTRY.setdefault(index, entry)
+
+    claimed_prop_paths = {str(entry.get("sheet", ""))
+                          for entry in PROP_REGISTRY.values()}
+    for type_id, entry in scan_props(claimed_prop_paths).items():
+        PROP_REGISTRY.setdefault(type_id, entry)
+
+    for type_id, entry in scan_npcs(set(NPC_REGISTRY)).items():
+        NPC_REGISTRY.setdefault(type_id, entry)
+
+
+_merge_discovered()
+
+
+# ─────────────────────────────────────────────────────────────
+# TILE VARIANT FAMILIES
+# ─────────────────────────────────────────────────────────────
+# Art almost never ships one grass. It ships grass_0, grass_1,
+# grass_2 — the same surface with the blades in different places, so a
+# painted field does not read as wallpaper. The editor's RANDOM toggle
+# turns that folder convention into a brush.
+#
+# A family is derived from the SHEET FILENAME, not the display name:
+# the curated entries are called "grass" and "grass_alt" and share no
+# name prefix, but both point at grass_N.png and so are one family.
+# A tile whose file carries no _<digits> suffix belongs to no family
+# and paints as itself, randomise or not.
+# ─────────────────────────────────────────────────────────────
+
+
+def get_tile_family(tile_index: int) -> str:
+    """The variant family of a tile, or "" when it stands alone."""
+    entry = TILE_REGISTRY.get(tile_index)
+    if entry is None:
+        return ""
+    return family_of_path(str(entry.get("sheet", "")))
+
+
+def get_tile_variants(tile_index: int) -> List[int]:
+    """
+    Every tile index sharing this tile's family, in registry order.
+
+    Always includes the tile itself, so callers can paint from the
+    result unconditionally. A tile with no family returns just itself,
+    which is what makes randomised painting a safe no-op on loners.
+    """
+    family = get_tile_family(tile_index)
+    if not family:
+        return [tile_index]
+    return sorted(index for index in TILE_REGISTRY
+                  if get_tile_family(index) == family)
+
+
+def has_tile_variants(tile_index: int) -> bool:
+    """True when this tile has at least one sibling to randomise with."""
+    return len(get_tile_variants(tile_index)) > 1
+
+
+def pick_tile_variant(tile_index: int,
+                      rng: Optional[random.Random] = None) -> int:
+    """
+    One member of this tile's family, chosen at random.
+
+    Every variant is equally likely, including the one that was asked
+    for — weighting the selection toward the "base" tile would defeat
+    the point, which is that a painted field should not read as a
+    repeating pattern.
+    """
+    variants = get_tile_variants(tile_index)
+    if len(variants) < 2:
+        return tile_index
+    return (rng or random).choice(variants)
+
+
+def get_tile_families() -> Dict[str, List[int]]:
+    """Every family with more than one member, for tooling and tests."""
+    families: Dict[str, List[int]] = {}
+    for index in TILE_REGISTRY:
+        family = get_tile_family(index)
+        if family:
+            families.setdefault(family, []).append(index)
+    return {name: sorted(members)
+            for name, members in families.items() if len(members) > 1}
+
+
+def is_discovered_tile(tile_index: int) -> bool:
+    """True when this tile came from assets/ rather than from this file."""
+    return bool((TILE_REGISTRY.get(tile_index) or {}).get("discovered"))
+
+
+# ─────────────────────────────────────────────────────────────
 # NPC ROSTER BINDING  (Feature 6, phase F5)
 # ─────────────────────────────────────────────────────────────
 # content/npc_roster.py is the CANONICAL source of NPC ids and of
@@ -273,10 +404,13 @@ NPC_REGISTRY: Dict[str, Dict[str, Any]] = {
 # Ayesha moves an NPC from semester 5 to semester 6, the editor's
 # gate default follows with no edit to this file.
 #
-# Only ids whose art exists today are registered, so the editor
-# palette never offers a broken entry. The other five roster
-# members are listed below, commented out, ready to uncomment the
-# moment their sprites land.
+# All seven roster members are mapped. Five of them (purnno, rafi,
+# zayan, kabir, rahman) are NOT hand-written in NPC_REGISTRY above —
+# they are picked up by the asset scanner from their npc_<id>_idle.png
+# sheets. The mapping still has to be listed here, because a scanned
+# NPC knows its art but not which roster entry it is, and without that
+# link every one of them would default to min_semester 1 instead of
+# the semester Ayesha actually gave them.
 # ─────────────────────────────────────────────────────────────
 
 _ROSTER_ID_BY_TYPE: Dict[str, str] = {
@@ -287,23 +421,15 @@ _ROSTER_ID_BY_TYPE: Dict[str, str] = {
     "rafi": "overachiever_classmate_rafi",
     "rahman": "professor_rahman",
     "purnno": "warm_classmate_purnno",
-    # Waiting on art before they join NPC_REGISTRY above:
-    # [NPC PLACEHOLDER: assets/npcs/npc_purnno_idle.png -- 192x48 idle strip]
-    # "purnno": "warm_classmate_purnno",
-    # [NPC PLACEHOLDER: assets/npcs/npc_rafi_idle.png -- 192x48 idle strip]
-    # "rafi": "overachiever_classmate_rafi",
-    # [NPC PLACEHOLDER: assets/npcs/npc_zayan_idle.png -- 192x48 idle strip]
-    # "zayan": "struggling_friend_zayan",
-    # [NPC PLACEHOLDER: assets/npcs/npc_kabir_idle.png -- 192x48 idle strip]
-    # "kabir": "late_bloomer_kabir",
-    # [NPC PLACEHOLDER: assets/npcs/npc_rahman_idle.png -- 192x48 idle strip]
-    # "rahman": "professor_rahman",
 }
 
 # Used only if content/npc_roster.py cannot be imported, so this
 # module stays usable standalone. The real numbers come from the
 # roster; these mirror it and are asserted equal by the tests.
-_MIN_SEMESTER_FALLBACK: Dict[str, int] = {"hoque": 5, "roya": 4,}
+_MIN_SEMESTER_FALLBACK: Dict[str, int] = {
+    "purnno": 1, "rafi": 1, "rahman": 1, "zayan": 2, "kabir": 3,
+    "roya": 4, "hoque": 5,
+}
 
 MIN_SEMESTER_DEFAULT: int = 1
 
@@ -348,8 +474,45 @@ ON_COMPLETE_DEFAULT: str = "loop_last"
 # PROP INTERACTION BOUNDS  (Spec §5.3)
 # ─────────────────────────────────────────────────────────────
 
-INTERACTION_KINDS: tuple = ("none", "money", "skill")
+INTERACTION_KINDS: tuple = ("none", "money", "skill", "menu")
 INTERACTION_KIND_DEFAULT: str = "none"
+
+# ─────────────────────────────────────────────────────────────
+# MENU REGISTRY
+# ─────────────────────────────────────────────────────────────
+# The screens a "menu" prop may open. A noticeboard opens the
+# registration screen, a terminal opens the skill tree, a results
+# board opens the exam result — the prop is the door, this is the
+# list of rooms behind it.
+#
+# Hand-written on purpose. Deriving it by importing ui/ would drag
+# pygame into a module the schema and the tests load with no display,
+# and scanning ui/*.py filenames cannot tell a SCREEN from a widget
+# (ui/popup.py, ui/hud.py and ui/ui_widgets.py are not destinations).
+# One line per screen is the honest cost.
+#
+# Adding a screen: add its id here, then handle that id wherever
+# menu props are dispatched (play_sandbox.__open_menu today). The
+# editor's dropdown needs no edit — it reads this dict.
+#
+# `state` names the engine/screen_manager.py ScreenState where one
+# exists; screens routed some other way leave it "" and are opened
+# directly by the dispatcher.
+# ─────────────────────────────────────────────────────────────
+
+MENU_REGISTRY: Dict[str, Dict[str, Any]] = {
+    "registration": {"name": "Course Registration", "state": "REGISTRATION"},
+    "skill_tree":   {"name": "Skill Tree",          "state": "SKILL_TREE"},
+    "stats":        {"name": "Player Stats",        "state": "STATS"},
+    "certificate":  {"name": "Certifications",      "state": "CERTIFICATE"},
+    "exam":         {"name": "Exam",                "state": "EXAM"},
+    "exam_result":  {"name": "Exam Results",        "state": "EXAM_RESULT"},
+    "settings":     {"name": "Settings",            "state": "SETTINGS"},
+    "load_game":    {"name": "Load Game",           "state": "LOAD_GAME"},
+    "main_menu":    {"name": "Main Menu",           "state": "MAIN_MENU"},
+}
+
+MENU_ID_DEFAULT: str = "registration"
 
 MONEY_MIN: float = 50.0
 MONEY_MAX: float = 1000.0
@@ -557,3 +720,34 @@ def get_npc_display_name(type_id: str) -> str:
     if entry is None:
         return type_id.upper()
     return str(entry.get("name", type_id))
+
+
+def get_menu_def(menu_id: str) -> Optional[Dict[str, Any]]:
+    """Return the MENU_REGISTRY entry, or None for an unknown id."""
+    return MENU_REGISTRY.get(menu_id)
+
+
+def get_menu_ids() -> List[str]:
+    """Menu ids in stable registry order — the editor's dropdown."""
+    return list(MENU_REGISTRY.keys())
+
+
+def get_menu_display_name(menu_id: str) -> str:
+    """Human-facing menu label, falling back to the raw id."""
+    entry = MENU_REGISTRY.get(menu_id)
+    if entry is None:
+        return menu_id
+    return str(entry.get("name", menu_id))
+
+
+def get_menu_state(menu_id: str) -> str:
+    """
+    The ScreenState name this menu maps to, or "".
+
+    Read by the runtime dispatcher; screens with no state of their own
+    are opened directly instead of routed.
+    """
+    entry = MENU_REGISTRY.get(menu_id)
+    if entry is None:
+        return ""
+    return str(entry.get("state", ""))

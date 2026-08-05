@@ -8,7 +8,7 @@ never promises something E will not do:
 """
 import pygame
 
-from engine import gate_service
+from engine import gate_service, menu_prop, soundtrack
 from engine.level_loader import LevelLoadError, load_level
 from engine.player_mover import PlayerMover
 from engine.screen_manager import ScreenState
@@ -50,7 +50,7 @@ def enter(ctx):
                                ["Could not open '%s'." % ctx.level_id,
                                 ctx.level_error], SEVERITY_WARNING)
         return
-    ctx.play_music(ctx.level.get_music() or "campus")
+    soundtrack.apply_for_level(ctx)
     ctx.play_ambient(ctx.level.get_ambient() or "day")
 
 
@@ -220,6 +220,10 @@ def __talk(ctx, npc_data):
 
 
 def __trigger_prop(ctx, prop):
+    # Menu props open a screen instead of paying out, and are checked
+    # first so the per-semester trigger cap never applies to them.
+    if menu_prop.trigger(ctx, prop):
+        return
     key = "%s:%s" % (ctx.level_id, prop.get_uid())
     used = ctx.prop_trigger_counts.get(key, 0)
     allowed = prop.get_triggers_per_semester()
@@ -276,7 +280,9 @@ def __travel(ctx, portal):
     ctx.walker.place(spawn)
     ctx.last_cell = ctx.walker.get_cell()
     ctx.play_sfx("page_turn")
-    ctx.play_music(level.get_music() or "campus")
+    # Portal travel keeps us in EXPLORATION, so the router's per-screen
+    # music hook never fires — the new level's track is set here.
+    soundtrack.apply_for_level(ctx)
     ctx.play_ambient(level.get_ambient() or "day")
 
 

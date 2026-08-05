@@ -10,6 +10,11 @@ import pygame
 from engine.screen_manager import ScreenState
 from ui.registration_screen import RegistrationScreen
 
+# Where a confirmed registration drops the player. Their own room is
+# the fixed start of every term (owner ruling), so this is not read
+# from the save or from whatever map was last open.
+START_LEVEL_ID = "player_room"
+
 __screen = None
 
 
@@ -29,7 +34,8 @@ def __catalog(ctx):
 def enter(ctx):
     __ui(ctx)
     ctx.reg_scroll = 0
-    ctx.play_music("main_menu")
+    # Music is set centrally by engine/soundtrack.py via the router:
+    # every screen takes the "menu" track except EXAM, which is silent.
     unmatched = ctx.catalog_builder.get_unmatched_backlog_codes()
     if unmatched:
         print("[registration] backlog codes not offered this term:", unmatched)
@@ -57,6 +63,13 @@ def __confirm(ctx, courses):
     # Baseline for next term's NEW tag: exactly once per semester.
     ctx.catalog_builder.snapshot(courses)
     ctx.play_sfx("confirm")
+    # Every term starts in the player's own room (owner ruling). The
+    # loaded level and any pending spawn are cleared as well, or
+    # exploration would keep whatever map it was last showing and drop
+    # the player on a cell that belongs to a different level.
+    ctx.level_id = START_LEVEL_ID
+    ctx.level = None
+    ctx.pending_spawn = None
     ctx.go(ScreenState.EXPLORATION)
 
 

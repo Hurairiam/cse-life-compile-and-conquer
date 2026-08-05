@@ -17,6 +17,7 @@ import importlib
 
 import pygame
 
+from engine import soundtrack
 from engine.screen_manager import ScreenState
 
 # HUD is hidden on these. Everything else shows it.
@@ -62,6 +63,9 @@ class StateRouter:
         self.__call(self.__active, "exit")
         self.__active = state
         self.__call(state, "enter")
+        # One place decides the music for every screen, so the thirteen
+        # state modules do not each need their own play_music line.
+        soundtrack.apply_for_state(self.__ctx, state)
 
     def __modals(self):
         """Open modals, highest priority first. None entries skipped."""
@@ -109,6 +113,8 @@ class StateRouter:
                 wallet=ctx.player().get_wallet_balance(),
                 semester=semester.get_semester_number(),
                 credits=ctx.player().get_accumulated_credits(),
+                location=(ctx.level.get_level_name()
+                          if ctx.level is not None else ""),
             )
         if ctx.pause_menu is not None and ctx.pause_menu.is_open():
             ctx.pause_menu.render(screen, ctx.pause_focus)

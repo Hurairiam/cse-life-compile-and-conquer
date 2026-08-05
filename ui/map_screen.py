@@ -427,15 +427,24 @@ class MapScreen:
                    if first_col <= p.get_position()[0] <= last_col
                    and first_row <= p.get_position()[1] <= last_row]
         for prop in sorted(visible, key=lambda p: p.get_position()[1]):
+            # Portals draw NOTHING in game (owner ruling). The doorway
+            # is painted into the tiles; the portal prop is only the
+            # trigger standing on top of it, so giving it a sprite --
+            # or the missing-art square it used to get -- would put a
+            # block in the middle of a finished doorway. It still
+            # works: the target is level data, not art.
+            #
+            # This is the one place a missing sprite is NOT a
+            # placeholder case. tools/level_editor.py draws a labelled
+            # marker instead, so an author can still see every portal.
+            if prop.is_portal():
+                continue
             x, y = prop.get_position()
             rect = self.get_screen_rect_for_cell(x, y, camera)
             sprite = self.__prop_sprite(prop.get_type_id())
             if sprite is not None:
                 screen.blit(sprite, rect.topleft)
             else:
-                # [PROP PLACEHOLDER: assets/props/portal_0.png -- 16x16
-                #  doorway / arch marker. The portal still works: the
-                #  target level is level data, not art (§5.2).]
                 pygame.draw.rect(screen, PLACEHOLDER, rect)
 
     def __draw_npcs(self, screen: pygame.Surface, level: Any,
