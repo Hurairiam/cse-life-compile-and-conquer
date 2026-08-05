@@ -27,6 +27,13 @@ class ScreenState(Enum):
     EXAM = auto()
     DIALOGUE = auto()
     ENDGAME = auto()
+    MONOLOGUE = auto()
+    SETTINGS = auto()
+    LOAD_GAME = auto()
+    SKILL_TREE = auto()
+    STATS = auto()
+    EXAM_RESULT = auto()
+    CERTIFICATE = auto()
 
 
 class ScreenManager:
