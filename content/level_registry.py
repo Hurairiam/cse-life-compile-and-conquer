@@ -197,6 +197,71 @@ NPC_REGISTRY: Dict[str, Dict[str, Any]] = {
         },
         "default_emotion": "neutral",
     },
+    "kabir": {
+        "name": "Kabir",
+        "idle_sheet": "assets/npcs/npc_kabir_idle.png",
+        "frames": 4,
+        "cell_px": 48,
+        "editor_icon": "assets/npcs/npc_kabir_level_editor.png",
+        "portraits": {
+            "neutral": "assets/npcs/npc_kabir_neutral.png",
+            "happy":   "assets/npcs/npc_kabir_happy.png",
+            "serious": "assets/npcs/npc_kabir_serious.png",
+        },
+        "default_emotion": "neutral",
+    },
+    "zayan": {
+        "name": "Zayan",
+        "idle_sheet": "assets/npcs/npc_zayan_idle.png",
+        "frames": 4,
+        "cell_px": 48,
+        "editor_icon": "assets/npcs/npc_zayan_level_editor.png",
+        "portraits": {
+            "neutral": "assets/npcs/npc_zayan_neutral.png",
+            "happy":   "assets/npcs/npc_zayan_happy.png",
+            "serious": "assets/npcs/npc_zayan_serious.png",
+        },
+        "default_emotion": "neutral",
+    },
+    "purnno": {
+        "name": "Purnno",
+        "idle_sheet": "assets/npcs/npc_purnno_idle.png",
+        "frames": 4,
+        "cell_px": 48,
+        "editor_icon": "assets/npcs/npc_purnno_level_editor.png",
+        "portraits": {
+            "neutral": "assets/npcs/npc_purnno_neutral.png",
+            "happy":   "assets/npcs/npc_purnno_happy.png",
+            "serious": "assets/npcs/npc_purnno_serious.png",
+        },
+        "default_emotion": "neutral",
+    },
+    "rafi": {
+        "name": "Rafi",
+        "idle_sheet": "assets/npcs/npc_rafi_idle.png",
+        "frames": 4,
+        "cell_px": 48,
+        "editor_icon": "assets/npcs/npc_rafi_level_editor.png",
+        "portraits": {
+            "neutral": "assets/npcs/npc_rafi_neutral.png",
+            "happy":   "assets/npcs/npc_rafi_happy.png",
+            "serious": "assets/npcs/npc_rafi_serious.png",
+        },
+        "default_emotion": "neutral",
+    },
+    "rahman": {
+        "name": "Rahman",
+        "idle_sheet": "assets/npcs/npc_rahman_idle.png",
+        "frames": 4,
+        "cell_px": 48,
+        "editor_icon": "assets/npcs/npc_rahman_level_editor.png",
+        "portraits": {
+            "neutral": "assets/npcs/npc_rahman_neutral.png",
+            "happy":   "assets/npcs/npc_rahman_happy.png",
+            "serious": "assets/npcs/npc_rahman_serious.png",
+        },
+        "default_emotion": "neutral",
+    },
 }
 
 # ─────────────────────────────────────────────────────────────
@@ -217,6 +282,11 @@ NPC_REGISTRY: Dict[str, Dict[str, Any]] = {
 _ROSTER_ID_BY_TYPE: Dict[str, str] = {
     "hoque": "professor_hoque",
     "roya": "career_advisor_roya",
+    "kabir": "late_bloomer_kabir",
+    "zayan": "struggling_friend_zayan",
+    "rafi": "overachiever_classmate_rafi",
+    "rahman": "professor_rahman",
+    "purnno": "warm_classmate_purnno",
     # Waiting on art before they join NPC_REGISTRY above:
     # [NPC PLACEHOLDER: assets/npcs/npc_purnno_idle.png -- 192x48 idle strip]
     # "purnno": "warm_classmate_purnno",
@@ -233,7 +303,7 @@ _ROSTER_ID_BY_TYPE: Dict[str, str] = {
 # Used only if content/npc_roster.py cannot be imported, so this
 # module stays usable standalone. The real numbers come from the
 # roster; these mirror it and are asserted equal by the tests.
-_MIN_SEMESTER_FALLBACK: Dict[str, int] = {"hoque": 5, "roya": 4}
+_MIN_SEMESTER_FALLBACK: Dict[str, int] = {"hoque": 5, "roya": 4,}
 
 MIN_SEMESTER_DEFAULT: int = 1
 
