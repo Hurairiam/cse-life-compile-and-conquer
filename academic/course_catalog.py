@@ -84,7 +84,7 @@ _CATALOG_DATA: List[Tuple[str, str, int, List[str], bool, Optional[str], int]] =
     ("CSE1201", "Structured Programming", 3, ["CSE1102"], False, None, 2),
     ("CSE1202", "Structured Programming Lab", 1, ["CSE1102"], True, None, 2),
     ("CSE1203", "Discrete Mathematics", 3, [], False, None, 2),
-    ("UCC1101", "Bangla Bhasa", 3, [], False, "GED Core 2", 2),
+    ("GEF2101", "Academic English 3", 3, [], False, "GED Core 2", 2),
     ("MAT1201", "Coordinate Geometry and Linear Algebra", 3, [], False, None, 2),
     ("ESK1110", "Study Skills", 0, [], False, "GED Core 6", 2),
     ("PHY1301", "Physics II", 3, [], False, None, 3),
@@ -189,10 +189,10 @@ _QUESTION_DATA: Dict[str, Dict[str, Tuple[str, List[str], str]]] = {
         "medium": ("How many edges are in a complete graph K_5 with 5 vertices?", ["5", "10", "20", "25"], "B"),
         "hard": ("Which of the following describes a relation that is Reflexive, Symmetric, and Transitive?", ["Partial Order Relation", "Equivalence Relation", "Total Order Relation", "Bijective Function"], "B"),
     },
-    "UCC1101": {
-        "easy": ("বাংলা ভাষার মূল উৎস কোনটি?", ["বৈদিক ভাষা", "সংস্কৃত ভাষা", "প্রাকৃত ভাষা / ইন্দো-ইউরোপীয় মূল ভাষা", "পালি ভাষা"], "C"),
-        "medium": ("বাংলা ব্যাকরণের প্রধান অঙ্গ কয়টি?", ["৩ টি", "৪ টি", "৫ টি", "৬ টি"], "B"),
-        "hard": ("'সন্ধি' বাংলা ব্যাকরণের কোন অংশে আলোচিত হয়?", ["রূপতত্ত্ব", "ধ্বনিতত্ত্ব", "বাক্যতত্ত্ব", "অর্থতত্ত্ব"], "B"),
+    "GEF2101": {
+        "easy": ("Which of the following is essential for avoiding plagiarism?", ["Using only common knowledge", "Citing the sources of borrowed ideas and information", "Changing a few words from the original source", "Using information without mentioning the author"], "B"),
+        "medium": ("Which transition word is best used to show contrast?", ["Furthermore", "Therefore", "However", "Similarly"], "C"),
+        "hard": ("Which of the following is the most formal academic expression?", ["A lot of students think this is important.", "Many students believe that this is significant.", "Tons of students feel this is a big deal.", "Students are totally into this idea."], "B"),
     },
     "MAT1201": {
         "easy": ("What is the determinant of a 2 x 2 matrix [[a, b], [c, d]]?", ["ac - bd", "ad - bc", "ad + bc", "a + d"], "B"),
