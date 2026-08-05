@@ -62,6 +62,7 @@ class Course:
         prerequisites: Optional[List[str]] = None,
         is_lab_component: bool = False,
         category: Optional[str] = None,
+        semester_number: Optional[int] = None,
     ) -> None:
         if not course_code or not isinstance(course_code, str):
             raise ValueError("course_code must be a non-empty string")
@@ -69,6 +70,10 @@ class Course:
             raise ValueError("course_name must be a non-empty string")
         if not isinstance(credit_value, (int, float)) or credit_value < 0:
             raise ValueError("credit_value must be a non-negative number")
+        if semester_number is not None and (
+            not isinstance(semester_number, int) or semester_number < 1
+        ):
+            raise ValueError("semester_number must be a positive integer or None")
 
         self.__course_code: str = course_code.strip().upper()
         self.__course_name: str = course_name.strip()
@@ -78,6 +83,13 @@ class Course:
         )
         self.__is_lab_component: bool = is_lab_component
         self.__category: Optional[str] = category.strip() if category else None
+        # Which curriculum term this course is FIRST offered in (1-12).
+        # Drives the new term-gated visibility model: a course is only
+        # selectable once the player's current semester number reaches
+        # this value — separate from (and in addition to) prerequisite
+        # checks. None means "not yet assigned a term" (shouldn't happen
+        # for any course built via course_catalog.py).
+        self.__semester_number: Optional[int] = semester_number
 
         # 3-question MCQ ladder → {"easy": {...}, "medium": {...}, "hard": {...}}
         # Each entry: {"question_text": str, "options": {"A": str, "B": str, ...},
@@ -108,6 +120,30 @@ class Course:
     def set_category(self, category: Optional[str]) -> None:
         """Allows the catalog loader to tag/re-tag a course after creation."""
         self.__category = category.strip() if category else None
+
+    def get_semester_number(self) -> Optional[int]:
+        """Return the curriculum term (1-12) this course is first offered in."""
+        return self.__semester_number
+
+    def set_semester_number(self, semester_number: Optional[int]) -> None:
+        """Allows the catalog loader to assign/reassign a course's term."""
+        if semester_number is not None and (
+            not isinstance(semester_number, int) or semester_number < 1
+        ):
+            raise ValueError("semester_number must be a positive integer or None")
+        self.__semester_number = semester_number
+
+    def is_offered_in_semester(self, semester_number: int) -> bool:
+        """
+        Return True if this course's assigned term matches the given
+        semester number. Used by the term-gated registration filter
+        (RegistrationManager) as the PRIMARY visibility rule — separate
+        from, and in addition to, prerequisite checking. A course with
+        no assigned semester_number (None) is never offered by this
+        check (returns False), since every catalog course should have
+        one set via course_catalog.py.
+        """
+        return self.__semester_number == semester_number
 
     def get_prerequisites(self) -> List[str]:
         # Return a defensive copy so callers cannot mutate internal state
@@ -307,5 +343,6 @@ class Course:
     def __repr__(self) -> str:
         return (
             f"Course({self.__course_code!r}, credits={self.__credit_value}, "
+            f"term={self.__semester_number}, "
             f"completed={self.__is_completed}, backlogged={self.__is_backlogged})"
         )
