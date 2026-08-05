@@ -12,10 +12,10 @@ and now also loads the full 3-tier MCQ exam ladder (easy/
 medium/hard) for every single course, sourced from the
 official question bank document.
 
-STATUS: COMPLETE. Prerequisites, categories, AND questions
-are all populated. build_course_catalog() returns fully
-exam-ready Course objects — is_question_set_complete() will
-be True for all 65 courses.
+STATUS: COMPLETE. Prerequisites, categories, semester/term
+assignment, AND questions are all populated. build_course_catalog()
+returns fully exam-ready Course objects — is_question_set_complete()
+will be True for all 65 courses.
 
 Design notes
 ────────────
@@ -24,6 +24,18 @@ Design notes
   This makes the curriculum easy to read/verify at a glance —
   it looks like the same table you'd see in the course sheet —
   without repeating 65 near-identical constructor calls.
+
+• Term-gated visibility (confirmed design decision): every course
+  now carries a semester_number (1-12), assigned by curriculum term
+  rather than left open. Registration is no longer "anything with
+  satisfied prerequisites" — it's "only what's assigned to the
+  player's CURRENT term, plus anything still backlogged from an
+  earlier term". Course.is_offered_in_semester() implements this
+  check; engine/registration_manager.py needs a matching update to
+  actually gate on it (flagged separately — that file isn't owned
+  here). Prerequisites are still stored and still meaningful as a
+  secondary safety check, but term assignment is now the PRIMARY
+  visibility rule.
 
 • _QUESTION_DATA is a second plain data table, keyed by course
   code, holding the (question_text, options, correct_letter)
@@ -63,75 +75,75 @@ from academic.course import Course
 
 # Table columns: (course_code, course_name, credit_value,
 #                 prerequisites, is_lab_component, category)
-_CATALOG_DATA: List[Tuple[str, str, int, List[str], bool, Optional[str]]] = [
-    ("CSE1102", "Introduction to Programming", 1, [], False, None),
-    ("GEF1101", "Academic English I", 3, [], False, "GED Core 1"),
-    ("MAT1101", "Differential and Integral Calculus", 3, [], False, None),
-    ("PHY1101", "Physics I", 3, [], False, None),
-    ("PHY1102", "Physics I Lab", 1, [], True, None),
-    ("CSE1201", "Structured Programming", 3, ["CSE1102"], False, None),
-    ("CSE1202", "Structured Programming Lab", 1, ["CSE1102"], True, None),
-    ("CSE1203", "Discrete Mathematics", 3, [], False, None),
-    ("UCC1101", "Bangla Bhasa", 3, [], False, "GED Core 2"),
-    ("MAT1201", "Coordinate Geometry and Linear Algebra", 3, [], False, None),
-    ("ESK1110", "Study Skills", 0, [], False, "GED Core 6"),
-    ("PHY1301", "Physics II", 3, [], False, None),
-    ("CSE1301", "Data Structures", 3, ["CSE1201", "CSE1202"], False, None),
-    ("CSE1302", "Data Structures Lab", 1, ["CSE1201", "CSE1202"], True, None),
-    ("EEE1101", "Electrical Circuit 1", 3, [], False, None),
-    ("EEE1102", "Electrical Circuit 1 Lab", 1, [], True, None),
-    ("UCC1201", "History of the Emergence of Independent Bangladesh", 3, [], False, "GED Core 3"),
-    ("ESK1111", "Healthy Life Skills", 0, [], False, "GED Core 6"),
-    ("MAT2101", "Differential Equations and Numerical Analysis", 3, [], False, None),
-    ("GEF1201", "English II", 3, [], False, "GED Core 4"),
-    ("CSE2101", "Digital Logic Design", 3, [], False, None),
-    ("CSE2102", "Digital Logic Design Lab", 1, [], True, None),
-    ("CSE2103", "Object Oriented Programming", 3, ["CSE1201", "CSE1202"], False, None),
-    ("CSE2104", "Object Oriented Programming Lab", 1, ["CSE1201", "CSE1202"], True, None),
-    ("ESK1112", "Social Skills", 0, [], False, "GED Core 6"),
-    ("CSE2201", "Algorithms", 3, ["CSE1203", "CSE1201", "CSE1202"], False, None),
-    ("CSE2202", "Algorithms Lab", 1, ["CSE1203", "CSE1201", "CSE1202"], True, None),
-    ("CSE2203", "Computer Organization and Architecture", 3, ["CSE2101"], False, None),
-    ("STA2101", "Statistics and Probability", 3, [], False, None),
-    ("EEE1301", "Electronic Device and Circuits 1", 3, [], False, None),
-    ("EEE1302", "Electronic Device and Circuits 1 Lab", 1, [], True, None),
-    ("CSE2200", "Design Project-I", 1, ["CSE2103", "CSE2104"], False, None),
-    ("ESK1113", "Professional Skills", 0, [], False, "GED Core 6"),
-    ("CSE2301", "Database Management System", 3, [], False, None),
-    ("CSE2302", "Database Management System Lab", 1, [], True, None),
-    ("CSE2303", "Automata and Theory of Computation", 3, ["CSE2201"], False, None),
-    ("CSE2305", "Operating Systems", 3, ["CSE2203"], False, None),
-    ("CSE2306", "Operating Systems Lab", 1, ["CSE2203"], True, None),
-    ("GED2159", "Professional Ethics", 3, [], False, "GED Core 5"),
-    ("CSE3101", "Microprocessor and Microcontroller", 3, ["CSE2203"], False, None),
-    ("CSE3102", "Microprocessor and Microcontroller Lab", 1, ["CSE2203"], True, None),
-    ("GED_ELEC3", "GED Elective 3", 3, [], False, "GED Elective - Social Science"),
-    ("CSE3103", "System Analysis and Design", 3, ["CSE2103"], False, None),
-    ("GED2243", "Environment and Sustainability", 3, [], False, "Mandatory for CSE / GED Tier 3"),
-    ("CSE3120", "Web Programming", 1, ["CSE2103", "CSE2104"], False, None),
+_CATALOG_DATA: List[Tuple[str, str, int, List[str], bool, Optional[str], int]] = [
+    ("CSE1102", "Introduction to Programming", 1, [], False, None, 1),
+    ("GEF1101", "Academic English I", 3, [], False, "GED Core 1", 1),
+    ("MAT1101", "Differential and Integral Calculus", 3, [], False, None, 1),
+    ("PHY1101", "Physics I", 3, [], False, None, 1),
+    ("PHY1102", "Physics I Lab", 1, [], True, None, 1),
+    ("CSE1201", "Structured Programming", 3, ["CSE1102"], False, None, 2),
+    ("CSE1202", "Structured Programming Lab", 1, ["CSE1102"], True, None, 2),
+    ("CSE1203", "Discrete Mathematics", 3, [], False, None, 2),
+    ("GEF2101", "Academic English 3", 3, [], False, "GED Core 2", 2),
+    ("MAT1201", "Coordinate Geometry and Linear Algebra", 3, [], False, None, 2),
+    ("ESK1110", "Study Skills", 0, [], False, "GED Core 6", 2),
+    ("PHY1301", "Physics II", 3, [], False, None, 3),
+    ("CSE1301", "Data Structures", 3, ["CSE1201", "CSE1202"], False, None, 3),
+    ("CSE1302", "Data Structures Lab", 1, ["CSE1201", "CSE1202"], True, None, 3),
+    ("EEE1101", "Electrical Circuit 1", 3, [], False, None, 3),
+    ("EEE1102", "Electrical Circuit 1 Lab", 1, [], True, None, 3),
+    ("UCC1201", "History of the Emergence of Independent Bangladesh", 3, [], False, "GED Core 3", 3),
+    ("ESK1111", "Healthy Life Skills", 0, [], False, "GED Core 6", 3),
+    ("MAT2101", "Differential Equations and Numerical Analysis", 3, [], False, None, 4),
+    ("GEF1201", "English II", 3, [], False, "GED Core 4", 4),
+    ("CSE2101", "Digital Logic Design", 3, [], False, None, 4),
+    ("CSE2102", "Digital Logic Design Lab", 1, [], True, None, 4),
+    ("CSE2103", "Object Oriented Programming", 3, ["CSE1201", "CSE1202"], False, None, 4),
+    ("CSE2104", "Object Oriented Programming Lab", 1, ["CSE1201", "CSE1202"], True, None, 4),
+    ("ESK1112", "Social Skills", 0, [], False, "GED Core 6", 4),
+    ("CSE2201", "Algorithms", 3, ["CSE1203", "CSE1201", "CSE1202"], False, None, 5),
+    ("CSE2202", "Algorithms Lab", 1, ["CSE1203", "CSE1201", "CSE1202"], True, None, 5),
+    ("CSE2203", "Computer Organization and Architecture", 3, ["CSE2101"], False, None, 5),
+    ("STA2101", "Statistics and Probability", 3, [], False, None, 5),
+    ("EEE1301", "Electronic Device and Circuits 1", 3, [], False, None, 5),
+    ("EEE1302", "Electronic Device and Circuits 1 Lab", 1, [], True, None, 5),
+    ("CSE2200", "Design Project-I", 1, ["CSE2103", "CSE2104"], False, None, 5),
+    ("ESK1113", "Professional Skills", 0, [], False, "GED Core 6", 5),
+    ("CSE2301", "Database Management System", 3, [], False, None, 6),
+    ("CSE2302", "Database Management System Lab", 1, [], True, None, 6),
+    ("CSE2303", "Automata and Theory of Computation", 3, ["CSE2201"], False, None, 6),
+    ("CSE2305", "Operating Systems", 3, ["CSE2203"], False, None, 6),
+    ("CSE2306", "Operating Systems Lab", 1, ["CSE2203"], True, None, 6),
+    ("GED2159", "Professional Ethics", 3, [], False, "GED Core 5", 6),
+    ("CSE3101", "Microprocessor and Microcontroller", 3, ["CSE2203"], False, None, 7),
+    ("CSE3102", "Microprocessor and Microcontroller Lab", 1, ["CSE2203"], True, None, 7),
+    ("GED_ELEC3", "GED Elective 3", 3, [], False, "GED Elective - Social Science", 7),
+    ("CSE3103", "System Analysis and Design", 3, ["CSE2103"], False, None, 7),
+    ("GED2243", "Environment and Sustainability", 3, [], False, "Mandatory for CSE / GED Tier 3", 7),
+    ("CSE3120", "Web Programming", 1, ["CSE2103", "CSE2104"], False, None, 7),
     ("CSE3201", "Artificial Intelligence & Machine Learning", 3,
-        ["CSE2201", "CSE2202", "STA2101", "MAT1201"], False, None),
+        ["CSE2201", "CSE2202", "STA2101", "MAT1201"], False, None, 8),
     ("CSE3202", "Artificial Intelligence & Machine Learning Lab", 1,
-        ["CSE2201", "CSE2202", "STA2101", "MAT1201"], True, None),
-    ("CSE3203", "Software Engineering", 3, ["CSE3103"], False, None),
+        ["CSE2201", "CSE2202", "STA2101", "MAT1201"], True, None, 8),
+    ("CSE3203", "Software Engineering", 3, ["CSE3103"], False, None, 8),
     ("CSE3200", "Design Project-II", 1,
-        ["CSE2301", "CSE2302", "CSE3103", "CSE2200"], False, None),
-    ("CSE3205", "Computer Networks", 3, [], False, None),
-    ("CSE3206", "Computer Networks Lab", 1, [], True, None),
-    ("GED2248", "Industrial Management", 3, [], False, "Mandatory for CSE / GED Tier 2"),
-    ("CSE_ELEC1", "Major Elective 1", 3, [], False, "Major Elective"),
-    ("CSE3301", "Cyber Security", 3, ["CSE2305", "CSE2306", "CSE3205", "CSE3206"], False, None),
-    ("MINOR1", "Optional/Minor 1", 3, [], False, "Optional/Minor"),
-    ("CSE4098A", "Capstone Project 1", 1, [], False, None),
-    ("CSE_ELEC2", "Major Elective 2", 3, [], False, "Major Elective"),
-    ("CSE_ELEC2_LAB", "Major Elective 2 Lab", 1, [], True, "Major Elective"),
-    ("CSE_ELEC3", "Major Elective 3", 3, [], False, "Major Elective"),
-    ("MINOR2", "Optional/Minor 2", 3, [], False, "Optional/Minor"),
-    ("CSE4098B", "Capstone Project 2", 1, [], False, None),
-    ("CSE_ELEC4", "Major Elective 4", 3, [], False, "Major Elective"),
-    ("MINOR3", "Optional/Minor 3", 3, [], False, "Optional/Minor"),
-    ("CSE4098C", "Capstone Project 3", 2, [], False, None),
-    ("CSE4099", "Internship / Thesis", 1, [], False, None),
+        ["CSE2301", "CSE2302", "CSE3103", "CSE2200"], False, None, 8),
+    ("CSE3205", "Computer Networks", 3, [], False, None, 8),
+    ("CSE3206", "Computer Networks Lab", 1, [], True, None, 8),
+    ("GED2248", "Industrial Management", 3, [], False, "Mandatory for CSE / GED Tier 2", 8),
+    ("CSE_ELEC1", "Major Elective 1", 3, [], False, "Major Elective", 9),
+    ("CSE3301", "Cyber Security", 3, ["CSE2305", "CSE2306", "CSE3205", "CSE3206"], False, None, 9),
+    ("MINOR1", "Optional/Minor 1", 3, [], False, "Optional/Minor", 9),
+    ("CSE4098A", "Capstone Project 1", 1, [], False, None, 9),
+    ("CSE_ELEC2", "Major Elective 2", 3, [], False, "Major Elective", 10),
+    ("CSE_ELEC2_LAB", "Major Elective 2 Lab", 1, [], True, "Major Elective", 10),
+    ("CSE_ELEC3", "Major Elective 3", 3, [], False, "Major Elective", 10),
+    ("MINOR2", "Optional/Minor 2", 3, [], False, "Optional/Minor", 10),
+    ("CSE4098B", "Capstone Project 2", 1, [], False, None, 10),
+    ("CSE_ELEC4", "Major Elective 4", 3, [], False, "Major Elective", 11),
+    ("MINOR3", "Optional/Minor 3", 3, [], False, "Optional/Minor", 11),
+    ("CSE4098C", "Capstone Project 3", 2, [], False, None, 11),
+    ("CSE4099", "Internship / Thesis", 1, [], False, None, 12),
 ]
 
 
@@ -177,10 +189,10 @@ _QUESTION_DATA: Dict[str, Dict[str, Tuple[str, List[str], str]]] = {
         "medium": ("How many edges are in a complete graph K_5 with 5 vertices?", ["5", "10", "20", "25"], "B"),
         "hard": ("Which of the following describes a relation that is Reflexive, Symmetric, and Transitive?", ["Partial Order Relation", "Equivalence Relation", "Total Order Relation", "Bijective Function"], "B"),
     },
-    "UCC1101": {
-        "easy": ("বাংলা ভাষার মূল উৎস কোনটি?", ["বৈদিক ভাষা", "সংস্কৃত ভাষা", "প্রাকৃত ভাষা / ইন্দো-ইউরোপীয় মূল ভাষা", "পালি ভাষা"], "C"),
-        "medium": ("বাংলা ব্যাকরণের প্রধান অঙ্গ কয়টি?", ["৩ টি", "৪ টি", "৫ টি", "৬ টি"], "B"),
-        "hard": ("'সন্ধি' বাংলা ব্যাকরণের কোন অংশে আলোচিত হয়?", ["রূপতত্ত্ব", "ধ্বনিতত্ত্ব", "বাক্যতত্ত্ব", "অর্থতত্ত্ব"], "B"),
+    "GEF2101": {
+        "easy": ("Which of the following is essential for avoiding plagiarism?", ["Using only common knowledge", "Citing the sources of borrowed ideas and information", "Changing a few words from the original source", "Using information without mentioning the author"], "B"),
+        "medium": ("Which transition word is best used to show contrast?", ["Furthermore", "Therefore", "However", "Similarly"], "C"),
+        "hard": ("Which of the following is the most formal academic expression?", ["A lot of students think this is important.", "Many students believe that this is significant.", "Tons of students feel this is a big deal.", "Students are totally into this idea."], "B"),
     },
     "MAT1201": {
         "easy": ("What is the determinant of a 2 x 2 matrix [[a, b], [c, d]]?", ["ac - bd", "ad - bc", "ad + bc", "a + d"], "B"),
@@ -468,7 +480,8 @@ def build_course_catalog() -> List[Course]:
     """
     Construct and return the full master catalog as a list of
     persistent Course objects, in curriculum order — fully loaded
-    with prerequisites, categories, AND the 3-tier MCQ exam ladder.
+    with prerequisites, categories, semester/term assignment, AND
+    the 3-tier MCQ exam ladder.
 
     Called ONCE at game startup (GameSession initialisation).
     The same Course instances returned here are the ones that
@@ -478,7 +491,7 @@ def build_course_catalog() -> List[Course]:
     is ever re-instantiated for a backlog/retake.
     """
     catalog: List[Course] = []
-    for code, name, credits, prereqs, is_lab, category in _CATALOG_DATA:
+    for code, name, credits, prereqs, is_lab, category, semester_number in _CATALOG_DATA:
         course = Course(
             course_code=code,
             course_name=name,
@@ -486,6 +499,7 @@ def build_course_catalog() -> List[Course]:
             prerequisites=prereqs,
             is_lab_component=is_lab,
             category=category,
+            semester_number=semester_number,
         )
         _load_questions_for_course(course)
         catalog.append(course)
