@@ -226,6 +226,37 @@ PORTAL_TYPE_ID: str = "portal"
 
 PROP_ROOT_H_DEFAULT: int = 1
 
+# ─────────────────────────────────────────────────────────────
+# ROTATION
+# ─────────────────────────────────────────────────────────────
+# Tiles and props may be turned in 90-degree steps. Quarter turns
+# only: pixel art rotated by an arbitrary angle has to be resampled,
+# which softens the very hard edges the whole look depends on. At 90,
+# 180 and 270 the rotation is exact and every pixel survives.
+#
+# Stored as DEGREES rather than an index so a hand-edited level file
+# reads plainly, and clamped by normalise_rotation() so a typo becomes
+# the nearest legal turn instead of a crash.
+# ─────────────────────────────────────────────────────────────
+
+ROTATIONS: tuple = (0, 90, 180, 270)
+ROTATION_DEFAULT: int = 0
+
+
+def normalise_rotation(value: Any) -> int:
+    """Snap any number to the nearest legal quarter turn."""
+    try:
+        degrees = int(value) % 360
+    except (TypeError, ValueError):
+        return ROTATION_DEFAULT
+    return min(ROTATIONS, key=lambda legal: abs(legal - degrees))
+
+
+def next_rotation(value: Any) -> int:
+    """The next quarter turn clockwise, wrapping at 270 -> 0."""
+    current = normalise_rotation(value)
+    return ROTATIONS[(ROTATIONS.index(current) + 1) % len(ROTATIONS)]
+
 
 def get_prop_footprint(type_id: str) -> tuple:
     """(cells_w, cells_h) for a prop type. Unknown types are 1x1."""
@@ -614,6 +645,7 @@ MENU_REGISTRY: Dict[str, Dict[str, Any]] = {
     "settings":     {"name": "Settings",            "state": "SETTINGS"},
     "load_game":    {"name": "Load Game",           "state": "LOAD_GAME"},
     "main_menu":    {"name": "Main Menu",           "state": "MAIN_MENU"},
+    "activity":     {"name": "Exam / Lecture",      "state": "ACTIVITY"},
 }
 
 MENU_ID_DEFAULT: str = "registration"

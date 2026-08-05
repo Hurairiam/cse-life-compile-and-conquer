@@ -141,6 +141,11 @@ class AppContext:
         self.skill_points = 0
         self.selected_skill_id = ""
 
+        # The exam / lecture / cancel card a classroom prop opens.
+        from ui.activity_choice_screen import ActivityChoiceScreen
+        self.activity_screen = ActivityChoiceScreen()
+        self.activity_focus = 0
+
         # -- STAGE 9: registration / endgame ------------------------
         from engine.catalog_builder import SemesterCatalogBuilder
         from ui.certificate_screen import CertificateScreen

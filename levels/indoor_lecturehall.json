@@ -9,73 +9,73 @@
     "music": "exploration",
     "spawn": {
       "x": 18,
-      "y": 7
+      "y": 8
     }
   },
   "layers": {
     "ground": [
       [
-        108,
-        108,
-        108,
-        108,
-        108,
-        108,
-        108,
-        108,
-        108,
-        108,
-        108,
-        108,
-        108,
-        108,
-        108,
-        108,
-        108,
-        108,
-        108
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101
       ],
       [
-        108,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
         110,
         110,
         110,
-        110,
-        110,
-        110,
-        110,
-        110,
-        110,
-        110,
-        110,
-        110,
-        110,
-        110,
-        110,
-        110,
-        110,
-        108
+        101
       ],
       [
-        108,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        101,
+        109,
+        109,
         110,
-        109,
-        109,
-        109,
-        109,
-        109,
-        109,
-        109,
-        109,
-        109,
-        109,
-        109,
-        109,
-        109,
-        109,
-        109,
-        110,
-        108
+        101
       ],
       [
         108,
@@ -1295,22 +1295,6 @@
       }
     },
     {
-      "uid": "prop_0049",
-      "type_id": "desk_1",
-      "x": 8,
-      "y": 3,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": true,
-      "interaction": {
-        "kind": "menu",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1,
-        "menu_id": "exam"
-      }
-    },
-    {
       "uid": "prop_0050",
       "type_id": "bookshelf_top_right",
       "x": 17,
@@ -1447,66 +1431,6 @@
       }
     },
     {
-      "uid": "prop_0059",
-      "type_id": "potted_plant",
-      "x": 14,
-      "y": 1,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
-      "uid": "prop_0060",
-      "type_id": "blackboard_left",
-      "x": 7,
-      "y": 0,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
-      "uid": "prop_0061",
-      "type_id": "blackboard_middle",
-      "x": 8,
-      "y": 0,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
-      "uid": "prop_0062",
-      "type_id": "blackboard_right",
-      "x": 9,
-      "y": 0,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
       "uid": "prop_0063",
       "type_id": "ac_left",
       "x": 1,
@@ -1535,6 +1459,191 @@
         "skill_id": null,
         "triggers_per_semester": 1
       }
+    },
+    {
+      "uid": "prop_0068",
+      "type_id": "computer_desk_1",
+      "x": 7,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0069",
+      "type_id": "computer_desk_2",
+      "x": 8,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0070",
+      "type_id": "computer_desk_3",
+      "x": 7,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0071",
+      "type_id": "computer_desk_4",
+      "x": 8,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "menu",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1,
+        "menu_id": "activity"
+      }
+    },
+    {
+      "uid": "prop_0072",
+      "type_id": "desk_1",
+      "x": 9,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0073",
+      "type_id": "blackboard_left",
+      "x": 6,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0074",
+      "type_id": "blackboard_right",
+      "x": 10,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0075",
+      "type_id": "blackboard_middle",
+      "x": 7,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0076",
+      "type_id": "blackboard_middle",
+      "x": 8,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0077",
+      "type_id": "blackboard_middle",
+      "x": 9,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0078",
+      "type_id": "yellowarrow",
+      "x": 17,
+      "y": 7,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 180
+    },
+    {
+      "uid": "prop_0079",
+      "type_id": "portal",
+      "x": 18,
+      "y": 7,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270,
+      "target_level_id": "cafeteria_lecturehall",
+      "target_spawn": null
     }
   ],
   "npcs": [],

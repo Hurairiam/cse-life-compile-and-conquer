@@ -74,7 +74,9 @@ from content.level_registry import (
     ON_COMPLETE_MODES,
     PORTAL_TYPE_ID,
     PROJECT_ROOT,
+    ROTATION_DEFAULT,
     is_multicell_prop,
+    normalise_rotation,
     prop_cells,
     SKILL_IDS,
     SPEED_MODIFIER_BASE,
@@ -112,12 +114,12 @@ SEVERITY_WARNING: str = "warning"
 # Top-level keys this module understands; anything else is carried
 # through untouched for forward compatibility (Spec §2.1).
 _KNOWN_TOP_KEYS: tuple = ("schema_version", "meta", "layers", "props", "npcs",
-                          "zones")
+                          "zones", "tile_rotations")
 _KNOWN_META_KEYS: tuple = ("level_name", "level_id", "grid_width",
                            "grid_height", "ambient", "music", "spawn")
 _KNOWN_PROP_KEYS: tuple = ("uid", "type_id", "x", "y", "passthrough",
                            "speed_modifier", "interactable", "interaction",
-                           "gate")
+                           "gate", "rotation")
 _KNOWN_NPC_KEYS: tuple = ("uid", "type_id", "x", "y", "facing",
                           "interactable", "dialog", "gate")
 _KNOWN_ZONE_KEYS: tuple = ("uid", "zone_id", "display_name", "x", "y",
@@ -710,6 +712,7 @@ class PropData:
         self.__amount: float = 0.0
         self.__skill_id: Optional[str] = None
         self.__menu_id: str = ""
+        self.__rotation: int = ROTATION_DEFAULT
         self.__triggers_per_semester: int = TRIGGERS_DEFAULT
         self.__target_level_id: str = ""
         self.__target_spawn: Optional[Tuple[int, int]] = None
@@ -736,6 +739,24 @@ class PropData:
             return False
         self.__x, self.__y = int(x), int(y)
         return True
+
+    def get_rotation(self) -> int:
+        """Quarter-turn rotation in degrees: 0, 90, 180 or 270."""
+        return self.__rotation
+
+    def set_rotation(self, degrees: Any) -> bool:
+        """
+        Turn the prop, snapping to the nearest quarter.
+
+        Rotation is PURELY VISUAL. A turned prop still occupies the
+        same cells and blocks the same way -- rotating a footprint
+        would let an author silently reshape collision from a keypress,
+        and a 1x3 tree laid on its side is a bug, not a feature.
+        """
+        value = normalise_rotation(degrees)
+        changed = value != self.__rotation
+        self.__rotation = value
+        return changed
 
     def is_portal(self) -> bool:
         """
@@ -1000,6 +1021,10 @@ class PropData:
         # level authored earlier still round-trips byte-identical.
         if self.__menu_id:
             data["interaction"]["menu_id"] = self.__menu_id
+        # Omitted while unturned, so a level with no rotated props
+        # serialises exactly as it did before rotation existed.
+        if self.__rotation:
+            data["rotation"] = self.__rotation
         # Written for step-on portals AND for any prop whose interaction
         # kind is "travel". A prop that does neither omits both keys, so
         # every level authored before travel props round-trips unchanged.
@@ -1025,6 +1050,7 @@ class PropData:
         prop.set_speed_modifier(float(data.get("speed_modifier",
                                                SPEED_MODIFIER_BASE)))
         prop.set_interactable(bool(data.get("interactable", False)))
+        prop.set_rotation(data.get("rotation", ROTATION_DEFAULT))
 
         interaction: Dict[str, Any] = data.get("interaction") or {}
         # Read BEFORE the kind so switching to "menu" sees the stored
@@ -1423,6 +1449,12 @@ class LevelData:
                                           for _ in range(height)]
         self.__overlay: List[List[int]] = [[EMPTY_TILE] * width
                                            for _ in range(height)]
+        # Tile rotation is SPARSE: {(layer, x, y): degrees} holding only
+        # the cells actually turned. A parallel full-size array would
+        # double every level file to record a feature most maps never
+        # use, and would rewrite all fourteen existing files on first
+        # save. An absent key means 0.
+        self.__tile_rotations: Dict[Tuple[str, int, int], int] = {}
         self.__props: List[PropData] = []
         self.__npcs: List[NpcData] = []
         self.__zones: List[ZoneData] = []
@@ -1553,6 +1585,39 @@ class LevelData:
             return False
         rows[y][x] = value
         return True
+
+    def get_tile_rotation(self, layer: str, x: int, y: int) -> int:
+        """Quarter-turn rotation of one painted cell; 0 when unturned."""
+        return self.__tile_rotations.get((layer, x, y), ROTATION_DEFAULT)
+
+    def set_tile_rotation(self, layer: str, x: int, y: int,
+                          degrees: Any) -> bool:
+        """
+        Turn one painted cell. False when nothing changed.
+
+        A rotation of 0 DELETES the entry rather than storing a zero,
+        which is what keeps the map sparse and keeps an unrotated level
+        serialising to exactly the bytes it had before.
+
+        Purely visual, like a prop's: walkability comes from the tile's
+        registry entry, and turning a wall does not open it.
+        """
+        if layer not in LAYER_NAMES or not self.is_inside(x, y):
+            return False
+        value = normalise_rotation(degrees)
+        key = (layer, x, y)
+        current = self.__tile_rotations.get(key, ROTATION_DEFAULT)
+        if value == current:
+            return False
+        if value == ROTATION_DEFAULT:
+            self.__tile_rotations.pop(key, None)
+        else:
+            self.__tile_rotations[key] = value
+        return True
+
+    def get_tile_rotation_count(self) -> int:
+        """How many cells carry a rotation — used by the editor readout."""
+        return len(self.__tile_rotations)
 
     def is_terrain_walkable(self, x: int, y: int) -> bool:
         """
@@ -1927,6 +1992,13 @@ class LevelData:
         # still writes byte-for-byte the same file it did before.
         if self.__zones:
             data["zones"] = [z.to_dict() for z in self.__zones]
+        # Same rule for rotations: nested per layer, "x,y" keys, and the
+        # whole block omitted when nothing is turned.
+        rotations: Dict[str, Dict[str, int]] = {}
+        for (layer, x, y), degrees in sorted(self.__tile_rotations.items()):
+            rotations.setdefault(layer, {})[f"{x},{y}"] = degrees
+        if rotations:
+            data["tile_rotations"] = rotations
         return data
 
     @staticmethod
@@ -1983,6 +2055,20 @@ class LevelData:
                         for n in (data.get("npcs") or [])]
         level.__zones = [ZoneData.from_dict(z)
                          for z in (data.get("zones") or [])]
+
+        # A malformed key is skipped, not fatal: a hand-edited file with
+        # one bad coordinate should lose that rotation, not fail to open.
+        for layer, cells in (data.get("tile_rotations") or {}).items():
+            if layer not in LAYER_NAMES or not isinstance(cells, dict):
+                continue
+            for coordinate, degrees in cells.items():
+                try:
+                    cx, cy = (int(part) for part in str(coordinate).split(","))
+                except (TypeError, ValueError):
+                    continue
+                value = normalise_rotation(degrees)
+                if value:
+                    level.__tile_rotations[(layer, cx, cy)] = value
 
         level.__meta_extra = {k: v for k, v in meta.items()
                               if k not in _KNOWN_META_KEYS}

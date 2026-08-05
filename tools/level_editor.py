@@ -24,7 +24,7 @@ Layout (Spec §3.1):
 Hotkeys (Spec §8): 1-5 tabs · LMB paint · RMB entity settings ·
 X+LMB erase · MMB/arrows pan · +/- zoom · Ctrl+S/O/N ·
 Ctrl+Z/Y undo/redo · G grid · B badges · R randomise variants ·
-F11 fullscreen · ESC close popup / clear selection.
+T rotate brush · F11 fullscreen · ESC close popup / clear selection.
 
 Tiles, props and NPCs are read from content/level_registry.py, which
 tops itself up from whatever is sitting in assets/ — so new art shows
@@ -64,6 +64,7 @@ from content.level_registry import (
     get_tile_layer,
     get_tile_variants,
     has_tile_variants,
+    next_rotation,
     npc_blit_offset,
     npc_sprite_px,
     pick_tile_variant,
@@ -129,12 +130,12 @@ TAB_COLUMNS = 3          # 3 tabs on the first row, the rest on the second
 TAB_ROWS = (len(TAB_NAMES) + TAB_COLUMNS - 1) // TAB_COLUMNS
 PANEL_PAD = 10
 SECTION_Y = TAB_Y + TAB_ROWS * (TAB_H + 4) + 12
-# Four label lines plus the panel status line beneath them: an
-# optional hovered-item name, then walkable / layer / variants. Was 76
-# when it held two, and every growth since has been because a line
-# printed straight through "ZOOM ... GRID ON" — re-measure before
-# adding a fifth.
-FOOTER_H = 106
+# Five label lines plus the panel status line beneath them: an optional
+# hovered-item name, the brush rotation, then walkable / layer /
+# variants. Was 76 when it held two, and every growth since has been
+# because a line printed straight through "ZOOM ... GRID ON" —
+# re-measure before adding a sixth.
+FOOTER_H = 122
 
 # Pixel size of one cell on screen. Every step is an integer multiple
 # of the 16 px source art, so the pixels stay crisp (Spec §3.3); 48 is
@@ -262,6 +263,11 @@ class LevelEditorApp:
         # shimmer the tiles it had just placed.
         self.__randomise: bool = False
         self.__stroke_cells: set = set()
+
+        # The brush's quarter turn. Applied to whatever is painted or
+        # placed next; T advances it. Kept on the BRUSH rather than on
+        # the selection so it survives switching tile.
+        self.__rotation: int = 0
 
         # zone tool (F6): the in-progress drag, and which zone the
         # gate popup is currently editing
@@ -660,9 +666,13 @@ class LevelEditorApp:
             index = int(self.__selection_key)
             if self.__randomise:
                 index = pick_tile_variant(index)
-            self.__level.set_tile(get_tile_layer(index), x, y, index)
+            layer = get_tile_layer(index)
+            self.__level.set_tile(layer, x, y, index)
+            self.__level.set_tile_rotation(layer, x, y, self.__rotation)
         elif self.__selection_kind == "prop":
-            self.__level.add_prop(self.__selection_key, x, y)
+            placed = self.__level.add_prop(self.__selection_key, x, y)
+            if placed is not None:
+                placed.set_rotation(self.__rotation)
         elif self.__selection_kind == "npc":
             self.__level.add_npc(self.__selection_key, x, y)
 
@@ -681,6 +691,9 @@ class LevelEditorApp:
             self.__level.set_tile(LAYER_OVERLAY, x, y, EMPTY_TILE)
             return
         self.__level.set_tile(LAYER_GROUND, x, y, DEFAULT_GROUND_TILE)
+        # Clear the turn as well, or the default fill comes back rotated.
+        for layer in (LAYER_GROUND, LAYER_OVERLAY):
+            self.__level.set_tile_rotation(layer, x, y, 0)
 
     def __is_erasing(self) -> bool:
         """True while the eraser tool or the X-key shortcut is active."""
@@ -995,6 +1008,9 @@ class LevelEditorApp:
             self.__show_badges = not self.__show_badges
         elif event.key == pygame.K_r:
             self.__toggle_randomise()
+        elif event.key == pygame.K_t:
+            self.__rotation = next_rotation(self.__rotation)
+            self.__set_status(f"Brush rotation {self.__rotation} degrees")
 
     def __handle_mouse_down(self, event: pygame.event.Event) -> None:
         """Clicks on the top bar, the side panel or the canvas."""
@@ -1184,7 +1200,9 @@ class LevelEditorApp:
                     if index == EMPTY_TILE:
                         continue
                     rect = self.__cell_screen_rect(x, y)
-                    sprite = self.__assets.get_tile(index, cell_px)
+                    sprite = self.__turn(
+                        self.__assets.get_tile(index, cell_px),
+                        self.__level.get_tile_rotation(layer, x, y))
                     if sprite is not None:
                         surface.blit(sprite, rect.topleft)
                     else:
@@ -1277,8 +1295,10 @@ class LevelEditorApp:
             if prop.is_portal():
                 self.__render_portal_marker(prop, rect)
             else:
-                sprite = self.__assets.get_prop_footprint_sprite(
-                    prop.get_type_id(), cell_px)
+                sprite = self.__turn(
+                    self.__assets.get_prop_footprint_sprite(
+                        prop.get_type_id(), cell_px),
+                    prop.get_rotation())
                 if sprite is not None:
                     # Bottom-left anchored, same as the game: a tree
                     # stands ON the cell you clicked and hangs upward.
@@ -1305,6 +1325,21 @@ class LevelEditorApp:
                 th.draw_placeholder(surface, rect, npc.get_type_id())
             if self.__show_badges:
                 self.__render_npc_badges(npc, rect)
+
+    @staticmethod
+    def __turn(sprite, degrees: int):
+        """
+        Quarter-turn a sprite for drawing. Square sprites only.
+
+        Matches ui/map_screen.py exactly: a multi-cell prop keeps its
+        orientation, because turning it would draw it across cells it
+        does not actually occupy.
+        """
+        if sprite is None or not degrees:
+            return sprite
+        if sprite.get_width() != sprite.get_height():
+            return sprite
+        return pygame.transform.rotate(sprite, -degrees)
 
     def __render_portal_marker(self, prop, rect: pygame.Rect) -> None:
         """
@@ -1659,6 +1694,14 @@ class LevelEditorApp:
         # tell two same-prefix entries apart, and it is transient.
         if self.__render_hover_name(SIDE_PANEL.x + PANEL_PAD, footer_y,
                                     th.load_font(th.SIZE_LABEL)):
+            footer_y += 16
+        # The brush rotation applies to tiles AND props, so it belongs
+        # here rather than beside the tiles-only RANDOMISE toggle.
+        if self.__tab in (TAB_TILES, TAB_PROPS):
+            th.draw_text(self.__window, th.load_font(th.SIZE_LABEL),
+                         f"ROTATION: {self.__rotation} DEG  [T]",
+                         (SIDE_PANEL.x + PANEL_PAD, footer_y),
+                         th.ROW_GREEN if self.__rotation else th.STAT_BROWN)
             footer_y += 16
         x = SIDE_PANEL.x + PANEL_PAD
         font = th.load_font(th.SIZE_LABEL)
