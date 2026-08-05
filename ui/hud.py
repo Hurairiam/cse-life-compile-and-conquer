@@ -40,6 +40,9 @@ ICON_TEXT_GAP = 6    # space between an icon and its text
 BAR_WIDTH     = 84
 BAR_HEIGHT    = 16
 
+LOCATION_PAD   = 12  # gap between the location label and the right edge
+LOCATION_MIN_W = 40  # below this much free space the label is dropped
+
 
 class HUD:
     """
@@ -84,11 +87,16 @@ class HUD:
 
     # -- main drawing -----------------------------------------
     def render(self, screen: pygame.Surface, time_pool: int,
-               wallet: float, semester: int, credits: int) -> None:
+               wallet: float, semester: int, credits: int,
+               location: str = "") -> None:
         """
         Draw the whole HUD strip.
         time_pool : days left (0-80)     wallet : money in BDT
         semester  : current semester     credits: credits earned (goal 140)
+        location  : where the player is, drawn right-aligned ("" = hidden)
+
+        `location` is optional and defaults to "" so every existing
+        caller keeps working unchanged.
         """
         width: int = screen.get_width()
 
@@ -106,6 +114,13 @@ class HUD:
         x = self.__draw_stat(screen, "wallet",   f"{wallet:,.0f} BDT", x) + GAP
         x = self.__draw_stat(screen, "semester", f"Sem {semester}", x) + GAP
         x = self.__draw_stat(screen, "credits",  f"{credits}/140",  x)
+
+        # 3) the location, packed against the RIGHT edge. The stats grow
+        #    rightwards as the numbers get longer (140/140, 200,000 BDT),
+        #    so it is clipped to whatever room is left rather than
+        #    allowed to collide with them.
+        if location:
+            self.__draw_location(screen, location, width, x)
 
     # -- piece-by-piece drawing -------------------------------
     def __draw_days(self, screen: pygame.Surface, time_pool: int,
@@ -168,6 +183,37 @@ class HUD:
         surface = self.__font.render(text, True, TEXT_COFFEE)
         y = (STRIP_HEIGHT - self.__font.get_height()) // 2
         screen.blit(surface, (x, y))
+
+    def __draw_location(self, screen: pygame.Surface, location: str,
+                        width: int, stats_end_x: int) -> None:
+        """
+        Draw where the player is, right-aligned against the strip edge.
+
+        Underscores become spaces and a bare slug is title-cased, so a
+        level whose name was never filled in ("indoor_library") still
+        reads as "Indoor Library" instead of shouting its filename.
+        A properly authored name ("Cafeteria & Lecture Hall") already
+        has spaces and is left exactly as written.
+
+        `stats_end_x` is where the numbers finish. The label is clipped
+        to the gap after it rather than overlapping: the stats widen as
+        the save progresses (200,000 BDT, 140/140) and the label must
+        give way, never the numbers.
+        """
+        text = location.strip()
+        if "_" in text or text.islower():
+            text = text.replace("_", " ").title()
+
+        available = width - LOCATION_PAD - stats_end_x - GAP
+        if available < LOCATION_MIN_W:
+            return
+        while text and self.__font.size(text)[0] > available:
+            text = text[:-1]
+        if not text:
+            return
+
+        text_width = self.__font.size(text)[0]
+        self.__draw_text(screen, text, width - LOCATION_PAD - text_width)
 
 
 # -------------------------------------------------------------

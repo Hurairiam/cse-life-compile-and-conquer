@@ -51,6 +51,7 @@ from content.level_registry import (
     GRID_MAX,
     GRID_MIN,
     INTERACTION_KINDS,
+    MENU_ID_DEFAULT,
     MONEY_MAX,
     MONEY_MIN,
     MONEY_STEP,
@@ -62,6 +63,8 @@ from content.level_registry import (
     SPEED_MODIFIER_STEP,
     TRIGGERS_MAX,
     TRIGGERS_MIN,
+    get_menu_display_name,
+    get_menu_ids,
     get_npc_display_name,
     get_npc_emotions,
     get_prop_def,
@@ -477,6 +480,12 @@ class PropSettingsPopup(Modal):
     Portal props swap the reward controls for travel controls: a portal
     grants nothing, it moves the player between campus locations
     (Spec §9).
+
+    The "menu" reward kind swaps them again, for a single picker over
+    MENU_REGISTRY: that prop opens a screen — the registration desk,
+    the skill tree, the results board — instead of paying out. Menus
+    have no amount and no per-semester trigger cap, because opening a
+    screen is not a reward to budget.
     """
 
     def __init__(self, prop: PropData) -> None:
@@ -517,23 +526,46 @@ class PropSettingsPopup(Modal):
         self.__skill: Cycler = Cycler(
             pygame.Rect(inner_x, body.y + 292, 450, 30), list(SKILL_IDS),
             prop.get_skill_id() or SKILL_IDS[0])
+        # Shares the skill picker's row: only one of the two is ever
+        # live, because a prop cannot both grant EXP and open a screen.
+        menu_ids = get_menu_ids()
+        self.__menu: Cycler = Cycler(
+            pygame.Rect(inner_x, body.y + 232, 450, 30), menu_ids,
+            prop.get_menu_id() or MENU_ID_DEFAULT,
+            {menu_id: get_menu_display_name(menu_id)
+             for menu_id in menu_ids})
         self.__retune_amount()
 
         self.__target: TextInput = TextInput(
             pygame.Rect(inner_x, body.y + 184, 450, 30),
             prop.get_target_level_id(), 48, lambda c: c in _SLUG_CHARS)
-        spawn = prop.get_target_spawn() or (0, 0)
+        # A portal used to ALWAYS write an explicit target spawn, seeded
+        # from (0, 0). Opening one and pressing OK was therefore enough
+        # to pin every arrival to the top-left corner and silently
+        # override the SET SPAWN point the destination level had
+        # authored. The mode chip makes that a choice instead: "level
+        # spawn" clears the override entirely.
+        existing_spawn = prop.get_target_spawn()
+        self.__spawn_mode: ChipRow = ChipRow(
+            pygame.Rect(inner_x, body.y + 238, 330, 26),
+            ["level spawn", "custom cell"],
+            "custom cell" if existing_spawn else "level spawn")
+        spawn = existing_spawn or (0, 0)
+        # body is 338 px tall, so the trailing note has to land by ~318
+        # or it is clipped by the sub-box edge.
         self.__spawn_x: Stepper = Stepper(
-            pygame.Rect(inner_x, body.y + 244, 210, 30), spawn[0], 0,
+            pygame.Rect(inner_x, body.y + 284, 210, 30), spawn[0], 0,
             GRID_MAX - 1, 1)
         self.__spawn_y: Stepper = Stepper(
-            pygame.Rect(inner_x + 240, body.y + 244, 210, 30), spawn[1], 0,
+            pygame.Rect(inner_x + 240, body.y + 284, 210, 30), spawn[1], 0,
             GRID_MAX - 1, 1)
 
     # ── helpers ───────────────────────────────────────────────
 
     def __retune_amount(self) -> None:
         """Point the amount stepper at the active reward's range."""
+        if self.__kind.get_value() == "menu":
+            return
         if self.__kind.get_value() == "money":
             self.__amount.set_range(MONEY_MIN, MONEY_MAX, MONEY_STEP, 0,
                                     " BDT")
@@ -562,21 +594,27 @@ class PropSettingsPopup(Modal):
             if self.__is_portal:
                 if self.__target.handle_event(event):
                     return
-                if self.__spawn_x.handle_event(event) or \
-                        self.__spawn_y.handle_event(event):
+                if self.__spawn_mode.handle_event(event):
+                    return
+                if self.__spawn_mode.get_value() == "custom cell" and (
+                        self.__spawn_x.handle_event(event)
+                        or self.__spawn_y.handle_event(event)):
                     return
             else:
                 if self.__kind.handle_event(event):
                     self.__retune_amount()
                     return
-                if self.__kind.get_value() != "none":
+                kind = self.__kind.get_value()
+                if kind == "menu":
+                    if self.__menu.handle_event(event):
+                        return
+                elif kind != "none":
                     if self.__amount.handle_event(event):
                         return
                     if self.__triggers.handle_event(event):
                         return
-                if self.__kind.get_value() == "skill" and \
-                        self.__skill.handle_event(event):
-                    return
+                    if kind == "skill" and self.__skill.handle_event(event):
+                        return
         super().handle_event(event)
 
     def update(self, dt: float) -> None:
@@ -595,13 +633,23 @@ class PropSettingsPopup(Modal):
         if self.__is_portal:
             prop.set_interaction_kind("none")
             prop.set_target_level_id(self.__target.get_text())
-            prop.set_target_spawn((int(self.__spawn_x.get_value()),
-                                   int(self.__spawn_y.get_value())))
+            # None means "no override" -- the runtime then uses the
+            # destination level's own SET SPAWN point.
+            if self.__spawn_mode.get_value() == "custom cell":
+                prop.set_target_spawn((int(self.__spawn_x.get_value()),
+                                       int(self.__spawn_y.get_value())))
+            else:
+                prop.set_target_spawn(None)
         else:
-            prop.set_interaction_kind(self.__kind.get_value())
-            if self.__kind.get_value() == "skill":
+            kind = self.__kind.get_value()
+            prop.set_interaction_kind(kind)
+            if kind == "menu":
+                # A menu opens every time it is used, so it carries no
+                # amount and no per-semester budget to spend.
+                prop.set_menu_id(self.__menu.get_value())
+            elif kind == "skill":
                 prop.set_skill_id(self.__skill.get_value())
-            if self.__kind.get_value() != "none":
+            if kind in ("money", "skill"):
                 prop.set_amount(self.__amount.get_value())
                 prop.set_triggers_per_semester(
                     int(self.__triggers.get_value()))
@@ -651,22 +699,38 @@ class PropSettingsPopup(Modal):
         th.draw_text(surface, label, "TARGET LEVEL ID", (x, body.y + 168),
                      th.CREDIT_HL)
         self.__target.render(surface, "campus_lab")
-        th.draw_text(surface, label, "TARGET SPAWN X", (x, body.y + 228),
+
+        th.draw_text(surface, label, "ARRIVE AT", (x, body.y + 222),
                      th.CREDIT_HL)
-        th.draw_text(surface, label, "TARGET SPAWN Y", (x + 240, body.y + 228),
+        self.__spawn_mode.render(surface)
+        custom = self.__spawn_mode.get_value() == "custom cell"
+        if not custom:
+            th.draw_text(surface, label,
+                         "USES THE TARGET LEVEL'S OWN SET SPAWN POINT",
+                         (x, body.y + 276), th.ROW_GREEN)
+            th.draw_text(surface, label,
+                         "PORTALS MOVE THE PLAYER — THEY GRANT NOTHING",
+                         (x, body.y + 300), th.STAT_BROWN)
+            return
+
+        th.draw_text(surface, label, "SPAWN X", (x, body.y + 268),
+                     th.CREDIT_HL)
+        th.draw_text(surface, label, "SPAWN Y", (x + 240, body.y + 268),
                      th.CREDIT_HL)
         self.__spawn_x.render(surface)
         self.__spawn_y.render(surface)
         th.draw_text(surface, label,
-                     "PORTALS MOVE THE PLAYER — THEY GRANT NOTHING",
-                     (x, body.y + 288), th.STAT_BROWN)
+                     "OVERRIDES THE TARGET LEVEL'S OWN SPAWN POINT",
+                     (x, body.y + 318), th.STAT_BROWN)
 
     def __render_reward_fields(self, surface: pygame.Surface,
                                label: pygame.font.Font) -> None:
         """Reward kind, amount, triggers and (for skills) the node."""
         body = self.get_body_rect()
         x = body.x + 12
-        th.draw_text(surface, label, "REWARD KIND", (x, body.y + 168),
+        # "INTERACTION KIND", not "REWARD KIND": since menus landed,
+        # one of the four options is a destination rather than a payout.
+        th.draw_text(surface, label, "INTERACTION KIND", (x, body.y + 168),
                      th.CREDIT_HL)
         self.__kind.render(surface)
         kind = self.__kind.get_value()
@@ -674,6 +738,9 @@ class PropSettingsPopup(Modal):
             th.draw_text(surface, th.load_font(th.SIZE_SUB),
                          "Shows a flavour line only.", (x, body.y + 236),
                          th.STAT_BROWN)
+            return
+        if kind == "menu":
+            self.__render_menu_fields(surface, label)
             return
 
         th.draw_text(surface, label, "AMOUNT", (x, body.y + 216),
@@ -695,6 +762,27 @@ class PropSettingsPopup(Modal):
             th.draw_text(surface, label,
                          f"UP TO {int(total):,} BDT PER SEMESTER FROM THIS "
                          f"PROP", (x, body.y + 276), th.STAT_BROWN)
+
+    def __render_menu_fields(self, surface: pygame.Surface,
+                             label: pygame.font.Font) -> None:
+        """
+        Which screen this prop opens.
+
+        No amount and no trigger cap are drawn: a menu prop is a door,
+        not a reward, so it may be used as often as the player likes
+        and there is nothing per-semester to budget.
+        """
+        body = self.get_body_rect()
+        x = body.x + 12
+        th.draw_text(surface, label, "OPENS MENU", (x, body.y + 216),
+                     th.CREDIT_HL)
+        self.__menu.render(surface)
+        th.draw_text(surface, label,
+                     f"MENU ID: {self.__menu.get_value().upper()}",
+                     (x, body.y + 276), th.STAT_BROWN)
+        th.draw_text(surface, label,
+                     "OPENS EVERY TIME — NO REWARD, NO TRIGGER LIMIT",
+                     (x, body.y + 296), th.STAT_BROWN)
 
 
 # ─────────────────────────────────────────────────────────────

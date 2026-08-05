@@ -157,8 +157,14 @@ def _discover_audio_files() -> Dict[str, Dict[str, str]]:
 
     Naming rules, in order:
         `music_<name>` / `ambient_<name>` / `sfx_<name>`  -> that table
+        `<name>_sfx`                                      -> sfx table
         a stem already in SFX_FILES or AMBIENT_BEDS       -> that table
         anything else                                     -> music
+
+    The `_sfx` SUFFIX is accepted as well as the `sfx_` prefix because
+    that is how the sound files actually arrived (`click_sfx.mp3`), and
+    a 20 KB tick auto-registering as a looping music track is a silent,
+    confusing failure rather than a loud one.
 
     A discovered file overrides the fallback path for a key it matches,
     so `campus.ogg` binds to the `campus` key even though the table
@@ -187,6 +193,8 @@ def _discover_audio_files() -> Dict[str, Dict[str, str]]:
             found["ambient"][key[8:]] = relative
         elif key.startswith("sfx_"):
             found["sfx"][key[4:]] = relative
+        elif key.endswith("_sfx"):
+            found["sfx"][key[:-4]] = relative
         elif key in SFX_FILES:
             found["sfx"][key] = relative
         elif key in AMBIENT_BEDS:
@@ -200,6 +208,41 @@ DISCOVERED_AUDIO: Dict[str, Dict[str, str]] = _discover_audio_files()
 MUSIC_TRACKS.update(DISCOVERED_AUDIO["music"])
 AMBIENT_BEDS.update(DISCOVERED_AUDIO["ambient"])
 SFX_FILES.update(DISCOVERED_AUDIO["sfx"])
+
+# ─────────────────────────────────────────────────────────────
+# INTERACTION SFX FALLBACK
+# ─────────────────────────────────────────────────────────────
+# The keys that mean "the player hit something and it responded". The
+# ~50 call sites for these already fire at exactly the right moments,
+# and identically for a mouse click and a key press — which is the
+# owner's rule for the click sound, with no event sniffing needed.
+#
+# Any of them without its own file borrows `click`. That is why one
+# 20 KB tick covers the whole UI today, and why recording a real
+# `confirm.wav` later needs no code change: a discovered file wins.
+#
+# footstep and dialogue_blip are deliberately EXCLUDED. They repeat
+# several times a second while walking or revealing text, so borrowing
+# a click would turn them into a rattle.
+# ─────────────────────────────────────────────────────────────
+
+INTERACTION_SFX_KEYS: Tuple[str, ...] = (
+    "confirm", "cancel", "select", "page_turn", "error", "gate_locked",
+)
+
+
+def _bind_interaction_fallbacks() -> None:
+    """Point interaction keys at `click` when they have no file."""
+    click_path = SFX_FILES.get("click", "")
+    if not click_path or not os.path.exists(resolve_asset(click_path)):
+        return
+    for key in INTERACTION_SFX_KEYS:
+        path = SFX_FILES.get(key, "")
+        if not path or not os.path.exists(resolve_asset(path)):
+            SFX_FILES[key] = click_path
+
+
+_bind_interaction_fallbacks()
 
 
 def describe(key: str) -> str:

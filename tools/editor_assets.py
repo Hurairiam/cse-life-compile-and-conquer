@@ -113,12 +113,27 @@ class AssetCache:
         """
         The NPC's `level_editor` art — palette cell and canvas preview.
         This is editor chrome; the game never shows it.
+
+        Falls back to the first frame of the idle sheet when the
+        dedicated icon is absent. Only two of the seven NPCs ever got a
+        `_level_editor.png`, so without this the other five drew as
+        blank placeholder squares and were impossible to tell apart in
+        the palette — an NPC with a map sprite should always be
+        recognisable, even before its icon is drawn.
+
+        The missing path is still recorded, so `get_missing_paths()`
+        keeps listing it as art worth making.
         """
         entry = get_npc_def(type_id)
         if entry is None:
             return None
-        return self.__cell(entry.get("editor_icon", ""), 0, 0,
-                           int(entry.get("cell_px", 48)), size)
+        cell_px = int(entry.get("cell_px", 48))
+        icon = str(entry.get("editor_icon", ""))
+        surface = self.__cell(icon, 0, 0, cell_px, size) if icon else None
+        if surface is None:
+            surface = self.__cell(str(entry.get("idle_sheet", "")), 0, 0,
+                                  cell_px, size)
+        return surface
 
     def get_npc_idle(self, type_id: str, size: int,
                      frame: int = 0) -> Optional[pygame.Surface]:

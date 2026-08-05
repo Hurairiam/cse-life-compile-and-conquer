@@ -66,6 +66,8 @@ from content.level_registry import (
     LAYER_OVERLAY,
     MAX_PROP_EXP_PER_SEMESTER,
     MAX_PROP_MONEY_PER_SEMESTER,
+    MENU_ID_DEFAULT,
+    MENU_REGISTRY,
     MONEY_MAX,
     MONEY_MIN,
     ON_COMPLETE_DEFAULT,
@@ -705,6 +707,7 @@ class PropData:
         self.__kind: str = INTERACTION_KIND_DEFAULT
         self.__amount: float = 0.0
         self.__skill_id: Optional[str] = None
+        self.__menu_id: str = ""
         self.__triggers_per_semester: int = TRIGGERS_DEFAULT
         self.__target_level_id: str = ""
         self.__target_spawn: Optional[Tuple[int, int]] = None
@@ -776,13 +779,16 @@ class PropData:
         self.__interactable = bool(value)
 
     def get_interaction_kind(self) -> str:
-        """"none", "money" or "skill"."""
+        """"none", "money", "skill" or "menu"."""
         return self.__kind
 
     def set_interaction_kind(self, kind: str) -> bool:
         """
         Switch reward type, re-seeding the amount into that kind's
         legal range so the popup never shows an out-of-range value.
+
+        "menu" grants nothing — it opens a screen — so it clears the
+        amount exactly as "none" does and seeds a menu id instead.
         """
         if kind not in INTERACTION_KINDS:
             return False
@@ -799,10 +805,49 @@ class PropData:
                 self.__amount = float(EXP_MIN)
             if self.__skill_id is None:
                 self.__skill_id = SKILL_IDS[0]
+        elif kind == "menu":
+            self.__amount = 0.0
+            self.__skill_id = None
+            if not self.__menu_id:
+                self.__menu_id = MENU_ID_DEFAULT
         else:
             self.__amount = 0.0
             self.__skill_id = None
         return True
+
+    def get_menu_id(self) -> str:
+        """
+        The screen a "menu" prop opens ("" = unset).
+
+        Kept even after the kind is switched away, so an author who
+        flips a noticeboard to money and back does not lose which
+        screen they had chosen. Only the active kind is acted on.
+        """
+        return self.__menu_id
+
+    def set_menu_id(self, menu_id: Optional[str]) -> bool:
+        """
+        Name the screen to open, or None/"" to clear it.
+
+        An id outside MENU_REGISTRY is REFUSED rather than coerced:
+        there is no nearest sensible screen, and quietly substituting
+        one would send the player somewhere the author never chose.
+        """
+        if menu_id is None or menu_id == "":
+            changed = self.__menu_id != ""
+            self.__menu_id = ""
+            return changed
+        text = str(menu_id)
+        if text not in MENU_REGISTRY:
+            return False
+        changed = text != self.__menu_id
+        self.__menu_id = text
+        return changed
+
+    def opens_menu(self) -> bool:
+        """True when interacting with this prop should open a screen."""
+        return (self.__interactable and self.__kind == "menu"
+                and bool(self.__menu_id))
 
     def get_amount(self) -> float:
         """BDT for money rewards, EXP points for skill rewards."""
@@ -920,6 +965,12 @@ class PropData:
                 "triggers_per_semester": self.__triggers_per_semester,
             },
         })
+        # Written only when a menu was actually chosen, the same rule
+        # `gate` and `zones` follow: a prop that opens no menu
+        # serialises exactly as it did before menus existed, so every
+        # level authored earlier still round-trips byte-identical.
+        if self.__menu_id:
+            data["interaction"]["menu_id"] = self.__menu_id
         if self.is_portal():
             data["target_level_id"] = self.__target_level_id
             data["target_spawn"] = (list(self.__target_spawn)
@@ -944,6 +995,10 @@ class PropData:
         prop.set_interactable(bool(data.get("interactable", False)))
 
         interaction: Dict[str, Any] = data.get("interaction") or {}
+        # Read BEFORE the kind so switching to "menu" sees the stored
+        # id and does not overwrite it with the default.
+        if interaction.get("menu_id"):
+            prop.set_menu_id(str(interaction["menu_id"]))
         prop.set_interaction_kind(str(interaction.get(
             "kind", INTERACTION_KIND_DEFAULT)))
         if interaction.get("amount") is not None:
@@ -1983,6 +2038,19 @@ class LevelData:
                 issues.append(ValidationIssue(
                     SEVERITY_WARNING, "PORTAL_NO_TARGET",
                     f"portal '{prop.get_uid()}' has no target level", (x, y)))
+            if prop.get_interactable() and \
+                    prop.get_interaction_kind() == "menu":
+                menu_id = prop.get_menu_id()
+                if not menu_id:
+                    issues.append(ValidationIssue(
+                        SEVERITY_WARNING, "MENU_NO_TARGET",
+                        f"prop '{prop.get_uid()}' opens a menu but none is "
+                        f"chosen", (x, y)))
+                elif menu_id not in MENU_REGISTRY:
+                    issues.append(ValidationIssue(
+                        SEVERITY_WARNING, "UNKNOWN_MENU",
+                        f"prop '{prop.get_uid()}' opens unknown menu "
+                        f"'{menu_id}'", (x, y)))
             if prop.get_interactable():
                 payout = prop.get_amount() * prop.get_triggers_per_semester()
                 if prop.get_interaction_kind() == "money":
