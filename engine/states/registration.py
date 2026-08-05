@@ -22,7 +22,8 @@ def __ui(ctx):
 
 def __catalog(ctx):
     """Full ordered catalog — backlog first. Never sliced."""
-    return ctx.catalog_builder.build(ctx.full_catalog, ctx.history())
+    return ctx.catalog_builder.build(
+        ctx.full_catalog, ctx.history(), ctx.semester().get_semester_number())
 
 
 def enter(ctx):
@@ -115,7 +116,7 @@ def render(ctx, screen):
         student_id=ctx.player().get_character_id(),
         semester=ctx.semester().get_semester_number(),
         backlogged=ctx.catalog_builder.get_backlogged(
-            ctx.full_catalog, ctx.history()),
+            ctx.full_catalog, ctx.history(), ctx.semester().get_semester_number()),
         scroll_offset=ctx.reg_scroll,
         newly_unlocked=ctx.catalog_builder.get_newly_unlocked(courses),
     )
