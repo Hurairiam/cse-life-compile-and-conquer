@@ -176,7 +176,12 @@ def verb_for(ctx, cell):
         return (LABEL_TALK, False)
     if ctx.level.get_portal_at(*cell) is not None:
         return (LABEL_ENTER, False)
-    if ctx.level.get_interactable_at(*cell) is not None:
+    prop = ctx.level.get_interactable_at(*cell)
+    if prop is not None:
+        # A travel prop is a door, so it reads ENTER like a portal
+        # rather than EXAMINE like a thing you poke at.
+        if prop.travels_on_interact():
+            return (LABEL_ENTER, False)
         return (LABEL_EXAMINE, False)
     return ("", False)
 
@@ -220,9 +225,15 @@ def __talk(ctx, npc_data):
 
 
 def __trigger_prop(ctx, prop):
-    # Menu props open a screen instead of paying out, and are checked
-    # first so the per-semester trigger cap never applies to them.
+    # Menu and travel props are doors, not payouts, so both are checked
+    # before the per-semester trigger cap — a doorway usable three times
+    # a term would be nonsense. Any restriction on them lives on the
+    # prop's GATE, which __interact already evaluated before getting
+    # here, so reaching this line means the player is allowed through.
     if menu_prop.trigger(ctx, prop):
+        return
+    if prop.travels_on_interact():
+        __travel(ctx, prop)
         return
     key = "%s:%s" % (ctx.level_id, prop.get_uid())
     used = ctx.prop_trigger_counts.get(key, 0)

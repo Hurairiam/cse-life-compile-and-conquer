@@ -72,6 +72,40 @@ def resolve_asset(relative_path: str) -> str:
 TILE_SIZE_PX: int = 48          # on-screen size of one cell (Style Guide §5.4)
 EMPTY_TILE: int = -1            # "no tile here" — overlay layer only
 
+# ─────────────────────────────────────────────────────────────
+# NPC DRAW SIZE
+# ─────────────────────────────────────────────────────────────
+# NPCs are drawn LARGER than the cell they stand on. A character
+# scaled to exactly one tile reads as scenery — the same size as the
+# rock next to them — and one centred in the cell appears to hover.
+#
+# So the sprite is scaled up and anchored by the FEET: it is centred
+# horizontally on the cell and its bottom edge sits on the cell's
+# bottom edge, with the extra height overhanging the cells behind.
+# Collision is unaffected; an NPC still occupies exactly one cell.
+#
+# Expressed as a MULTIPLE of the cell rather than a pixel count so the
+# level editor's 32 / 48 / 96 px zoom steps all stay correct.
+# ─────────────────────────────────────────────────────────────
+
+NPC_DRAW_SCALE: float = 1.5
+
+
+def npc_sprite_px(cell_px: int = TILE_SIZE_PX) -> int:
+    """On-screen size of an NPC sprite for a given cell size."""
+    return max(1, int(round(cell_px * NPC_DRAW_SCALE)))
+
+
+def npc_blit_offset(cell_px: int = TILE_SIZE_PX) -> tuple:
+    """
+    (dx, dy) from a cell's top-left corner to the NPC sprite's corner.
+
+    dy is negative: the sprite is taller than the cell and hangs off
+    the top, which is what puts the feet on the floor.
+    """
+    size = npc_sprite_px(cell_px)
+    return ((cell_px - size) // 2, cell_px - size)
+
 GRID_MIN: int = 10              # Spec §4.4 grid-size stepper range
 GRID_MAX: int = 200
 
@@ -166,6 +200,76 @@ PROP_REGISTRY: Dict[str, Dict[str, Any]] = {
 }
 
 PORTAL_TYPE_ID: str = "portal"
+
+# ─────────────────────────────────────────────────────────────
+# MULTI-CELL PROPS  (trees and anything else taller than a tile)
+# ─────────────────────────────────────────────────────────────
+# A prop may cover more than one cell. Its stored (x, y) is always the
+# BOTTOM-LEFT cell — the corner of its root — and the sprite extends
+# up and to the right from there. Anchoring at the bottom is what makes
+# a tree "stand on" the cell you clicked instead of hanging from it.
+#
+#     cells_w / cells_h : footprint, in cells
+#     root_h            : how many rows at the BOTTOM are solid
+#
+# Only the root blocks. The canopy above it is walk-behind, and the
+# renderer fades the whole prop while the player is behind it so they
+# are never lost under a tree.
+#
+# Both are DERIVED from the art by default: a 32x48 sprite of 16 px
+# cells is 2 wide and 3 tall, so an artist gets a correct footprint by
+# drawing the tree at the size they want it. The `_props.json` override
+# is there for the cases that rule gets wrong — a wide canopy over a
+# one-cell trunk wants root_h 1, which is already the default, but a
+# hedge that is solid all the way up wants root_h equal to cells_h.
+# ─────────────────────────────────────────────────────────────
+
+PROP_ROOT_H_DEFAULT: int = 1
+
+
+def get_prop_footprint(type_id: str) -> tuple:
+    """(cells_w, cells_h) for a prop type. Unknown types are 1x1."""
+    entry = PROP_REGISTRY.get(type_id)
+    if entry is None:
+        return (1, 1)
+    return (max(1, int(entry.get("cells_w", 1))),
+            max(1, int(entry.get("cells_h", 1))))
+
+
+def get_prop_root_height(type_id: str) -> int:
+    """
+    How many bottom rows of a prop are solid, clamped to its height.
+
+    Defaults to 1: one row of trunk under any amount of canopy.
+    """
+    entry = PROP_REGISTRY.get(type_id)
+    if entry is None:
+        return 1
+    _, cells_h = get_prop_footprint(type_id)
+    return max(1, min(cells_h, int(entry.get("root_h",
+                                             PROP_ROOT_H_DEFAULT))))
+
+
+def is_multicell_prop(type_id: str) -> bool:
+    """True when this prop covers more than the cell it stands on."""
+    return get_prop_footprint(type_id) != (1, 1)
+
+
+def prop_cells(type_id: str, x: int, y: int) -> list:
+    """
+    Every cell a prop covers, given its bottom-left anchor.
+
+    Returned as (cx, cy, is_root) so callers do not each re-derive
+    which rows block and which are walk-behind canopy.
+    """
+    cells_w, cells_h = get_prop_footprint(type_id)
+    root_h = get_prop_root_height(type_id)
+    out = []
+    for row in range(cells_h):
+        cy = y - row                      # row 0 is the anchor itself
+        for col in range(cells_w):
+            out.append((x + col, cy, row < root_h))
+    return out
 
 # ─────────────────────────────────────────────────────────────
 # NPC REGISTRY
@@ -474,7 +578,7 @@ ON_COMPLETE_DEFAULT: str = "loop_last"
 # PROP INTERACTION BOUNDS  (Spec §5.3)
 # ─────────────────────────────────────────────────────────────
 
-INTERACTION_KINDS: tuple = ("none", "money", "skill", "menu")
+INTERACTION_KINDS: tuple = ("none", "money", "skill", "menu", "travel")
 INTERACTION_KIND_DEFAULT: str = "none"
 
 # ─────────────────────────────────────────────────────────────

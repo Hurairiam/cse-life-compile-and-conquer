@@ -3,6 +3,7 @@
   "tiles": {
     "Layer-10-copy-5": 100,
     "brick": 101,
+    "brick copy": 129,
     "brick_edge_left_bottom": 102,
     "brick_edge_left_middle": 103,
     "brick_edge_left_top": 104,
