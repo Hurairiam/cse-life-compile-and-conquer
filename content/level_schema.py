@@ -74,6 +74,8 @@ from content.level_registry import (
     ON_COMPLETE_MODES,
     PORTAL_TYPE_ID,
     PROJECT_ROOT,
+    is_multicell_prop,
+    prop_cells,
     SKILL_IDS,
     SPEED_MODIFIER_BASE,
     SPEED_MODIFIER_MAX,
@@ -736,8 +738,30 @@ class PropData:
         return True
 
     def is_portal(self) -> bool:
-        """True for travel props (Spec §9)."""
+        """
+        True for the step-on portal prop type (Spec §9).
+
+        Distinct from `travels_on_interact()`: a portal fires the moment
+        the player walks onto it, while ANY prop can be given the
+        "travel" interaction kind and fires on E instead. Both carry the
+        same target_level_id / target_spawn fields.
+        """
         return self.__type_id == PORTAL_TYPE_ID
+
+    def travels_on_interact(self) -> bool:
+        """
+        True when pressing E on this prop should move the player.
+
+        A door you open rather than a threshold you cross. Restrictions
+        come from the prop's own gate, which exploration.__interact
+        already evaluates before it ever reaches the prop.
+        """
+        return (self.__interactable and self.__kind == "travel"
+                and bool(self.__target_level_id))
+
+    def has_travel_fields(self) -> bool:
+        """True when this prop stores a destination at all."""
+        return self.is_portal() or self.__kind == "travel"
 
     # ── collision + movement ──────────────────────────────────
 
@@ -810,6 +834,11 @@ class PropData:
             self.__skill_id = None
             if not self.__menu_id:
                 self.__menu_id = MENU_ID_DEFAULT
+        elif kind == "travel":
+            # A door grants nothing; it moves you. The destination is
+            # kept in the same fields a portal uses.
+            self.__amount = 0.0
+            self.__skill_id = None
         else:
             self.__amount = 0.0
             self.__skill_id = None
@@ -971,7 +1000,10 @@ class PropData:
         # level authored earlier still round-trips byte-identical.
         if self.__menu_id:
             data["interaction"]["menu_id"] = self.__menu_id
-        if self.is_portal():
+        # Written for step-on portals AND for any prop whose interaction
+        # kind is "travel". A prop that does neither omits both keys, so
+        # every level authored before travel props round-trips unchanged.
+        if self.has_travel_fields():
             data["target_level_id"] = self.__target_level_id
             data["target_spawn"] = (list(self.__target_spawn)
                                     if self.__target_spawn else None)
@@ -1008,7 +1040,7 @@ class PropData:
         prop.set_triggers_per_semester(int(interaction.get(
             "triggers_per_semester", TRIGGERS_DEFAULT)))
 
-        if prop.is_portal():
+        if prop.has_travel_fields():
             prop.set_target_level_id(str(data.get("target_level_id", "")))
             spawn = data.get("target_spawn")
             if isinstance(spawn, (list, tuple)) and len(spawn) == 2:
@@ -1522,10 +1554,15 @@ class LevelData:
         rows[y][x] = value
         return True
 
-    def is_cell_walkable(self, x: int, y: int) -> bool:
+    def is_terrain_walkable(self, x: int, y: int) -> bool:
         """
-        Combined collision for a cell: overlay wins over ground, and
-        a solid prop blocks regardless of the tiles under it.
+        Collision from the MAP ALONE: overlay wins over ground, and a
+        solid prop blocks regardless of the tiles under it.
+
+        Split out from is_cell_walkable() so the validator can ask
+        "is this a sensible place to stand?" about a cell an NPC is
+        already standing on. Asking the combined question there would
+        report every NPC in the level as standing somewhere blocked.
         """
         if not self.is_inside(x, y):
             return False
@@ -1534,10 +1571,25 @@ class LevelData:
                    else is_tile_walkable(self.__ground[y][x]))
         if not tile_ok:
             return False
-        prop = self.get_prop_at(x, y)
+        # Root, not anchor: a tree blocks every cell of its trunk, and
+        # nothing at all under its canopy.
+        prop = self.get_prop_root_at(x, y)
         if prop is not None and not prop.get_passthrough():
             return False
         return True
+
+    def is_cell_walkable(self, x: int, y: int) -> bool:
+        """
+        Can the player occupy this cell? Terrain, plus entities.
+
+        An NPC is SOLID: you talk to them from the next cell over, you
+        do not walk through them. `engine/level_loader.py` bakes this
+        into its collision grid, so the rule reaches the game as well
+        as the editor from this one place.
+        """
+        if not self.is_terrain_walkable(x, y):
+            return False
+        return self.get_npc_at(x, y) is None
 
     def resize(self, width: int, height: int,
                fill_tile: int = DEFAULT_GROUND_TILE) -> bool:
@@ -1592,10 +1644,55 @@ class LevelData:
         return list(self.__props)
 
     def get_prop_at(self, x: int, y: int) -> Optional[PropData]:
-        """The prop on a cell — at most one (Spec §3.3)."""
+        """
+        The prop ANCHORED on a cell — at most one (Spec §3.3).
+
+        This is identity, not coverage: a 1x3 tree anchored at (4, 9)
+        answers only for (4, 9). Use get_prop_root_at() to ask whether
+        something solid occupies a cell.
+        """
         for prop in self.__props:
             if prop.get_position() == (x, y):
                 return prop
+        return None
+
+    def get_prop_root_at(self, x: int, y: int) -> Optional[PropData]:
+        """
+        The prop whose ROOT covers this cell, anchored here or not.
+
+        A multi-cell prop only blocks on its root rows; the canopy is
+        walk-behind, so this deliberately ignores those cells. Anything
+        1x1 behaves exactly as before.
+        """
+        for prop in self.__props:
+            px, py = prop.get_position()
+            type_id = prop.get_type_id()
+            if not is_multicell_prop(type_id):
+                if (px, py) == (x, y):
+                    return prop
+                continue
+            for cx, cy, is_root in prop_cells(type_id, px, py):
+                if is_root and (cx, cy) == (x, y):
+                    return prop
+        return None
+
+    def get_prop_covering(self, x: int, y: int) -> Optional[PropData]:
+        """
+        The prop whose FOOTPRINT covers this cell, root or canopy.
+
+        Used by the renderer to decide when the player is standing
+        behind something and it should fade.
+        """
+        for prop in self.__props:
+            px, py = prop.get_position()
+            type_id = prop.get_type_id()
+            if not is_multicell_prop(type_id):
+                if (px, py) == (x, y):
+                    return prop
+                continue
+            for cx, cy, _ in prop_cells(type_id, px, py):
+                if (cx, cy) == (x, y):
+                    return prop
         return None
 
     def add_prop(self, type_id: str, x: int, y: int) -> Optional[PropData]:
@@ -1998,7 +2095,9 @@ class LevelData:
         """Advisory issues — listed in amber, saving still allowed."""
         for npc in self.__npcs:
             x, y = npc.get_position()
-            if self.is_inside(x, y) and not self.is_cell_walkable(x, y):
+            # Terrain-only: NPCs are solid now, so the combined check
+            # would flag every one of them for standing on itself.
+            if self.is_inside(x, y) and not self.is_terrain_walkable(x, y):
                 issues.append(ValidationIssue(
                     SEVERITY_WARNING, "NPC_ON_BLOCKED",
                     f"npc '{npc.get_uid()}' stands on a blocked cell", (x, y)))
@@ -2038,6 +2137,13 @@ class LevelData:
                 issues.append(ValidationIssue(
                     SEVERITY_WARNING, "PORTAL_NO_TARGET",
                     f"portal '{prop.get_uid()}' has no target level", (x, y)))
+            if prop.get_interactable() and \
+                    prop.get_interaction_kind() == "travel" and \
+                    not prop.get_target_level_id():
+                issues.append(ValidationIssue(
+                    SEVERITY_WARNING, "TRAVEL_NO_TARGET",
+                    f"prop '{prop.get_uid()}' travels but has no target "
+                    f"level", (x, y)))
             if prop.get_interactable() and \
                     prop.get_interaction_kind() == "menu":
                 menu_id = prop.get_menu_id()

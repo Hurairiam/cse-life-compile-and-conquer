@@ -388,12 +388,26 @@ def scan_props(claimed_paths: Optional[set] = None
     for stem, path in _list_pngs(PROPS_DIR):
         if path in claimed_paths:
             continue
+        # Footprint straight off the art: the SHORTER side is taken as
+        # one cell, so a 16x48 tree is 1 wide and 3 tall and a 16x16
+        # rock stays 1x1. Drawing a prop bigger is all an artist has to
+        # do to make it cover more ground.
+        size = read_png_size(os.path.join(PROJECT_ROOT, path))
+        if size is None:
+            cell, cells_w, cells_h = 16, 1, 1
+        else:
+            width, height = size
+            cell = min(width, height)
+            cells_w = max(1, width // cell)
+            cells_h = max(1, height // cell)
         entry: Dict[str, Any] = {
             "name": stem.replace("_", " "),
             "sheet": path,
             "col": 0,
             "row": 0,
-            "cell_px": _cell_px(path),
+            "cell_px": cell,
+            "cells_w": cells_w,
+            "cells_h": cells_h,
             "default_passthrough": _is_passthrough_prop(stem),
             "discovered": True,
         }
