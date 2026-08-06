@@ -130,28 +130,38 @@ class RegistrationManager:
 
         A course is visible if:
           - it's already completed -> NEVER visible (excluded outright), OR
-          - it's currently backlogged (a past failed attempt) -> ALWAYS
-            visible, regardless of term or prerequisites — a backlogged
-            course already "belongs" to the player until they pass it, OR
-          - it's assigned to current_semester_number (Course.
-            is_offered_in_semester()) AND its prerequisites are satisfied.
+          - its term has ARRIVED (Course.is_term_available(), i.e.
+            semester_number <= current_semester_number) AND its
+            prerequisites are satisfied.
 
-        CHANGE (term-gated visibility): previously any course with
-        satisfied prerequisites was visible regardless of its assigned
-        term — e.g. a term-5 course with no prerequisites could appear
-        in term 1. Term assignment is now the PRIMARY gate; prerequisite
-        checking still applies on top of it as a secondary safety check
-        (a course can be scheduled for term 2 but still require term-1
-        content to be passed first).
+        BUG FIX: this used to check is_offered_in_semester() (an EXACT
+        term match) plus a separate "is it in the backlog" branch. That
+        meant a course offered in an earlier term that the player simply
+        never registered for (not completed, not failed, just skipped)
+        fell through both checks and vanished from every later term's
+        catalog — reported as "unselected courses disappearing" when
+        only retaken/backlogged courses were carrying forward. Switching
+        to is_term_available()'s <= comparison fixes this: any course
+        whose term has arrived and isn't finished yet keeps showing up,
+        whether it was never attempted OR previously failed. The old
+        backlog-list branch is no longer needed for VISIBILITY (a failed
+        course's term has, by definition, already arrived) — the
+        backlog list itself is still tracked in AcademicHistory and used
+        separately by engine/catalog_builder.py for backlog-first
+        ordering in the UI.
+
+        CHANGE (term-gated visibility, from the previous iteration):
+        previously any course with satisfied prerequisites was visible
+        regardless of its assigned term at all. Term assignment is now
+        the PRIMARY gate; prerequisite checking still applies on top of
+        it as a secondary safety check (a course can be scheduled for
+        term 2 but still require term-1 content to be passed first).
         """
-        backlog_ids: list[str] = history.get_backlog_courses()
         visible: list[Course] = []
         for course in full_catalog:
             if course.get_is_completed():
                 continue
-            if course.get_course_id() in backlog_ids:
-                visible.append(course)
-            elif (course.is_offered_in_semester(current_semester_number)
+            if (course.is_term_available(current_semester_number)
                     and course.are_prerequisites_satisfied(history)):
                 visible.append(course)
         return visible
