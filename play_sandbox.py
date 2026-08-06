@@ -119,7 +119,7 @@ WALK_FPS = 8.0                  # frames per second of the 4-frame cycle
 WALK_FRAMES = 4
 FOOTSTEP_PERIOD = 0.34          # seconds between footstep SFX while moving
 
-DEFAULT_LEVEL_ID = "indoor_lecturehall"
+DEFAULT_LEVEL_ID = "lecture_hall"
 
 # The fake player's starting figures — plausible mid-degree numbers so
 # the HUD shows something other than zeroes. Every one is nudgeable

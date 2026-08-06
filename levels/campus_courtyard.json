@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "meta": {
-    "level_name": "courtyard",
-    "level_id": "courtyard",
+    "level_name": "Campus Courtyard",
+    "level_id": "campus_courtyard",
     "grid_width": 22,
     "grid_height": 22,
     "ambient": "day",
@@ -2701,7 +2701,46 @@
       }
     }
   ],
-  "npcs": [],
+  "npcs": [
+    {
+      "uid": "npc_0001",
+      "type_id": "zayan",
+      "x": 11,
+      "y": 11,
+      "facing": "down",
+      "interactable": true,
+      "dialog": {
+        "chains": [
+          {
+            "chain_id": "greeting",
+            "lines": [
+              "Oh hey. We met in class before.",
+              "I'm Zayan. Been sitting out here avoiding the library.",
+              "Don't tell me you actually did the readings."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "offer",
+            "lines": [
+              "Okay so I found this thing we could work on.",
+              "I'm probably not going to do it alone if I'm honest.",
+              "You in?"
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "farewell",
+            "lines": [
+              "Fair enough. I'll probably just sit here a bit longer."
+            ],
+            "emotion": "neutral"
+          }
+        ],
+        "on_complete": "loop_last"
+      }
+    }
+  ],
   "zones": [
     {
       "uid": "zone_0001",

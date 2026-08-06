@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "meta": {
-    "level_name": "indoor_cafeteria",
-    "level_id": "indoor_cafeteria",
+    "level_name": "Cafeteria",
+    "level_id": "cafeteria",
     "grid_width": 22,
     "grid_height": 22,
     "ambient": "day",
@@ -1090,7 +1090,7 @@
         "triggers_per_semester": 1
       },
       "rotation": 270,
-      "target_level_id": "cafeteria_lecturehall",
+      "target_level_id": "campus_main",
       "target_spawn": null
     },
     {
@@ -1110,7 +1110,47 @@
       "rotation": 180
     }
   ],
-  "npcs": [],
+  "npcs": [
+    {
+      "uid": "npc_0001",
+      "type_id": "purnno",
+      "x": 10,
+      "y": 12,
+      "facing": "down",
+      "interactable": true,
+      "dialog": {
+        "chains": [
+          {
+            "chain_id": "greeting",
+            "lines": [
+              "Oh, you're in the CSE program too?",
+              "I'm Purnno by the way. Just grabbed some food\u2014 this place gets crowded really fast.",
+              "Join us please!"
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "offer",
+            "lines": [
+              "I found something we could work on together.",
+              "A few days of focused practice \u2014 nothing crazy.",
+              "Interested?"
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "farewell",
+            "lines": [
+              "No pressure. Food's getting cold so I gotta dash.",
+              "You know where to find me."
+            ],
+            "emotion": "neutral"
+          }
+        ],
+        "on_complete": "loop_last"
+      }
+    }
+  ],
   "zones": [
     {
       "uid": "zone_0001",
