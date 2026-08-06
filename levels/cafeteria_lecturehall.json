@@ -2768,6 +2768,276 @@
         "skill_id": null,
         "triggers_per_semester": 1
       }
+    },
+    {
+      "uid": "prop_0019",
+      "type_id": "brick_edge_right_bottom",
+      "x": 45,
+      "y": 14,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0020",
+      "type_id": "brick_edge_right_middle",
+      "x": 45,
+      "y": 13,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0021",
+      "type_id": "brick_edge_right_middle",
+      "x": 45,
+      "y": 12,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0022",
+      "type_id": "brick_edge_right_middle",
+      "x": 45,
+      "y": 11,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0023",
+      "type_id": "brick_edge_right_middle",
+      "x": 45,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0024",
+      "type_id": "brick_edge_right_middle",
+      "x": 45,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0025",
+      "type_id": "brick_edge_right_middle",
+      "x": 45,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0026",
+      "type_id": "brick_edge_right_middle",
+      "x": 45,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0030",
+      "type_id": "brick_edge_left_middle",
+      "x": 25,
+      "y": 13,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0031",
+      "type_id": "brick_edge_left_middle",
+      "x": 25,
+      "y": 12,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0032",
+      "type_id": "brick_edge_left_middle",
+      "x": 25,
+      "y": 11,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0033",
+      "type_id": "brick_edge_left_middle",
+      "x": 25,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0034",
+      "type_id": "brick_edge_left_middle",
+      "x": 25,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0035",
+      "type_id": "brick_edge_left_middle",
+      "x": 25,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0036",
+      "type_id": "brick_edge_left_middle",
+      "x": 25,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0037",
+      "type_id": "brick_edge_left_middle",
+      "x": 25,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0038",
+      "type_id": "brick_edge_right_top",
+      "x": 45,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0039",
+      "type_id": "brick_edge_left_bottom",
+      "x": 25,
+      "y": 14,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
     }
   ],
   "npcs": [],
