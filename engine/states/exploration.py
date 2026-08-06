@@ -73,7 +73,7 @@ def handle_events(ctx, events):
             __interact(ctx)
         elif event.key == pygame.K_x:
             ctx.go(ScreenState.EXAM)
-
+        
 
 def __read_axis(keys):
     dx = (1 if keys[pygame.K_RIGHT] or keys[pygame.K_d] else 0) \
