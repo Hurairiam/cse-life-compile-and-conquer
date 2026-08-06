@@ -190,7 +190,7 @@ class HUD:
         Draw where the player is, right-aligned against the strip edge.
 
         Underscores become spaces and a bare slug is title-cased, so a
-        level whose name was never filled in ("indoor_library") still
+        level whose name was never filled in ("campus_library") still
         reads as "Indoor Library" instead of shouting its filename.
         A properly authored name ("Cafeteria & Lecture Hall") already
         has spaces and is left exactly as written.

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "meta": {
-    "level_name": "lobby",
-    "level_id": "lobby",
+    "level_name": "Campus Lobby",
+    "level_id": "campus_lobby",
     "grid_width": 24,
     "grid_height": 32,
     "ambient": "day",
@@ -2164,7 +2164,7 @@
         "skill_id": null,
         "triggers_per_semester": 1
       },
-      "target_level_id": "cafeteria_lecturehall",
+      "target_level_id": "campus_main",
       "target_spawn": null
     },
     {
@@ -2232,7 +2232,47 @@
       }
     }
   ],
-  "npcs": [],
+  "npcs": [
+    {
+      "uid": "npc_0001",
+      "type_id": "roya",
+      "x": 12,
+      "y": 20,
+      "facing": "down",
+      "interactable": true,
+      "dialog": {
+        "chains": [
+          {
+            "chain_id": "greeting",
+            "lines": [
+              "Oh, a student! Come in, come in.",
+              "I'm Ms. Roya \u2014 I run the career office.",
+              "You're here earlier than most. That's already a good sign."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "offer",
+            "lines": [
+              "I have an internship shift available this week.",
+              "It pays a stipend \u2014 not much, but real experience.",
+              "Interested? It won't take long."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "farewell",
+            "lines": [
+              "No worries at all. My door is always open.",
+              "Come back any time \u2014 even just to talk through your options."
+            ],
+            "emotion": "neutral"
+          }
+        ],
+        "on_complete": "loop_last"
+      }
+    }
+  ],
   "zones": [
     {
       "uid": "zone_0001",
