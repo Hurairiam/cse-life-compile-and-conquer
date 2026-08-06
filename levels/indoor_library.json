@@ -1,0 +1,1560 @@
+{
+  "schema_version": 1,
+  "meta": {
+    "level_name": "indoor_library",
+    "level_id": "indoor_library",
+    "grid_width": 19,
+    "grid_height": 15,
+    "ambient": "day",
+    "music": "exploration",
+    "spawn": {
+      "x": 17,
+      "y": 7
+    }
+  },
+  "layers": {
+    "ground": [
+      [
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108
+      ],
+      [
+        108,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        108
+      ],
+      [
+        108,
+        110,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        110,
+        108
+      ],
+      [
+        108,
+        110,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        110,
+        108
+      ],
+      [
+        108,
+        110,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        110,
+        108
+      ],
+      [
+        108,
+        110,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        110,
+        108
+      ],
+      [
+        108,
+        110,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        110,
+        109
+      ],
+      [
+        108,
+        110,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        110,
+        109
+      ],
+      [
+        108,
+        110,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        110,
+        109
+      ],
+      [
+        108,
+        110,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        110,
+        108
+      ],
+      [
+        108,
+        110,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        110,
+        108
+      ],
+      [
+        108,
+        110,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        110,
+        108
+      ],
+      [
+        108,
+        110,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        109,
+        110,
+        109,
+        109,
+        110,
+        108
+      ],
+      [
+        108,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        110,
+        108
+      ],
+      [
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108,
+        108
+      ]
+    ],
+    "overlay": [
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    ]
+  },
+  "props": [
+    {
+      "uid": "prop_0005",
+      "type_id": "bookshelf_top_left",
+      "x": 13,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0006",
+      "type_id": "bookshelf_top_right",
+      "x": 14,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0007",
+      "type_id": "bookshelf_top_right",
+      "x": 11,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0008",
+      "type_id": "bookshelf_top_left",
+      "x": 10,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0009",
+      "type_id": "bookshelf_top_right",
+      "x": 8,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0010",
+      "type_id": "bookshelf_top_left",
+      "x": 7,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0011",
+      "type_id": "bookshelf_top_right",
+      "x": 5,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0012",
+      "type_id": "bookshelf_top_left",
+      "x": 4,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0015",
+      "type_id": "bookshelf_middle_right",
+      "x": 14,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0016",
+      "type_id": "bookshelf_middle_right",
+      "x": 11,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0017",
+      "type_id": "bookshelf_middle_right",
+      "x": 8,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0018",
+      "type_id": "bookshelf_middle_right",
+      "x": 5,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0021",
+      "type_id": "bookshelf_middle_left",
+      "x": 13,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0022",
+      "type_id": "bookshelf_middle_left",
+      "x": 10,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0023",
+      "type_id": "bookshelf_middle_left",
+      "x": 7,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0024",
+      "type_id": "bookshelf_middle_left",
+      "x": 4,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0027",
+      "type_id": "bookshelf_bottom_right",
+      "x": 14,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0028",
+      "type_id": "bookshelf_bottom_right",
+      "x": 11,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0029",
+      "type_id": "bookshelf_bottom_right",
+      "x": 8,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0030",
+      "type_id": "bookshelf_bottom_right",
+      "x": 5,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0033",
+      "type_id": "bookshelf_bottom_left",
+      "x": 13,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0034",
+      "type_id": "bookshelf_bottom_left",
+      "x": 10,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0035",
+      "type_id": "bookshelf_bottom_left",
+      "x": 7,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0036",
+      "type_id": "bookshelf_bottom_left",
+      "x": 4,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0039",
+      "type_id": "cushio",
+      "x": 12,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0040",
+      "type_id": "cushio",
+      "x": 9,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0041",
+      "type_id": "cushio",
+      "x": 6,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0049",
+      "type_id": "bookshelf_top_left",
+      "x": 16,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0050",
+      "type_id": "bookshelf_top_right",
+      "x": 17,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0051",
+      "type_id": "bookshelf_middle_right",
+      "x": 17,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0052",
+      "type_id": "bookshelf_middle_left",
+      "x": 16,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0053",
+      "type_id": "bookshelf_bottom_right",
+      "x": 17,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0054",
+      "type_id": "bookshelf_bottom_left",
+      "x": 16,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0055",
+      "type_id": "cushio",
+      "x": 15,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0064",
+      "type_id": "sofa_left",
+      "x": 1,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0065",
+      "type_id": "sofa_middle",
+      "x": 2,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0066",
+      "type_id": "sofa_right",
+      "x": 3,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0067",
+      "type_id": "desk_1",
+      "x": 2,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0069",
+      "type_id": "desk_1",
+      "x": 6,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0071",
+      "type_id": "desk_2",
+      "x": 4,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0072",
+      "type_id": "desk_2",
+      "x": 8,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0073",
+      "type_id": "desk_2",
+      "x": 2,
+      "y": 12,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0074",
+      "type_id": "desk_2",
+      "x": 6,
+      "y": 12,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0075",
+      "type_id": "desk_1",
+      "x": 8,
+      "y": 12,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0076",
+      "type_id": "desk_1",
+      "x": 4,
+      "y": 12,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0077",
+      "type_id": "chair_front",
+      "x": 2,
+      "y": 11,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0078",
+      "type_id": "chair_front",
+      "x": 4,
+      "y": 11,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0079",
+      "type_id": "chair_front",
+      "x": 6,
+      "y": 11,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0080",
+      "type_id": "chair_front",
+      "x": 8,
+      "y": 11,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0081",
+      "type_id": "chair_front",
+      "x": 2,
+      "y": 13,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0082",
+      "type_id": "chair_front",
+      "x": 4,
+      "y": 13,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0083",
+      "type_id": "chair_front",
+      "x": 6,
+      "y": 13,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0084",
+      "type_id": "chair_front",
+      "x": 8,
+      "y": 13,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0085",
+      "type_id": "bin",
+      "x": 1,
+      "y": 13,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0089",
+      "type_id": "portal",
+      "x": 18,
+      "y": 7,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_library",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0090",
+      "type_id": "vase_2",
+      "x": 18,
+      "y": 14,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0091",
+      "type_id": "vase_!",
+      "x": 18,
+      "y": 13,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0092",
+      "type_id": "potted_plant",
+      "x": 17,
+      "y": 14,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0093",
+      "type_id": "yellowarrow",
+      "x": 17,
+      "y": 7,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 180
+    }
+  ],
+  "npcs": [],
+  "zones": [
+    {
+      "uid": "zone_0001",
+      "zone_id": "zone_campus_library",
+      "display_name": "Library",
+      "x": 18,
+      "y": 6,
+      "w": 1,
+      "h": 3,
+      "gate": {
+        "locked_lines": [
+          "You can't exit!",
+          "Complete the task(s) before trying",
+          "to exit"
+        ]
+      }
+    }
+  ]
+}

@@ -138,7 +138,6 @@ class MainMenuScreen:
         ]
 
         self.__audio = audio
-        self.__last_focus: int = -1
 
     # -- loading helpers --------------------------------------
     def __load_font(self, size: int) -> pygame.font.Font:
@@ -208,14 +207,16 @@ class MainMenuScreen:
         focused_index : which entry has keyboard focus, or -1 for none
         version       : the build string, drawn bottom-right in the frame
         """
-        # The select cue fires from the focus actually being drawn, so a
-        # caller never has to remember to announce it. Still no decision
-        # made here -- the caller owns focused_index.
-        if self.__audio and focused_index != self.__last_focus \
-                and self.__last_focus != -1:
-            self.__audio.play_sfx("select")
-        self.__last_focus = focused_index
-
+        # NO audio here. This used to fire the "select" cue whenever the
+        # drawn focus differed from last frame, which meant merely
+        # MOVING THE MOUSE across the buttons made noise -- the state
+        # sets menu_focus on MOUSEMOTION, and a render-time diff cannot
+        # tell that apart from a deliberate keyboard move. It also
+        # double-fired on arrow keys, once here and once from
+        # states/main_menu.py which already announces the move.
+        #
+        # A ui/ class makes no decisions (Style Guide §6.1); deciding
+        # something is worth a sound is a decision. The caller owns it.
         screen.fill(PANEL_TAN)
         if self.__backdrop is not None:
             screen.blit(self.__backdrop, (0, 0))

@@ -42,10 +42,16 @@ import pygame
 from content.level_registry import (
     EMPTY_TILE,
     FACINGS,
+    LAYER_GROUND,
+    LAYER_OVERLAY,
     TILE_SIZE_PX,
     get_npc_def,
     get_prop_def,
+    get_prop_footprint,
     get_tile_def,
+    npc_blit_offset,
+    npc_sprite_px,
+    prop_cells,
     resolve_asset,
 )
 
@@ -56,6 +62,7 @@ from content.level_registry import (
 PANEL_TAN = (231, 214, 189)     # the void outside the level edge
 BORDER_BROWN = (169, 130, 94)   # level edge frame, badge outlines
 PLACEHOLDER = (196, 178, 150)   # square drawn where a PNG is missing
+BEHIND_ALPHA = 110              # a canopy fades this far while walked behind
 HEADER_TAN = (214, 196, 168)    # lock badge fill
 BAR_RED = (199, 123, 107)       # a gate the player cannot pass
 BAR_GREEN = (167, 185, 133)     # a gate whose requirements are met
@@ -82,6 +89,8 @@ BADGE_BORDER_W = 2
 PLAYER_FRAMES = 4               # frames in one walk cycle
 NPC_FRAMES_DEFAULT = 4          # frames in a 192x48 idle strip
 NPC_ANIM_FPS = 4.0              # idle strips loop slowly (~4 fps)
+NPC_DRAW_PX = npc_sprite_px(CELL)   # bigger than a cell — see registry
+PLAYER_DRAW_PX = NPC_DRAW_PX        # the player matches the NPCs exactly
 
 # Compass folder -> the animation direction it plays (§1.6 ruling).
 # The newer per-file player art is stored under compass names; the
@@ -181,6 +190,25 @@ class MapScreen:
         self.__cells[key] = surface
         return surface
 
+    def __rotated(self, sprite: Optional[pygame.Surface],
+                  degrees: int) -> Optional[pygame.Surface]:
+        """
+        A quarter-turned copy of a sprite, cached by identity.
+
+        Only SQUARE sprites turn. A 1x3 tree rotated 90 degrees would
+        draw 3x1 while still colliding as 1x3, so multi-cell props are
+        left alone -- rotation is a visual nicety, never a way to
+        reshape collision from a keypress.
+        """
+        if sprite is None or not degrees:
+            return sprite
+        if sprite.get_width() != sprite.get_height():
+            return sprite
+        key = ("rot", id(sprite), degrees)
+        if key not in self.__cells:
+            self.__cells[key] = pygame.transform.rotate(sprite, -degrees)
+        return self.__cells[key]
+
     def __load_scaled(self, path: str,
                       size: int) -> Optional[pygame.Surface]:
         """A whole image scaled to a square, or None when it is missing."""
@@ -203,14 +231,31 @@ class MapScreen:
                                 int(entry.get("cell_px", 16)), CELL)
 
     def __prop_sprite(self, type_id: str) -> Optional[pygame.Surface]:
-        """The 48 px sprite for a prop type, or None when its art is gone."""
+        """
+        The sprite for a prop type, or None when its art is gone.
+
+        One cell for an ordinary prop; footprint-sized for a tree or
+        anything else taller than a tile. Multi-cell art is not square,
+        so __load_cell (which slices squares) cannot serve it — the
+        whole image is scaled to the footprint instead.
+        """
         entry = get_prop_def(type_id)
         if entry is None:
             return None
-        return self.__load_cell(str(entry.get("sheet", "")),
-                                int(entry.get("col", 0)),
-                                int(entry.get("row", 0)),
-                                int(entry.get("cell_px", 16)), CELL)
+        cells_w, cells_h = get_prop_footprint(type_id)
+        if (cells_w, cells_h) == (1, 1):
+            return self.__load_cell(str(entry.get("sheet", "")),
+                                    int(entry.get("col", 0)),
+                                    int(entry.get("row", 0)),
+                                    int(entry.get("cell_px", 16)), CELL)
+        path = str(entry.get("sheet", ""))
+        key = ("prop_footprint", path, cells_w, cells_h)
+        if key not in self.__cells:
+            sheet = self.__load_sheet(path)
+            self.__cells[key] = None if sheet is None else \
+                pygame.transform.scale(sheet,
+                                       (cells_w * CELL, cells_h * CELL))
+        return self.__cells[key]
 
     def __npc_sprite(self, type_id: str,
                      frame: int) -> Optional[pygame.Surface]:
@@ -225,7 +270,7 @@ class MapScreen:
         frames = max(1, int(entry.get("frames", NPC_FRAMES_DEFAULT)))
         return self.__load_cell(str(entry.get("idle_sheet", "")),
                                 frame % frames, 0,
-                                int(entry.get("cell_px", 48)), CELL)
+                                int(entry.get("cell_px", 48)), NPC_DRAW_PX)
 
     def __player_sprite(self, direction: str,
                         frame: int) -> Optional[pygame.Surface]:
@@ -244,7 +289,8 @@ class MapScreen:
         relative = os.path.join(
             PLAYER_DIR_ROOT, compass,
             PLAYER_FRAME_PATTERN.format(index=index)).replace("\\", "/")
-        sprite = self.__load_cell(relative, 0, 0, PLAYER_SHEET_CELL, CELL)
+        sprite = self.__load_cell(relative, 0, 0, PLAYER_SHEET_CELL,
+                                  PLAYER_DRAW_PX)
         if sprite is not None:
             return sprite
 
@@ -253,7 +299,8 @@ class MapScreen:
         #  per-direction folder art is absent; if this is missing too the
         #  player draws as a PLACEHOLDER square (Style Guide §5.2).]
         return self.__load_cell(PLAYER_SHEET_PATH, index,
-                                FACINGS.index(facing), PLAYER_SHEET_CELL, CELL)
+                                FACINGS.index(facing), PLAYER_SHEET_CELL,
+                                PLAYER_DRAW_PX)
 
     # -- geometry (the only decisions this file makes) ---------
     def get_viewport_rect(self, screen: pygame.Surface) -> pygame.Rect:
@@ -373,9 +420,13 @@ class MapScreen:
         screen.set_clip(viewport)
         try:
             screen.fill(PANEL_TAN, viewport)
-            self.__draw_layer(screen, level.get_ground_rows(), camera, bounds)
-            self.__draw_layer(screen, level.get_overlay_rows(), camera, bounds)
-            self.__draw_props(screen, level, camera, bounds)
+            self.__draw_layer(screen, level.get_ground_rows(), camera,
+                              bounds, level, LAYER_GROUND)
+            self.__draw_layer(screen, level.get_overlay_rows(), camera,
+                              bounds, level, LAYER_OVERLAY)
+            self.__draw_props(screen, level, camera, bounds,
+                              (int(player_px[0]) // CELL,
+                               int(player_px[1]) // CELL))
             self.__draw_npcs(screen, level, camera, bounds, npc_frames)
             self.__draw_player(screen, camera, player_px, player_dir,
                                player_frame)
@@ -388,7 +439,8 @@ class MapScreen:
     # -- piece-by-piece drawing -------------------------------
     def __draw_layer(self, screen: pygame.Surface, rows: List[List[int]],
                      camera: Sequence[int],
-                     bounds: Tuple[int, int, int, int]) -> None:
+                     bounds: Tuple[int, int, int, int],
+                     level: Any = None, layer_name: str = "") -> None:
         """
         Blit one tile layer over the visible rectangle.
 
@@ -406,6 +458,9 @@ class MapScreen:
                     continue
                 rect = self.get_screen_rect_for_cell(x, y, camera)
                 sprite = self.__tile_sprite(index)
+                if level is not None and layer_name:
+                    sprite = self.__rotated(
+                        sprite, level.get_tile_rotation(layer_name, x, y))
                 if sprite is not None:
                     screen.blit(sprite, rect.topleft)
                 else:
@@ -415,28 +470,70 @@ class MapScreen:
                     #  it comes from the registry, not the PNG (§5.2).]
                     pygame.draw.rect(screen, PLACEHOLDER, rect)
 
+    @staticmethod
+    def __player_is_behind(prop: Any,
+                           player_cell: Optional[Tuple[int, int]]) -> bool:
+        """
+        True when the player is under a prop's canopy and would be hidden.
+
+        Only the NON-root rows count. Standing beside a trunk should not
+        fade the tree; standing behind the leaves should, or the player
+        vanishes into the foliage with no way to tell where they are.
+        """
+        if player_cell is None:
+            return False
+        type_id = prop.get_type_id()
+        cells_w, cells_h = get_prop_footprint(type_id)
+        if (cells_w, cells_h) == (1, 1):
+            return False
+        px, py = prop.get_position()
+        return any((cx, cy) == player_cell and not is_root
+                   for cx, cy, is_root in prop_cells(type_id, px, py))
+
     def __draw_props(self, screen: pygame.Surface, level: Any,
                      camera: Sequence[int],
-                     bounds: Tuple[int, int, int, int]) -> None:
+                     bounds: Tuple[int, int, int, int],
+                     player_cell: Optional[Tuple[int, int]] = None) -> None:
         """
         Draw the visible props, sorted by row so a prop lower on the
         screen overlaps one above it.
+
+        `player_cell` lets a multi-cell prop fade while the player is
+        behind it. None disables that, which is what the level editor
+        (no player) passes.
         """
         first_col, first_row, last_col, last_row = bounds
         visible = [p for p in level.get_props()
                    if first_col <= p.get_position()[0] <= last_col
                    and first_row <= p.get_position()[1] <= last_row]
         for prop in sorted(visible, key=lambda p: p.get_position()[1]):
+            # Portals draw NOTHING in game (owner ruling). The doorway
+            # is painted into the tiles; the portal prop is only the
+            # trigger standing on top of it, so giving it a sprite --
+            # or the missing-art square it used to get -- would put a
+            # block in the middle of a finished doorway. It still
+            # works: the target is level data, not art.
+            #
+            # This is the one place a missing sprite is NOT a
+            # placeholder case. tools/level_editor.py draws a labelled
+            # marker instead, so an author can still see every portal.
+            if prop.is_portal():
+                continue
             x, y = prop.get_position()
             rect = self.get_screen_rect_for_cell(x, y, camera)
             sprite = self.__prop_sprite(prop.get_type_id())
-            if sprite is not None:
-                screen.blit(sprite, rect.topleft)
-            else:
-                # [PROP PLACEHOLDER: assets/props/portal_0.png -- 16x16
-                #  doorway / arch marker. The portal still works: the
-                #  target level is level data, not art (§5.2).]
+            if sprite is None:
                 pygame.draw.rect(screen, PLACEHOLDER, rect)
+                continue
+            # The stored cell is the prop's BOTTOM-LEFT, so a sprite
+            # taller than one cell hangs upward off it. A 1x1 prop is
+            # unaffected: its height is exactly one cell.
+            sprite = self.__rotated(sprite, prop.get_rotation())
+            top = rect.bottom - sprite.get_height()
+            if self.__player_is_behind(prop, player_cell):
+                sprite = sprite.copy()
+                sprite.set_alpha(BEHIND_ALPHA)
+            screen.blit(sprite, (rect.x, top))
 
     def __draw_npcs(self, screen: pygame.Surface, level: Any,
                     camera: Sequence[int],
@@ -460,7 +557,12 @@ class MapScreen:
             rect = self.get_screen_rect_for_cell(x, y, camera)
             sprite = self.__npc_sprite(npc.get_type_id(), frame)
             if sprite is not None:
-                screen.blit(sprite, rect.topleft)
+                # Drawn larger than a cell and anchored by the FEET:
+                # a character that fills its tile exactly reads as
+                # scenery, and one centred in it appears to float. The
+                # overhang goes upward, over the cells behind them.
+                dx, dy = npc_blit_offset(CELL)
+                screen.blit(sprite, (rect.x + dx, rect.y + dy))
             else:
                 # [NPC PLACEHOLDER: assets/npcs/npc_<name>_idle.png --
                 #  192x48 idle strip, 4 frames of 48 px. Only hoque and
@@ -471,14 +573,22 @@ class MapScreen:
                       player_px: Sequence[float], player_dir: str,
                       player_frame: int) -> None:
         """
-        Draw the player sprite centred on their world position.
+        Draw the player sprite on their world position.
 
         The position is a float and the cell size is 48, so the sprite
         rides between cells -- movement is smooth pixels, not grid steps.
+
+        Drawn at the SAME scale as the NPCs and anchored the same way:
+        centred horizontally, feet on the bottom of the cell. A player
+        rendered at one tile next to NPCs at one-and-a-half looks like
+        a child among adults, and the two must read as the same kind of
+        character.
         """
-        rect = pygame.Rect(0, 0, CELL, CELL)
-        rect.center = (int(player_px[0]) - int(camera[0]),
-                       int(player_px[1]) - int(camera[1]) + VIEWPORT_TOP)
+        cell_rect = pygame.Rect(0, 0, CELL, CELL)
+        cell_rect.center = (int(player_px[0]) - int(camera[0]),
+                            int(player_px[1]) - int(camera[1]) + VIEWPORT_TOP)
+        rect = pygame.Rect(0, 0, PLAYER_DRAW_PX, PLAYER_DRAW_PX)
+        rect.midbottom = cell_rect.midbottom
         sprite = self.__player_sprite(player_dir, player_frame)
         if sprite is not None:
             screen.blit(sprite, rect.topleft)

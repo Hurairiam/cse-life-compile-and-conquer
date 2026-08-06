@@ -50,7 +50,8 @@ def enter(ctx):
     __ui(ctx).reset()
     if not ctx.monologue_lines:
         start_semester(ctx, ctx.semester().get_semester_number())
-    ctx.play_music("dialogue")
+    # Music is set centrally by engine/soundtrack.py via the router:
+    # every screen takes the "menu" track except EXAM, which is silent.
 
 
 def __advance(ctx):
