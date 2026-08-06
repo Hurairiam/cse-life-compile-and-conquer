@@ -1089,7 +1089,7 @@
         "skill_id": null,
         "triggers_per_semester": 1
       },
-      "target_level_id": "indoor_library",
+      "target_level_id": "university_library",
       "target_spawn": null
     },
     {
@@ -1121,7 +1121,7 @@
         "skill_id": null,
         "triggers_per_semester": 1
       },
-      "target_level_id": "cafeteria_lecturehall",
+      "target_level_id": "campus_main",
       "target_spawn": null
     },
     {

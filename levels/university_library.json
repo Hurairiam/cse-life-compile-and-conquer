@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "meta": {
-    "level_name": "indoor_library",
-    "level_id": "indoor_library",
+    "level_name": "University Library",
+    "level_id": "university_library",
     "grid_width": 19,
     "grid_height": 15,
     "ambient": "day",
@@ -1538,7 +1538,83 @@
       "rotation": 180
     }
   ],
-  "npcs": [],
+  "npcs": [
+    {
+      "uid": "npc_0001",
+      "type_id": "kabir",
+      "x": 12,
+      "y": 6,
+      "facing": "down",
+      "interactable": true,
+      "dialog": {
+        "chains": [
+          {
+            "chain_id": "greeting",
+            "lines": [
+              "I'm Kabir. I've been here a while.",
+              "Don't make the same mistakes I did. That's all I'll say."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "offer",
+            "lines": [
+              "There's something I wish someone had shown me earlier.",
+              "It's a few days of work. Probably saves you more than that later.",
+              "Up to you."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "farewell",
+            "lines": [
+              "No rush. You still have time."
+            ],
+            "emotion": "neutral"
+          }
+        ],
+        "on_complete": "loop_last"
+      }
+    },
+    {
+      "uid": "npc_0002",
+      "type_id": "rafi",
+      "x": 8,
+      "y": 6,
+      "facing": "down",
+      "interactable": true,
+      "dialog": {
+        "chains": [
+          {
+            "chain_id": "greeting",
+            "lines": [
+              "Hey. You're in the CSE program? Which courses did you register for?",
+              "I'm Rafi. What're your thoughts about Rukhsana ma'am's assignment?",
+              "If you need notes let me know, I have everything organized by topic."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "offer",
+            "lines": [
+              "I'm working on something this week. You can join if you want.",
+              "Warning\u2014 I don't go slow.",
+              "A few days of proper focused work.It's totally worth it."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "farewell",
+            "lines": [
+              "Alright. The offer stands if you change your mind."
+            ],
+            "emotion": "neutral"
+          }
+        ],
+        "on_complete": "loop_last"
+      }
+    }
+  ],
   "zones": [
     {
       "uid": "zone_0001",
