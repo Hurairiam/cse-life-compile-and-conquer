@@ -11,7 +11,8 @@ def enter(ctx):
     if ctx.endgame_result is None:
         manager = ctx.session.trigger_endgame_evaluation()
         ctx.endgame_result = manager.evaluate(ctx.player())
-    ctx.play_music("endgame")
+    # Music is set centrally by engine/soundtrack.py via the router:
+    # every screen takes the "menu" track except EXAM, which is silent.
     if ctx.audio is not None:
         ctx.audio.stop_ambient()
 

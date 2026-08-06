@@ -44,6 +44,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from content.level_registry import (
     AMBIENT_TINTS,
+    LAYER_NAMES,
     SPEED_MODIFIER_BASE,
     get_npc_display_name,
 )
@@ -112,6 +113,12 @@ class Level:
             [document.is_cell_walkable(x, y)
              for x in range(self.__grid_width)]
             for y in range(self.__grid_height)]
+        self.__tile_rotations: Dict[Tuple[str, int, int], int] = {
+            (layer, x, y): document.get_tile_rotation(layer, x, y)
+            for layer in LAYER_NAMES
+            for x in range(self.__grid_width)
+            for y in range(self.__grid_height)
+            if document.get_tile_rotation(layer, x, y)}
         self.__prop_at: Dict[Tuple[int, int], PropData] = {
             p.get_position(): p for p in self.__props}
         self.__npc_at: Dict[Tuple[int, int], NpcData] = {
@@ -156,6 +163,15 @@ class Level:
     def get_overlay_rows(self) -> List[List[int]]:
         """Overlay layer rows (by reference — render only, never write)."""
         return self.__overlay
+
+    def get_tile_rotation(self, layer: str, x: int, y: int) -> int:
+        """
+        Quarter-turn rotation of one painted cell; 0 when unturned.
+
+        Purely a render detail — the collision grid was baked without
+        it, because turning a wall does not open it.
+        """
+        return self.__tile_rotations.get((layer, x, y), 0)
 
     def is_inside(self, x: int, y: int) -> bool:
         """True when (x, y) is a real cell."""

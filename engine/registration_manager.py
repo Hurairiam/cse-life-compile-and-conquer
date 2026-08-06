@@ -5,7 +5,15 @@ CSE Life: Compile & Conquer
 OOP Pillar: Encapsulation + Separation of Concerns
 RegistrationManager is the gatekeeper for course selection.
 It enforces the 15-credit cap, filters the catalog by
-prerequisites, and re-injects backlogged courses each semester.
+term assignment + prerequisites, and re-injects backlogged
+courses each semester.
+
+CHANGE: filter_visible_catalog() and build_semester_catalog()
+now take a current_semester_number argument and gate on
+Course.is_offered_in_semester() as the PRIMARY visibility rule,
+in addition to the existing prerequisite check. Callers
+(engine/catalog_builder.py, engine/states/registration.py)
+need matching updates — see those files.
 
 Nangiba's RegistrationScreen reads filtered data FROM this
 class — it never modifies game state directly.
@@ -114,31 +122,60 @@ class RegistrationManager:
     def filter_visible_catalog(
         self,
         full_catalog: list[Course],
-        history: AcademicHistory
+        history: AcademicHistory,
+        current_semester_number: int,
     ) -> list[Course]:
         """
-        Return only courses whose prerequisites are all satisfied
-        according to the player's AcademicHistory.
-        Courses with no prerequisites are always visible.
-        Already-completed courses are excluded from the result.
+        Return only courses selectable THIS term.
+
+        A course is visible if:
+          - it's already completed -> NEVER visible (excluded outright), OR
+          - its term has ARRIVED (Course.is_term_available(), i.e.
+            semester_number <= current_semester_number) AND its
+            prerequisites are satisfied.
+
+        BUG FIX: this used to check is_offered_in_semester() (an EXACT
+        term match) plus a separate "is it in the backlog" branch. That
+        meant a course offered in an earlier term that the player simply
+        never registered for (not completed, not failed, just skipped)
+        fell through both checks and vanished from every later term's
+        catalog — reported as "unselected courses disappearing" when
+        only retaken/backlogged courses were carrying forward. Switching
+        to is_term_available()'s <= comparison fixes this: any course
+        whose term has arrived and isn't finished yet keeps showing up,
+        whether it was never attempted OR previously failed. The old
+        backlog-list branch is no longer needed for VISIBILITY (a failed
+        course's term has, by definition, already arrived) — the
+        backlog list itself is still tracked in AcademicHistory and used
+        separately by engine/catalog_builder.py for backlog-first
+        ordering in the UI.
+
+        CHANGE (term-gated visibility, from the previous iteration):
+        previously any course with satisfied prerequisites was visible
+        regardless of its assigned term at all. Term assignment is now
+        the PRIMARY gate; prerequisite checking still applies on top of
+        it as a secondary safety check (a course can be scheduled for
+        term 2 but still require term-1 content to be passed first).
         """
         visible: list[Course] = []
         for course in full_catalog:
             if course.get_is_completed():
                 continue
-            if course.are_prerequisites_satisfied(history):
+            if (course.is_term_available(current_semester_number)
+                    and course.are_prerequisites_satisfied(history)):
                 visible.append(course)
         return visible
 
     def build_semester_catalog(
         self,
         full_catalog: list[Course],
-        history: AcademicHistory
+        history: AcademicHistory,
+        current_semester_number: int,
     ) -> list[Course]:
         """
         Build the full selectable catalog for the registration
         screen by merging the base catalog with backlogged courses
-        from AcademicHistory, then filtering by prerequisites.
+        from AcademicHistory, then filtering by term + prerequisites.
 
         Backlogged courses are the same Course instances that were
         previously registered and failed — they compete for the
@@ -161,7 +198,8 @@ class RegistrationManager:
                     and course.get_course_id() not in catalog_ids):
                 merged.append(course)
 
-        return self.filter_visible_catalog(merged, history)
+        return self.filter_visible_catalog(
+            merged, history, current_semester_number)
 
     # ── Confirmation ──────────────────────────────────────────
 
