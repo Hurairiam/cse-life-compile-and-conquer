@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
   "meta": {
-    "level_name": "indoor_lecturehall",
-    "level_id": "indoor_lecturehall",
+    "level_name": "Lecture Hall",
+    "level_id": "lecture_hall",
     "grid_width": 19,
     "grid_height": 15,
     "ambient": "day",
     "music": "exploration",
     "spawn": {
       "x": 18,
-      "y": 8
+      "y": 6
     }
   },
   "layers": {
@@ -179,7 +179,7 @@
         109,
         109,
         109,
-        110,
+        109,
         109
       ],
       [
@@ -222,7 +222,7 @@
         109,
         109,
         109,
-        108
+        109
       ],
       [
         108,
@@ -243,7 +243,7 @@
         109,
         109,
         110,
-        108
+        109
       ],
       [
         108,
@@ -1612,10 +1612,27 @@
       }
     },
     {
-      "uid": "prop_0078",
+      "uid": "prop_0079",
+      "type_id": "portal",
+      "x": 18,
+      "y": 10,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0080",
       "type_id": "yellowarrow",
       "x": 17,
-      "y": 7,
+      "y": 10,
       "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
@@ -1626,27 +1643,86 @@
         "triggers_per_semester": 1
       },
       "rotation": 180
-    },
-    {
-      "uid": "prop_0079",
-      "type_id": "portal",
-      "x": 18,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": true,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "rotation": 270,
-      "target_level_id": "cafeteria_lecturehall",
-      "target_spawn": null
     }
   ],
-  "npcs": [],
+  "npcs": [
+    {
+      "uid": "npc_0001",
+      "type_id": "hoque",
+      "x": 12,
+      "y": 5,
+      "facing": "down",
+      "interactable": true,
+      "dialog": {
+        "chains": [
+          {
+            "chain_id": "greeting",
+            "lines": [
+              "You are registered in my course.",
+              "I am Prof. Hoque. I do not repeat instructions.",
+              "Come prepared. Every single time."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "offer",
+            "lines": [
+              "There is an activity this week.",
+              "It will be difficult. That is the point.",
+              "If you are serious about this field \u2014 show up."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "farewell",
+            "lines": [
+              "Your choice. The work still needs to be done."
+            ],
+            "emotion": "neutral"
+          }
+        ],
+        "on_complete": "loop_last"
+      }
+    },
+    {
+      "uid": "npc_0002",
+      "type_id": "rahman",
+      "x": 8,
+      "y": 5,
+      "facing": "down",
+      "interactable": true,
+      "dialog": {
+        "chains": [
+          {
+            "chain_id": "greeting",
+            "lines": [
+              "Ah, a student who actually comes to office hours.",
+              "Prof. Rahman here. Sit down \u2014 I don't bite.",
+              "Tell me what you're struggling with. That's what I'm here for."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "offer",
+            "lines": [
+              "There is a study group forming this week.",
+              "I think it would help you. A few days of focused work.",
+              "Think about it."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "farewell",
+            "lines": [
+              "My door is open. Remember that."
+            ],
+            "emotion": "neutral"
+          }
+        ],
+        "on_complete": "loop_last"
+      }
+    }
+  ],
   "zones": [
     {
       "uid": "zone_0001",
