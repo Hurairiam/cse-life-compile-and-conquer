@@ -135,15 +135,37 @@ class Course:
 
     def is_offered_in_semester(self, semester_number: int) -> bool:
         """
-        Return True if this course's assigned term matches the given
-        semester number. Used by the term-gated registration filter
-        (RegistrationManager) as the PRIMARY visibility rule — separate
-        from, and in addition to, prerequisite checking. A course with
-        no assigned semester_number (None) is never offered by this
-        check (returns False), since every catalog course should have
-        one set via course_catalog.py.
+        Return True if this course's assigned term is EXACTLY the given
+        semester number — i.e. this is the term it's newly offered in.
+        Kept for cases that specifically need "is this brand new this
+        term" (e.g. a UI [NEW] vs carried-forward tag). Visibility
+        gating uses is_term_available() below, not this method.
         """
         return self.__semester_number == semester_number
+
+    def is_term_available(self, current_semester_number: int) -> bool:
+        """
+        Return True if this course's assigned term has ARRIVED —
+        i.e. semester_number <= current_semester_number — rather than
+        requiring an exact match.
+
+        This is the PRIMARY registration-visibility rule (used by
+        RegistrationManager.filter_visible_catalog()). It deliberately
+        covers TWO situations with one check:
+          1. A course offered in an earlier term that the player never
+             registered for (left unselected) — it must keep showing
+             up in every later term until taken, not vanish.
+          2. A course the player registered for and FAILED — same
+             logic applies; a failed course was, by definition, first
+             offered in an earlier-or-equal term, so this check alone
+             also covers what the separate AcademicHistory backlog
+             list used to be needed for.
+        A course with no assigned semester_number (None) is never
+        available (returns False).
+        """
+        if self.__semester_number is None:
+            return False
+        return self.__semester_number <= current_semester_number
 
     def get_prerequisites(self) -> List[str]:
         # Return a defensive copy so callers cannot mutate internal state
