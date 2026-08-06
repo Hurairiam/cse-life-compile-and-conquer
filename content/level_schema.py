@@ -66,12 +66,18 @@ from content.level_registry import (
     LAYER_OVERLAY,
     MAX_PROP_EXP_PER_SEMESTER,
     MAX_PROP_MONEY_PER_SEMESTER,
+    MENU_ID_DEFAULT,
+    MENU_REGISTRY,
     MONEY_MAX,
     MONEY_MIN,
     ON_COMPLETE_DEFAULT,
     ON_COMPLETE_MODES,
     PORTAL_TYPE_ID,
     PROJECT_ROOT,
+    ROTATION_DEFAULT,
+    is_multicell_prop,
+    normalise_rotation,
+    prop_cells,
     SKILL_IDS,
     SPEED_MODIFIER_BASE,
     SPEED_MODIFIER_MAX,
@@ -108,12 +114,12 @@ SEVERITY_WARNING: str = "warning"
 # Top-level keys this module understands; anything else is carried
 # through untouched for forward compatibility (Spec §2.1).
 _KNOWN_TOP_KEYS: tuple = ("schema_version", "meta", "layers", "props", "npcs",
-                          "zones")
+                          "zones", "tile_rotations")
 _KNOWN_META_KEYS: tuple = ("level_name", "level_id", "grid_width",
                            "grid_height", "ambient", "music", "spawn")
 _KNOWN_PROP_KEYS: tuple = ("uid", "type_id", "x", "y", "passthrough",
                            "speed_modifier", "interactable", "interaction",
-                           "gate")
+                           "gate", "rotation")
 _KNOWN_NPC_KEYS: tuple = ("uid", "type_id", "x", "y", "facing",
                           "interactable", "dialog", "gate")
 _KNOWN_ZONE_KEYS: tuple = ("uid", "zone_id", "display_name", "x", "y",
@@ -705,6 +711,8 @@ class PropData:
         self.__kind: str = INTERACTION_KIND_DEFAULT
         self.__amount: float = 0.0
         self.__skill_id: Optional[str] = None
+        self.__menu_id: str = ""
+        self.__rotation: int = ROTATION_DEFAULT
         self.__triggers_per_semester: int = TRIGGERS_DEFAULT
         self.__target_level_id: str = ""
         self.__target_spawn: Optional[Tuple[int, int]] = None
@@ -732,9 +740,49 @@ class PropData:
         self.__x, self.__y = int(x), int(y)
         return True
 
+    def get_rotation(self) -> int:
+        """Quarter-turn rotation in degrees: 0, 90, 180 or 270."""
+        return self.__rotation
+
+    def set_rotation(self, degrees: Any) -> bool:
+        """
+        Turn the prop, snapping to the nearest quarter.
+
+        Rotation is PURELY VISUAL. A turned prop still occupies the
+        same cells and blocks the same way -- rotating a footprint
+        would let an author silently reshape collision from a keypress,
+        and a 1x3 tree laid on its side is a bug, not a feature.
+        """
+        value = normalise_rotation(degrees)
+        changed = value != self.__rotation
+        self.__rotation = value
+        return changed
+
     def is_portal(self) -> bool:
-        """True for travel props (Spec §9)."""
+        """
+        True for the step-on portal prop type (Spec §9).
+
+        Distinct from `travels_on_interact()`: a portal fires the moment
+        the player walks onto it, while ANY prop can be given the
+        "travel" interaction kind and fires on E instead. Both carry the
+        same target_level_id / target_spawn fields.
+        """
         return self.__type_id == PORTAL_TYPE_ID
+
+    def travels_on_interact(self) -> bool:
+        """
+        True when pressing E on this prop should move the player.
+
+        A door you open rather than a threshold you cross. Restrictions
+        come from the prop's own gate, which exploration.__interact
+        already evaluates before it ever reaches the prop.
+        """
+        return (self.__interactable and self.__kind == "travel"
+                and bool(self.__target_level_id))
+
+    def has_travel_fields(self) -> bool:
+        """True when this prop stores a destination at all."""
+        return self.is_portal() or self.__kind == "travel"
 
     # ── collision + movement ──────────────────────────────────
 
@@ -776,13 +824,16 @@ class PropData:
         self.__interactable = bool(value)
 
     def get_interaction_kind(self) -> str:
-        """"none", "money" or "skill"."""
+        """"none", "money", "skill" or "menu"."""
         return self.__kind
 
     def set_interaction_kind(self, kind: str) -> bool:
         """
         Switch reward type, re-seeding the amount into that kind's
         legal range so the popup never shows an out-of-range value.
+
+        "menu" grants nothing — it opens a screen — so it clears the
+        amount exactly as "none" does and seeds a menu id instead.
         """
         if kind not in INTERACTION_KINDS:
             return False
@@ -799,10 +850,54 @@ class PropData:
                 self.__amount = float(EXP_MIN)
             if self.__skill_id is None:
                 self.__skill_id = SKILL_IDS[0]
+        elif kind == "menu":
+            self.__amount = 0.0
+            self.__skill_id = None
+            if not self.__menu_id:
+                self.__menu_id = MENU_ID_DEFAULT
+        elif kind == "travel":
+            # A door grants nothing; it moves you. The destination is
+            # kept in the same fields a portal uses.
+            self.__amount = 0.0
+            self.__skill_id = None
         else:
             self.__amount = 0.0
             self.__skill_id = None
         return True
+
+    def get_menu_id(self) -> str:
+        """
+        The screen a "menu" prop opens ("" = unset).
+
+        Kept even after the kind is switched away, so an author who
+        flips a noticeboard to money and back does not lose which
+        screen they had chosen. Only the active kind is acted on.
+        """
+        return self.__menu_id
+
+    def set_menu_id(self, menu_id: Optional[str]) -> bool:
+        """
+        Name the screen to open, or None/"" to clear it.
+
+        An id outside MENU_REGISTRY is REFUSED rather than coerced:
+        there is no nearest sensible screen, and quietly substituting
+        one would send the player somewhere the author never chose.
+        """
+        if menu_id is None or menu_id == "":
+            changed = self.__menu_id != ""
+            self.__menu_id = ""
+            return changed
+        text = str(menu_id)
+        if text not in MENU_REGISTRY:
+            return False
+        changed = text != self.__menu_id
+        self.__menu_id = text
+        return changed
+
+    def opens_menu(self) -> bool:
+        """True when interacting with this prop should open a screen."""
+        return (self.__interactable and self.__kind == "menu"
+                and bool(self.__menu_id))
 
     def get_amount(self) -> float:
         """BDT for money rewards, EXP points for skill rewards."""
@@ -920,7 +1015,20 @@ class PropData:
                 "triggers_per_semester": self.__triggers_per_semester,
             },
         })
-        if self.is_portal():
+        # Written only when a menu was actually chosen, the same rule
+        # `gate` and `zones` follow: a prop that opens no menu
+        # serialises exactly as it did before menus existed, so every
+        # level authored earlier still round-trips byte-identical.
+        if self.__menu_id:
+            data["interaction"]["menu_id"] = self.__menu_id
+        # Omitted while unturned, so a level with no rotated props
+        # serialises exactly as it did before rotation existed.
+        if self.__rotation:
+            data["rotation"] = self.__rotation
+        # Written for step-on portals AND for any prop whose interaction
+        # kind is "travel". A prop that does neither omits both keys, so
+        # every level authored before travel props round-trips unchanged.
+        if self.has_travel_fields():
             data["target_level_id"] = self.__target_level_id
             data["target_spawn"] = (list(self.__target_spawn)
                                     if self.__target_spawn else None)
@@ -942,8 +1050,13 @@ class PropData:
         prop.set_speed_modifier(float(data.get("speed_modifier",
                                                SPEED_MODIFIER_BASE)))
         prop.set_interactable(bool(data.get("interactable", False)))
+        prop.set_rotation(data.get("rotation", ROTATION_DEFAULT))
 
         interaction: Dict[str, Any] = data.get("interaction") or {}
+        # Read BEFORE the kind so switching to "menu" sees the stored
+        # id and does not overwrite it with the default.
+        if interaction.get("menu_id"):
+            prop.set_menu_id(str(interaction["menu_id"]))
         prop.set_interaction_kind(str(interaction.get(
             "kind", INTERACTION_KIND_DEFAULT)))
         if interaction.get("amount") is not None:
@@ -953,7 +1066,7 @@ class PropData:
         prop.set_triggers_per_semester(int(interaction.get(
             "triggers_per_semester", TRIGGERS_DEFAULT)))
 
-        if prop.is_portal():
+        if prop.has_travel_fields():
             prop.set_target_level_id(str(data.get("target_level_id", "")))
             spawn = data.get("target_spawn")
             if isinstance(spawn, (list, tuple)) and len(spawn) == 2:
@@ -1336,6 +1449,12 @@ class LevelData:
                                           for _ in range(height)]
         self.__overlay: List[List[int]] = [[EMPTY_TILE] * width
                                            for _ in range(height)]
+        # Tile rotation is SPARSE: {(layer, x, y): degrees} holding only
+        # the cells actually turned. A parallel full-size array would
+        # double every level file to record a feature most maps never
+        # use, and would rewrite all fourteen existing files on first
+        # save. An absent key means 0.
+        self.__tile_rotations: Dict[Tuple[str, int, int], int] = {}
         self.__props: List[PropData] = []
         self.__npcs: List[NpcData] = []
         self.__zones: List[ZoneData] = []
@@ -1467,10 +1586,48 @@ class LevelData:
         rows[y][x] = value
         return True
 
-    def is_cell_walkable(self, x: int, y: int) -> bool:
+    def get_tile_rotation(self, layer: str, x: int, y: int) -> int:
+        """Quarter-turn rotation of one painted cell; 0 when unturned."""
+        return self.__tile_rotations.get((layer, x, y), ROTATION_DEFAULT)
+
+    def set_tile_rotation(self, layer: str, x: int, y: int,
+                          degrees: Any) -> bool:
         """
-        Combined collision for a cell: overlay wins over ground, and
-        a solid prop blocks regardless of the tiles under it.
+        Turn one painted cell. False when nothing changed.
+
+        A rotation of 0 DELETES the entry rather than storing a zero,
+        which is what keeps the map sparse and keeps an unrotated level
+        serialising to exactly the bytes it had before.
+
+        Purely visual, like a prop's: walkability comes from the tile's
+        registry entry, and turning a wall does not open it.
+        """
+        if layer not in LAYER_NAMES or not self.is_inside(x, y):
+            return False
+        value = normalise_rotation(degrees)
+        key = (layer, x, y)
+        current = self.__tile_rotations.get(key, ROTATION_DEFAULT)
+        if value == current:
+            return False
+        if value == ROTATION_DEFAULT:
+            self.__tile_rotations.pop(key, None)
+        else:
+            self.__tile_rotations[key] = value
+        return True
+
+    def get_tile_rotation_count(self) -> int:
+        """How many cells carry a rotation — used by the editor readout."""
+        return len(self.__tile_rotations)
+
+    def is_terrain_walkable(self, x: int, y: int) -> bool:
+        """
+        Collision from the MAP ALONE: overlay wins over ground, and a
+        solid prop blocks regardless of the tiles under it.
+
+        Split out from is_cell_walkable() so the validator can ask
+        "is this a sensible place to stand?" about a cell an NPC is
+        already standing on. Asking the combined question there would
+        report every NPC in the level as standing somewhere blocked.
         """
         if not self.is_inside(x, y):
             return False
@@ -1479,10 +1636,25 @@ class LevelData:
                    else is_tile_walkable(self.__ground[y][x]))
         if not tile_ok:
             return False
-        prop = self.get_prop_at(x, y)
+        # Root, not anchor: a tree blocks every cell of its trunk, and
+        # nothing at all under its canopy.
+        prop = self.get_prop_root_at(x, y)
         if prop is not None and not prop.get_passthrough():
             return False
         return True
+
+    def is_cell_walkable(self, x: int, y: int) -> bool:
+        """
+        Can the player occupy this cell? Terrain, plus entities.
+
+        An NPC is SOLID: you talk to them from the next cell over, you
+        do not walk through them. `engine/level_loader.py` bakes this
+        into its collision grid, so the rule reaches the game as well
+        as the editor from this one place.
+        """
+        if not self.is_terrain_walkable(x, y):
+            return False
+        return self.get_npc_at(x, y) is None
 
     def resize(self, width: int, height: int,
                fill_tile: int = DEFAULT_GROUND_TILE) -> bool:
@@ -1537,10 +1709,55 @@ class LevelData:
         return list(self.__props)
 
     def get_prop_at(self, x: int, y: int) -> Optional[PropData]:
-        """The prop on a cell — at most one (Spec §3.3)."""
+        """
+        The prop ANCHORED on a cell — at most one (Spec §3.3).
+
+        This is identity, not coverage: a 1x3 tree anchored at (4, 9)
+        answers only for (4, 9). Use get_prop_root_at() to ask whether
+        something solid occupies a cell.
+        """
         for prop in self.__props:
             if prop.get_position() == (x, y):
                 return prop
+        return None
+
+    def get_prop_root_at(self, x: int, y: int) -> Optional[PropData]:
+        """
+        The prop whose ROOT covers this cell, anchored here or not.
+
+        A multi-cell prop only blocks on its root rows; the canopy is
+        walk-behind, so this deliberately ignores those cells. Anything
+        1x1 behaves exactly as before.
+        """
+        for prop in self.__props:
+            px, py = prop.get_position()
+            type_id = prop.get_type_id()
+            if not is_multicell_prop(type_id):
+                if (px, py) == (x, y):
+                    return prop
+                continue
+            for cx, cy, is_root in prop_cells(type_id, px, py):
+                if is_root and (cx, cy) == (x, y):
+                    return prop
+        return None
+
+    def get_prop_covering(self, x: int, y: int) -> Optional[PropData]:
+        """
+        The prop whose FOOTPRINT covers this cell, root or canopy.
+
+        Used by the renderer to decide when the player is standing
+        behind something and it should fade.
+        """
+        for prop in self.__props:
+            px, py = prop.get_position()
+            type_id = prop.get_type_id()
+            if not is_multicell_prop(type_id):
+                if (px, py) == (x, y):
+                    return prop
+                continue
+            for cx, cy, _ in prop_cells(type_id, px, py):
+                if (cx, cy) == (x, y):
+                    return prop
         return None
 
     def add_prop(self, type_id: str, x: int, y: int) -> Optional[PropData]:
@@ -1775,6 +1992,13 @@ class LevelData:
         # still writes byte-for-byte the same file it did before.
         if self.__zones:
             data["zones"] = [z.to_dict() for z in self.__zones]
+        # Same rule for rotations: nested per layer, "x,y" keys, and the
+        # whole block omitted when nothing is turned.
+        rotations: Dict[str, Dict[str, int]] = {}
+        for (layer, x, y), degrees in sorted(self.__tile_rotations.items()):
+            rotations.setdefault(layer, {})[f"{x},{y}"] = degrees
+        if rotations:
+            data["tile_rotations"] = rotations
         return data
 
     @staticmethod
@@ -1831,6 +2055,20 @@ class LevelData:
                         for n in (data.get("npcs") or [])]
         level.__zones = [ZoneData.from_dict(z)
                          for z in (data.get("zones") or [])]
+
+        # A malformed key is skipped, not fatal: a hand-edited file with
+        # one bad coordinate should lose that rotation, not fail to open.
+        for layer, cells in (data.get("tile_rotations") or {}).items():
+            if layer not in LAYER_NAMES or not isinstance(cells, dict):
+                continue
+            for coordinate, degrees in cells.items():
+                try:
+                    cx, cy = (int(part) for part in str(coordinate).split(","))
+                except (TypeError, ValueError):
+                    continue
+                value = normalise_rotation(degrees)
+                if value:
+                    level.__tile_rotations[(layer, cx, cy)] = value
 
         level.__meta_extra = {k: v for k, v in meta.items()
                               if k not in _KNOWN_META_KEYS}
@@ -1943,7 +2181,9 @@ class LevelData:
         """Advisory issues — listed in amber, saving still allowed."""
         for npc in self.__npcs:
             x, y = npc.get_position()
-            if self.is_inside(x, y) and not self.is_cell_walkable(x, y):
+            # Terrain-only: NPCs are solid now, so the combined check
+            # would flag every one of them for standing on itself.
+            if self.is_inside(x, y) and not self.is_terrain_walkable(x, y):
                 issues.append(ValidationIssue(
                     SEVERITY_WARNING, "NPC_ON_BLOCKED",
                     f"npc '{npc.get_uid()}' stands on a blocked cell", (x, y)))
@@ -1983,6 +2223,26 @@ class LevelData:
                 issues.append(ValidationIssue(
                     SEVERITY_WARNING, "PORTAL_NO_TARGET",
                     f"portal '{prop.get_uid()}' has no target level", (x, y)))
+            if prop.get_interactable() and \
+                    prop.get_interaction_kind() == "travel" and \
+                    not prop.get_target_level_id():
+                issues.append(ValidationIssue(
+                    SEVERITY_WARNING, "TRAVEL_NO_TARGET",
+                    f"prop '{prop.get_uid()}' travels but has no target "
+                    f"level", (x, y)))
+            if prop.get_interactable() and \
+                    prop.get_interaction_kind() == "menu":
+                menu_id = prop.get_menu_id()
+                if not menu_id:
+                    issues.append(ValidationIssue(
+                        SEVERITY_WARNING, "MENU_NO_TARGET",
+                        f"prop '{prop.get_uid()}' opens a menu but none is "
+                        f"chosen", (x, y)))
+                elif menu_id not in MENU_REGISTRY:
+                    issues.append(ValidationIssue(
+                        SEVERITY_WARNING, "UNKNOWN_MENU",
+                        f"prop '{prop.get_uid()}' opens unknown menu "
+                        f"'{menu_id}'", (x, y)))
             if prop.get_interactable():
                 payout = prop.get_amount() * prop.get_triggers_per_semester()
                 if prop.get_interaction_kind() == "money":

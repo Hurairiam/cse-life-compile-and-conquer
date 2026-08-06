@@ -20,7 +20,7 @@ place to hook into.
 
 from __future__ import annotations
 
-from typing import Callable, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import pygame
 
@@ -653,9 +653,18 @@ class Cycler:
     """
 
     def __init__(self, rect: pygame.Rect, options: Sequence[str],
-                 value: str = "") -> None:
+                 value: str = "",
+                 labels: Optional[Dict[str, str]] = None) -> None:
+        """
+        `labels` maps an option to the text drawn for it, for lists
+        whose ids are not what a human should be reading —
+        "skill_tree" cycles, "Skill Tree" is displayed. Options with
+        no entry fall back to the raw id, so callers that never pass
+        the map behave exactly as before.
+        """
         self.__rect: pygame.Rect = rect
         self.__options: List[str] = list(options)
+        self.__labels: Dict[str, str] = dict(labels or {})
         self.__index: int = 0
         self.set_value(value)
 
@@ -710,9 +719,10 @@ class Cycler:
         field = pygame.Rect(back.right + 4, self.__rect.y,
                             self.__rect.w - back.w * 2 - 8, self.__rect.h)
         th.draw_panel(surface, field, th.ROW_WHITE, th.BORDER_ROW)
-        value = self.get_value() or "-"
-        label = th.fit_font(value, field.w - 8)
-        th.draw_text_centered(surface, label, value, field, th.TEXT_COFFEE)
+        value = self.get_value()
+        text = self.__labels.get(value, value) or "-"
+        label = th.fit_font(text, field.w - 8)
+        th.draw_text_centered(surface, label, text, field, th.TEXT_COFFEE)
 
 
 class ChipRow:

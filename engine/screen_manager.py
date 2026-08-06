@@ -34,7 +34,11 @@ class ScreenState(Enum):
     STATS = auto()
     EXAM_RESULT = auto()
     CERTIFICATE = auto()
-    LECTURE = auto()    
+    LECTURE = auto()
+    # The exam / lecture / cancel card a classroom prop opens. Appended
+    # rather than inserted: auto() numbers by position, and moving an
+    # existing member would renumber the ones after it.
+    ACTIVITY = auto()
 
 
 class ScreenManager:

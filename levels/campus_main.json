@@ -2174,6 +2174,186 @@
         2,
         12
       ]
+    },
+    {
+      "uid": "prop_0010",
+      "type_id": "oaktree_1",
+      "x": 18,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0011",
+      "type_id": "oaktree_2",
+      "x": 19,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0012",
+      "type_id": "oaktree_3",
+      "x": 18,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0013",
+      "type_id": "oaktree_4",
+      "x": 19,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0014",
+      "type_id": "oaktree_5",
+      "x": 18,
+      "y": 11,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0015",
+      "type_id": "oaktree_6",
+      "x": 19,
+      "y": 11,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0016",
+      "type_id": "oaktree_small_1",
+      "x": 16,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0017",
+      "type_id": "oaktree_small_2",
+      "x": 17,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0018",
+      "type_id": "oaktree_small_3",
+      "x": 16,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0019",
+      "type_id": "oaktree_small_4",
+      "x": 17,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0020",
+      "type_id": "oaktree_small_shadow",
+      "x": 16,
+      "y": 11,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0021",
+      "type_id": "oaktree_small_shadow_2",
+      "x": 17,
+      "y": 11,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
     }
   ],
   "npcs": [

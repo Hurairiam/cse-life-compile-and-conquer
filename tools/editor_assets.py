@@ -30,6 +30,7 @@ from content.level_registry import (
     get_npc_def,
     get_npc_portrait_path,
     get_prop_def,
+    get_prop_footprint,
     get_tile_def,
     resolve_asset,
 )
@@ -108,17 +109,58 @@ class AssetCache:
         """Prop sprite at `size`, or None when its art is missing."""
         return self.__from_registry(get_prop_def(type_id), "sheet", size)
 
+    def get_prop_footprint_sprite(self, type_id: str,
+                                  cell_px: int) -> Optional[pygame.Surface]:
+        """
+        Prop sprite at its FULL footprint, for canvas drawing.
+
+        A 1x1 prop is one cell, as always. A multi-cell prop (a tree)
+        comes back at cells_w x cells_h cells, because its art is not
+        square and slicing a square cell out of it would show only the
+        bottom-left corner. The palette still uses get_prop(), which
+        squeezes the whole thing into one square swatch.
+        """
+        cells_w, cells_h = get_prop_footprint(type_id)
+        if (cells_w, cells_h) == (1, 1):
+            return self.get_prop(type_id, cell_px)
+        entry = get_prop_def(type_id)
+        if entry is None:
+            return None
+        path = str(entry.get("sheet", ""))
+        key = ("footprint", path, cells_w, cells_h, cell_px)
+        if key not in self.__cells:
+            sheet = self.__sheet(path)
+            self.__cells[key] = None if sheet is None else \
+                pygame.transform.scale(
+                    sheet, (cells_w * cell_px, cells_h * cell_px))
+        return self.__cells[key]
+
     def get_npc_editor(self, type_id: str,
                        size: int) -> Optional[pygame.Surface]:
         """
         The NPC's `level_editor` art — palette cell and canvas preview.
         This is editor chrome; the game never shows it.
+
+        Falls back to the first frame of the idle sheet when the
+        dedicated icon is absent. Only two of the seven NPCs ever got a
+        `_level_editor.png`, so without this the other five drew as
+        blank placeholder squares and were impossible to tell apart in
+        the palette — an NPC with a map sprite should always be
+        recognisable, even before its icon is drawn.
+
+        The missing path is still recorded, so `get_missing_paths()`
+        keeps listing it as art worth making.
         """
         entry = get_npc_def(type_id)
         if entry is None:
             return None
-        return self.__cell(entry.get("editor_icon", ""), 0, 0,
-                           int(entry.get("cell_px", 48)), size)
+        cell_px = int(entry.get("cell_px", 48))
+        icon = str(entry.get("editor_icon", ""))
+        surface = self.__cell(icon, 0, 0, cell_px, size) if icon else None
+        if surface is None:
+            surface = self.__cell(str(entry.get("idle_sheet", "")), 0, 0,
+                                  cell_px, size)
+        return surface
 
     def get_npc_idle(self, type_id: str, size: int,
                      frame: int = 0) -> Optional[pygame.Surface]:
