@@ -52,9 +52,13 @@ from content.level_registry import (          # noqa: E402  (after sys.path)
     SPEED_MODIFIER_BASE,
     SPEED_SMOOTH_RATE,
     TILE_SIZE_PX,
+    get_menu_display_name,
     get_npc_display_name,
     get_npc_portrait_path,
 )
+from content.skill_tree_layout import build_view_model   # noqa: E402
+from ui.skill_tree_screen import SkillTreeScreen         # noqa: E402
+from ui.stats_screen import StatsScreen                  # noqa: E402
 from content.level_schema import GateData               # noqa: E402
 from engine.dialogue_manager import DialogueManager      # noqa: E402
 from engine.game_clock import GameClock                  # noqa: E402
@@ -115,7 +119,7 @@ WALK_FPS = 8.0                  # frames per second of the 4-frame cycle
 WALK_FRAMES = 4
 FOOTSTEP_PERIOD = 0.34          # seconds between footstep SFX while moving
 
-DEFAULT_LEVEL_ID = "campus_main"
+DEFAULT_LEVEL_ID = "lecture_hall"
 
 # The fake player's starting figures — plausible mid-degree numbers so
 # the HUD shows something other than zeroes. Every one is nudgeable
@@ -570,6 +574,14 @@ class Sandbox:
         self.__talking: Optional[Tuple[str, str]] = None
         self.__talking_chain: int = 0
 
+        # Menu props (Feature: prop -> screen). Built once and reused:
+        # both are pure renderers that take their data as arguments
+        # (Style Guide §6.1), so keeping them alive costs one card of
+        # geometry and no state.
+        self.__menu_open: str = ""
+        self.__skill_tree_screen: SkillTreeScreen = SkillTreeScreen()
+        self.__stats_screen: StatsScreen = StatsScreen()
+
         self.__show_debug: bool = False
         self.__pulse: float = 0.0
         self.__footstep_timer: float = 0.0
@@ -638,6 +650,13 @@ class Sandbox:
                 continue
             if event.type != pygame.KEYDOWN:
                 continue
+            # An open menu owns the keyboard: ESC (or E) backs out of
+            # it rather than quitting the sandbox, which is what every
+            # other modal here already does.
+            if self.__menu_open:
+                if event.key in (pygame.K_ESCAPE, pygame.K_e):
+                    self.__close_menu()
+                continue
             if self.__dialogue.is_active():
                 self.__handle_dialogue_key(event.key)
                 continue
@@ -698,7 +717,8 @@ class Sandbox:
         self.__dialogue.update(dt)
         if (self.__popup.consumes_input()
                 or self.__gate_notice.consumes_input()
-                or self.__dialogue.is_active()):
+                or self.__dialogue.is_active()
+                or self.__menu_open):
             self.__walker.update(dt, 0.0, 0.0, self.__level)
         else:
             dx, dy = self.__read_movement_input()
@@ -930,7 +950,16 @@ class Sandbox:
         The cap is the editor's per-prop limit; the engine's global
         per-semester cap (MAX_PROP_MONEY_PER_SEMESTER) is a separate
         rule and is not the sandbox's to enforce.
+
+        A "menu" prop is checked FIRST and never counted: it is a door
+        to a screen, not a payout, so spending a trigger on it would
+        mean a registration desk you could only use once a term.
         """
+        kind = prop.get_interaction_kind()
+        if kind == "menu":
+            self.__open_menu(prop.get_menu_id())
+            return
+
         key = (self.__level.get_level_id(), prop.get_uid())
         used = self.__trigger_count.get(key, 0)
         allowed = prop.get_triggers_per_semester()
@@ -944,7 +973,6 @@ class Sandbox:
             return
 
         self.__trigger_count[key] = used + 1
-        kind = prop.get_interaction_kind()
         amount = prop.get_amount()
         if kind == "money":
             self.__state.add_money(amount)
@@ -963,6 +991,77 @@ class Sandbox:
         self.__popup.open("FOUND SOMETHING", body, SEVERITY_INFO)
         if self.__audio:
             self.__audio.play_sfx("confirm")
+
+    # -- menu props -------------------------------------------
+
+    # Screens this sandbox can genuinely drive. Both are pure
+    # renderers fed from FakePlayerState, so opening them here proves
+    # the prop -> screen path end to end.
+    #
+    # The rest of MENU_REGISTRY needs real game state — a Player, a
+    # catalog, a RegistrationManager, a save file — which this file is
+    # forbidden to construct (see the module docstring). Those report
+    # the binding instead of faking it, and get their real screen when
+    # main.py's router adopts this dispatch.
+    PLAYABLE_MENUS: tuple = ("skill_tree", "stats")
+
+    def __open_menu(self, menu_id: str) -> None:
+        """
+        Open the screen a menu prop points at.
+
+        An unset or unknown id is an authoring mistake, not a crash:
+        the player is told, exactly as a portal with no target is.
+        """
+        if not menu_id:
+            self.__popup.open("NOTHING HAPPENS",
+                              ["This prop opens a menu,",
+                               "but no menu was chosen for it."],
+                              SEVERITY_INFO)
+            return
+
+        name = get_menu_display_name(menu_id)
+        if menu_id in self.PLAYABLE_MENUS:
+            self.__menu_open = menu_id
+            if self.__audio:
+                self.__audio.play_sfx("page_turn")
+            return
+
+        self.__popup.open(
+            "MENU PROP",
+            [f"This opens: {name}",
+             f"(menu_id '{menu_id}')",
+             "Needs real game state — wired at integration."],
+            SEVERITY_INFO)
+        if self.__audio:
+            self.__audio.play_sfx("confirm")
+
+    def __close_menu(self) -> None:
+        """Leave the open menu and hand control back to the map."""
+        self.__menu_open = ""
+        if self.__audio:
+            self.__audio.play_sfx("page_turn")
+
+    def __render_menu(self) -> None:
+        """Draw whichever menu is open, full-screen over the map."""
+        if self.__menu_open == "skill_tree":
+            self.__skill_tree_screen.render(
+                self.__window,
+                build_view_model(self.__state.get_skill_tree()))
+        elif self.__menu_open == "stats":
+            completed = self.__state.get_academic_history() \
+                .get_completed_course_codes()
+            self.__stats_screen.render(
+                self.__window,
+                display_name="Sandbox Student",
+                semester=self.__state.get_current_semester(),
+                days_remaining=self.__state.get_time_pool_days(),
+                credits_earned=self.__state.get_accumulated_credits(),
+                wallet=self.__state.get_wallet_balance(),
+                # The SCREEN wants a {skill_id: level} map, not the tree
+                # object — handing it the tree renders nothing and
+                # raises on iteration.
+                skills=self.__state.get_skill_tree().get_all_levels(),
+                completed_count=len(completed))
 
     def __check_cell_transition(self) -> None:
         """
@@ -1032,6 +1131,13 @@ class Sandbox:
     def __draw(self, dt: float) -> None:
         """One frame: map, prompt, HUD, dialogue, popup, debug."""
         self.__window.fill(PANEL_TAN)
+        # A menu prop's screen replaces the world rather than sitting
+        # over it: these are full-card screens with their own
+        # background, and the HUD would collide with their titles.
+        if self.__menu_open:
+            self.__render_menu()
+            self.__draw_hint()
+            return
         self.__map.render(self.__window, self.__level, self.__camera,
                           self.__walker.get_position(),
                           self.__walker.get_facing(),
@@ -1043,7 +1149,8 @@ class Sandbox:
                           time_pool=self.__state.get_time_pool_days(),
                           wallet=self.__state.get_wallet_balance(),
                           semester=self.__state.get_current_semester(),
-                          credits=self.__state.get_accumulated_credits())
+                          credits=self.__state.get_accumulated_credits(),
+                          location=self.__level.get_level_name())
         self.__dialogue.render(self.__window)
         self.__popup.render(self.__window)
         if self.__gate_notice.is_open():
@@ -1143,8 +1250,12 @@ class Sandbox:
 
     def __draw_hint(self) -> None:
         """The muted bottom-right key hint every stub screen carries."""
-        text = ("WASD move  |  E interact  |  F1 debug  |  [ ] sem  "
-                "- = cr  , . days  9 0 BDT  |  F11  |  ESC")
+        if self.__menu_open:
+            text = (f"{get_menu_display_name(self.__menu_open).upper()}"
+                    f"  |  ESC / E to close  |  F11")
+        else:
+            text = ("WASD move  |  E interact  |  F1 debug  |  [ ] sem  "
+                    "- = cr  , . days  9 0 BDT  |  F11  |  ESC")
         width = self.__debug_font.size(text)[0] + PLATE_PAD * 2
         height = self.__debug_font.get_height() + PLATE_PAD * 2
         self.__draw_plate(

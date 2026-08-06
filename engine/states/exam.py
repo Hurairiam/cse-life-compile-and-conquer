@@ -35,7 +35,8 @@ def __current_course(ctx):
 
 
 def enter(ctx):
-    ctx.play_music("exam")
+    # Music is set centrally by engine/soundtrack.py via the router:
+    # every screen takes the "menu" track except EXAM, which is silent.
     __ensure_session(ctx)
 
 

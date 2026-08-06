@@ -19,7 +19,8 @@ def __ui(ctx):
 
 def enter(ctx):
     __ui(ctx)
-    ctx.play_music("main_menu")
+    # Music is set centrally by engine/soundtrack.py via the router:
+    # every screen takes the "menu" track except EXAM, which is silent.
 
 
 def __activate(ctx, index):

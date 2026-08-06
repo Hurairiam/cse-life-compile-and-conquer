@@ -1,0 +1,642 @@
+{
+  "schema_version": 1,
+  "meta": {
+    "level_name": "Player_Room",
+    "level_id": "player_room",
+    "grid_width": 10,
+    "grid_height": 10,
+    "ambient": "day",
+    "music": "menu",
+    "spawn": {
+      "x": 8,
+      "y": 8
+    }
+  },
+  "layers": {
+    "ground": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        0
+      ],
+      [
+        0,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        0
+      ],
+      [
+        0,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        0
+      ],
+      [
+        0,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        0
+      ],
+      [
+        0,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        0
+      ],
+      [
+        0,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        0
+      ],
+      [
+        0,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        0
+      ],
+      [
+        0,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        128,
+        128,
+        0
+      ]
+    ],
+    "overlay": [
+      [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      [
+        5,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        5
+      ],
+      [
+        5,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        5
+      ],
+      [
+        5,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        5
+      ],
+      [
+        5,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        5
+      ],
+      [
+        5,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        5
+      ],
+      [
+        5,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        5
+      ],
+      [
+        5,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        5
+      ],
+      [
+        5,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        5
+      ],
+      [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        -1,
+        -1,
+        5
+      ]
+    ]
+  },
+  "props": [
+    {
+      "uid": "prop_0001",
+      "type_id": "bin",
+      "x": 1,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0002",
+      "type_id": "bookshelf_top_left",
+      "x": 7,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0003",
+      "type_id": "bookshelf_top_right",
+      "x": 8,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0004",
+      "type_id": "bookshelf_bottom_left",
+      "x": 7,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0005",
+      "type_id": "bookshelf_bottom_right",
+      "x": 8,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0009",
+      "type_id": "cushio",
+      "x": 8,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0012",
+      "type_id": "potted_plant",
+      "x": 2,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0013",
+      "type_id": "portal",
+      "x": 7,
+      "y": 9,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_lobby",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0014",
+      "type_id": "portal",
+      "x": 8,
+      "y": 9,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_lobby",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0015",
+      "type_id": "bed_1",
+      "x": 1,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0016",
+      "type_id": "bed_2",
+      "x": 2,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0017",
+      "type_id": "bed_3",
+      "x": 1,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0018",
+      "type_id": "bed_4",
+      "x": 2,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0019",
+      "type_id": "bed_5",
+      "x": 1,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0020",
+      "type_id": "bed_6",
+      "x": 2,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0021",
+      "type_id": "computer_desk_1",
+      "x": 5,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0022",
+      "type_id": "computer_desk_2",
+      "x": 6,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0023",
+      "type_id": "computer_desk_4",
+      "x": 6,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "menu",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1,
+        "menu_id": "skill_tree"
+      }
+    },
+    {
+      "uid": "prop_0024",
+      "type_id": "computer_desk_3",
+      "x": 5,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "menu",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1,
+        "menu_id": "skill_tree"
+      }
+    },
+    {
+      "uid": "prop_0025",
+      "type_id": "nightstand_1",
+      "x": 3,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0026",
+      "type_id": "nightstand_2",
+      "x": 3,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0027",
+      "type_id": "vase_!",
+      "x": 4,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0028",
+      "type_id": "vase_2",
+      "x": 4,
+      "y": 2,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0029",
+      "type_id": "yellowarrow",
+      "x": 7,
+      "y": 8,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    }
+  ],
+  "npcs": [],
+  "zones": [
+    {
+      "uid": "zone_0001",
+      "zone_id": "lobby",
+      "display_name": "Campus Lobby",
+      "x": 7,
+      "y": 9,
+      "w": 2,
+      "h": 1
+    }
+  ]
+}

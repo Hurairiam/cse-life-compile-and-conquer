@@ -85,7 +85,7 @@ class SemesterCatalogBuilder:
     # ── the catalog ───────────────────────────────────────────
 
     def build(self, full_catalog: Sequence["Course"],
-              history: Any) -> List["Course"]:
+              history: Any, current_semester_number: int) -> List["Course"]:
         """
         The semester's catalog, backlogged courses first.
 
@@ -93,18 +93,26 @@ class SemesterCatalogBuilder:
         just cost them a term; everything else follows in the order
         `build_semester_catalog()` returned it, which is course-code
         order and therefore already meaningful.
+
+        CHANGE: current_semester_number is now required — it's passed
+        straight through to RegistrationManager.build_semester_catalog(),
+        which gates visibility by Course.is_offered_in_semester() as
+        well as prerequisites. Callers get this from
+        ctx.semester().get_semester_number().
         """
-        backlogged, regular = self.partition(full_catalog, history)
+        backlogged, regular = self.partition(
+            full_catalog, history, current_semester_number)
         return backlogged + regular
 
     def partition(self, full_catalog: Sequence["Course"],
-                  history: Any) -> Tuple[List["Course"], List["Course"]]:
+                  history: Any, current_semester_number: int
+                  ) -> Tuple[List["Course"], List["Course"]]:
         """
         Split the visible catalog into (backlogged, regular).
 
-        Both halves are prerequisite-filtered, because both come out of
-        the single `build_semester_catalog()` call this makes — the
-        filtering is never repeated here.
+        Both halves are term + prerequisite-filtered, because both
+        come out of the single `build_semester_catalog()` call this
+        makes — the filtering is never repeated here.
 
         The backlog half follows `AcademicHistory.get_backlog_courses()`
         LEDGER order (oldest failure first), so a course deferred term
@@ -112,11 +120,12 @@ class SemesterCatalogBuilder:
         regular half keeps the catalog's own order and is deliberately
         NOT re-sorted.
 
-        A course that is both backlogged and prerequisite-visible
+        A course that is both backlogged and otherwise-visible
         appears exactly once, in the backlog half only.
         """
         visible: List["Course"] = list(
-            self.__manager.build_semester_catalog(full_catalog, history))
+            self.__manager.build_semester_catalog(
+                full_catalog, history, current_semester_number))
         by_code: Dict[str, "Course"] = {}
         for course in visible:
             # First wins: if a catalog ever carried two objects with one
@@ -147,9 +156,10 @@ class SemesterCatalogBuilder:
         return (backlogged, regular)
 
     def get_backlogged(self, full_catalog: Sequence["Course"],
-                       history: Any) -> List["Course"]:
+                       history: Any, current_semester_number: int
+                       ) -> List["Course"]:
         """Just the backlog subset, in ledger order."""
-        return self.partition(full_catalog, history)[0]
+        return self.partition(full_catalog, history, current_semester_number)[0]
 
     def get_unmatched_backlog_codes(self) -> List[str]:
         """
@@ -268,7 +278,7 @@ if __name__ == "__main__":
             print(f"     ... {len(courses) - HEAD_ROWS} more")
 
     for semester in range(1, 4):
-        catalog = demo_builder.build(demo_catalog, demo_history)
+        catalog = demo_builder.build(demo_catalog, demo_history, semester)
         newly = demo_builder.get_newly_unlocked(catalog)
         dump(semester, catalog, newly)
 
