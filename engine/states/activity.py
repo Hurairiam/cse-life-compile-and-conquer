@@ -6,14 +6,17 @@ kind is "menu" and whose menu id is "activity" routes here, so an
 author wires a lectern up entirely from the level editor.
 
     START EXAM     -> ScreenState.EXAM
-    START LECTURE  -> nothing yet, deliberately (see below)
+    START LECTURE  -> ScreenState.LECTURE
     CANCEL         -> back to wherever the player came from
 
-The lecture branch is a live, focusable, clickable button that
-currently only reports itself. That is the owner's ruling: the lecture
-scripts do not exist yet, and a button wired to a screen that is not
-written would either crash or silently do nothing. It is one line to
-point at once those files land -- see __start_lecture.
+This card is currently the ONLY route into the lecture state. Ayesha's
+engine/states/lecture.py and content/lectures.py landed on main with no
+entry point -- nothing anywhere called ctx.go(ScreenState.LECTURE) --
+so without this the whole lecture feature was unreachable.
+
+Both activities read from the semester's REGISTERED COURSES, so an
+entry is greyed out when there is nothing for it to run rather than
+dropping the player into an empty screen.
 """
 import pygame
 
@@ -23,9 +26,25 @@ from ui.activity_choice_screen import (
 )
 from ui.popup import SEVERITY_INFO
 
-# Not yet routable. Listed here rather than hard-coded at the two
-# places that care, so wiring the lecture up is a single deletion.
-UNAVAILABLE = (ENTRY_LECTURE,)
+
+def __registered(ctx):
+    """The courses this semester's activities run over."""
+    try:
+        return list(ctx.semester().get_registered_courses())
+    except (AttributeError, TypeError):
+        return []
+
+
+def unavailable(ctx):
+    """
+    Entry keys that cannot be chosen right now.
+
+    A lecture over an empty course list shows a blank dialogue box the
+    player has to press SPACE at twice to escape, so it is refused up
+    front instead. The exam screen already handles "nothing to sit"
+    gracefully with its own message, so it is left enabled.
+    """
+    return () if __registered(ctx) else (ENTRY_LECTURE,)
 
 
 def enter(ctx):
@@ -50,16 +69,23 @@ def __start_exam(ctx):
 
 def __start_lecture(ctx):
     """
-    The lecture is not built yet.
+    Run this semester's lectures, one per registered course.
 
-    Replace this body with `ctx.go(ScreenState.LECTURE)` (and drop
-    ENTRY_LECTURE from UNAVAILABLE) once the lecture state exists.
+    Refused with a notice when nothing is registered, matching what the
+    card already draws greyed -- a click on a disabled entry should say
+    why, not silently do nothing.
     """
-    ctx.play_sfx("error")
-    ctx.message_popup.open(
-        "NOT YET",
-        ["Lectures are not implemented yet.",
-         "This button is wired and waiting."], SEVERITY_INFO)
+    if not __registered(ctx):
+        ctx.play_sfx("error")
+        ctx.message_popup.open(
+            "NOTHING TO ATTEND",
+            ["You have no registered courses.",
+             "Register first, then come back."], SEVERITY_INFO)
+        return
+    ctx.play_sfx("confirm")
+    # lecture.py returns to EXPLORATION on its own, so return_state is
+    # not consulted there; it is left as the caller set it.
+    ctx.go(ScreenState.LECTURE)
 
 
 def __choose(ctx, index):
@@ -121,5 +147,6 @@ def render(ctx, screen):
     ctx.activity_screen.render(
         screen,
         focused_index=getattr(ctx, "activity_focus", 0),
-        disabled=UNAVAILABLE,
+        disabled=unavailable(ctx),
+        subtitle="%d COURSE(S) REGISTERED" % len(__registered(ctx)),
     )
