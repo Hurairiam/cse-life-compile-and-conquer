@@ -1549,28 +1549,101 @@
       "dialog": {
         "chains": [
           {
-            "chain_id": "greeting",
+            "chain_id": "sem3",
             "lines": [
-              "I'm Kabir. I've been here a while.",
-              "Don't make the same mistakes I did. That's all I'll say."
+              "What?Look I'm just WAiting for my next class.",
+              "This place is somewhat free from the outside chaos.",
+              "Silence is very underrated."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "sem4",
+            "lines": [
+              "You again.",
+              "Group project assigned today. Worst part of university tbh.",
+              "I'd rather do four people's wprk alone than manage them.",
+              "Reliance on others is just delayed disappointment."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_5",
+            "lines": [
+              "...",
+              "My lab partner quit halfway through.Left me with the project",
+              "Expected as much. I shouldn't have kept my hopes up."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_6",
+            "lines": [
+              "Still around huh?",
+              "You don't try to make small talk.I appreciate that.",
+              "Most people just chatter to fill in the silence.",
+              "Noise is just cheap comfort according to me."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_7",
+            "lines": [
+              "Hey.",
+              "Got stuck on an assignment for three whole days.",
+              "Someone from class dropped off their reference notes.",
+              "Annoying when people ruin your bad mood by being decent."
             ],
             "emotion": "neutral"
           },
           {
-            "chain_id": "offer",
+            "chain_id": "chain_8",
             "lines": [
-              "There's something I wish someone had shown me earlier.",
-              "It's a few days of work. Probably saves you more than that later.",
-              "Up to you."
+              "Hey wanna sit together?",
+              "Joined that group project again.",
+              "Didn't take over the whole thing this time.",
+              "Let them handle their parts."
             ],
             "emotion": "neutral"
           },
           {
-            "chain_id": "farewell",
+            "chain_id": "chain_9",
             "lines": [
-              "No rush. You still have time."
+              "Hey. Did a group study session today.",
+              "A few people actually sat with me.",
+              "Didn't hate it as much as I thought I would.",
+              "Islation is easy but it gets boring after a while."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "chain_10",
+            "lines": [
+              "Morning.",
+              "Someone asked me about course selection today.",
+              "I spent 15 minutes mapping it out for them.",
+              "It...wasn't that bad."
             ],
             "emotion": "neutral"
+          },
+          {
+            "chain_id": "chain_11",
+            "lines": [
+              "Senior year moves really fast, doesn't it?",
+              "My group finished our final capstone early.",
+              "We're acually going out for food later.",
+              "See you later."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "chain_12",
+            "lines": [
+              "Last days.",
+              "Thanks for sticking around",
+              "Don't let the noise change you."
+            ],
+            "emotion": "happy"
           }
         ],
         "on_complete": "loop_last"
@@ -1586,29 +1659,122 @@
       "dialog": {
         "chains": [
           {
-            "chain_id": "greeting",
+            "chain_id": "s1",
             "lines": [
-              "Hey. You're in the CSE program? Which courses did you register for?",
-              "I'm Rafi. What're your thoughts about Rukhsana ma'am's assignment?",
-              "If you need notes let me know, I have everything organized by topic."
+              "Hey there. First week.I hope this journey becomes memorable.",
+              "I'm Rafi and  I was just color-coding the term syllabus.",
+              "If you plan from day one, nothing can surprise you."
             ],
             "emotion": "neutral"
           },
           {
-            "chain_id": "offer",
+            "chain_id": "s2",
             "lines": [
-              "I'm working on something this week. You can join if you want.",
-              "Warning\u2014 I don't go slow.",
-              "A few days of proper focused work.It's totally worth it."
+              "Lab reports are due.",
+              "I spent four hours double checking my calculations yesterday",
+              "Found zero errors. That's how it should be."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "s3",
+            "lines": [
+              "Morning.",
+              "The professors are grading much harder this term.",
+              "I lost two marks on formatting error. Two marks.",
+              "A small mistake is just a larger one in disguise."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_4",
+            "lines": [
+              "...FAiled my first pop quiz.",
+              "I kept re-reading the first question thinking it was a trick",
+              "Ran out of time.",
+              "Turns out overthinking charges the same as guessing."
             ],
             "emotion": "neutral"
           },
           {
-            "chain_id": "farewell",
+            "chain_id": "chain_5",
             "lines": [
-              "Alright. The offer stands if you change your mind."
+              "Don't ask about the midterm.",
+              "Spent 48 hours reviewing past papers.",
+              "Blanked out completely on section two.",
+              "Brain has a funny way of locking itself in dire times."
             ],
             "emotion": "neutral"
+          },
+          {
+            "chain_id": "chain_6",
+            "lines": [
+              "Hey.",
+              "I threw out my color-coded planners yesterday.",
+              "I was spending more time planning my schedule than living it",
+              "Planning for a storm doesn't stop the rain I guess."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_7",
+            "lines": [
+              "Remember my notebook where I wrote every mistake I  made?",
+              "I stopped writing anything in it.",
+              "Now I just write down what I learned instead.",
+              "Some bugs disappear in 5 minutes. Some stay for years."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "chain_8",
+            "lines": [
+              "Morning again.",
+              "Group project went completely off the rails yesterday.",
+              "A year ago, I'd have panicked.",
+              "Today I ust rewrote the code in 20 minutes."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_9",
+            "lines": [
+              "Hey there. How's it going?",
+              "A freshman asked me how to handle failing a test today.",
+              "I told him to eat something,get some sleep and try again.",
+              "Some new experiences really do shape you huh?"
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "chain_10",
+            "lines": [
+              "Senior year thesis is brutal man.",
+              "Half of my code broke during demonstration.",
+              "I just laughed and debugged it live infront of the board.",
+              "Perfection is boring anyways."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "chain_11",
+            "lines": [
+              "We're almost at the finish line aren't we?",
+              "Looked back at my semester 1 notes. I was so rigid back then",
+              "Glad I let some of the edges wear off.",
+              "You can't build something flexible if you're afraid to bend."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "chain_12",
+            "lines": [
+              "Finally at the finish line.",
+              "thanks for letting me obsess over details for four years.",
+              "I still make mistakes every week.",
+              "Difference is, I don't apologize to the notebook anymore."
+            ],
+            "emotion": "happy"
           }
         ],
         "on_complete": "loop_last"
