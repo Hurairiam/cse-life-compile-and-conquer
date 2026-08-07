@@ -171,8 +171,7 @@ class ChoiceBox:
             if event.key == pygame.K_DOWN:
                 self.__selected = (self.__selected + 1) % rows
                 return True
-            if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER,
-                             pygame.K_SPACE):
+            if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                 self.__confirmed = True
                 return True
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -190,7 +189,7 @@ class ChoiceBox:
 
     # -- main drawing -----------------------------------------
     def render(self, screen: pygame.Surface, options: Sequence[str],
-               selected_index: int, prompt: str = "CHOOSE A REPLY") -> None:
+               selected_index: int, prompt: str = "YOUR DECISION") -> None:
         """
         Draw the reply list from the state handed in.
 
