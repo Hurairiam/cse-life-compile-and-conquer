@@ -55,6 +55,7 @@ from content.level_registry import (
     GRID_MAX,
     GRID_MIN,
     LAYER_GROUND,
+    CHOICE_OPTIONS_MAX,
     INTERACTION_KINDS,
     MENU_ID_DEFAULT,
     MONEY_MAX,
@@ -73,6 +74,7 @@ from content.level_registry import (
     get_npc_display_name,
     get_npc_emotions,
     get_prop_def,
+    get_skill_display_name,
     get_tile_def,
     get_tile_indices,
     get_tile_layer,
@@ -603,9 +605,13 @@ class PropSettingsPopup(Modal):
         self.__triggers: Stepper = Stepper(
             pygame.Rect(inner_x + 240, body.y + 232, 210, 30),
             prop.get_triggers_per_semester(), TRIGGERS_MIN, TRIGGERS_MAX, 1)
+        # Labelled the same way the menu picker is: the level file stores
+        # the raw id, the author reads the skill tree's own node name.
         self.__skill: Cycler = Cycler(
             pygame.Rect(inner_x, body.y + 292, 450, 30), list(SKILL_IDS),
-            prop.get_skill_id() or SKILL_IDS[0])
+            prop.get_skill_id() or SKILL_IDS[0],
+            {skill_id: get_skill_display_name(skill_id)
+             for skill_id in SKILL_IDS})
         # Shares the skill picker's row: only one of the two is ever
         # live, because a prop cannot both grant EXP and open a screen.
         menu_ids = get_menu_ids()
@@ -991,7 +997,23 @@ class NpcDialogPopup(Modal):
 
     There is deliberately no availability control: the 0.75-1.00
     time-pool window is a game rule, not level data (Spec §6.1).
+
+    THE RIGHT COLUMN IS TABBED. A chain owns two lists — the lines it
+    speaks, and the optional replies it ends on — and they are never
+    edited at the same time. A LINES / REPLIES toggle reuses one table,
+    one button row and one text field for both, rather than growing the
+    card: at 1080x604 centred on a 1280x720 editor there are 58 px of
+    margin left, and a second full-size list does not fit in them.
+
+    A chain with no replies simply ends, which is every chain authored
+    before branches existed. Adding the first reply creates the branch;
+    removing the last one clears it again.
     """
+
+    # The reply "jumps to" picker needs a way to say "end the
+    # conversation". The schema spells that as an empty goto; a cycler
+    # cannot show an empty string, so it shows this instead.
+    END_TALK = "(end talk)"
 
     def __init__(self, npc: NpcData, assets: Any) -> None:
         super().__init__(
@@ -1016,23 +1038,43 @@ class NpcDialogPopup(Modal):
         self.__interactable: ChipRow = ChipRow(
             pygame.Rect(right_x, body.y + 16, 180, 26), ["yes", "no"],
             "yes" if npc.get_interactable() else "no")
+        # 300, not right_w - 200: the last 188 px of this row now carry
+        # the LINES / REPLIES toggle, and three mode chips never needed
+        # 508 px.
         self.__on_complete: ChipRow = ChipRow(
-            pygame.Rect(right_x + 200, body.y + 16, right_w - 200, 26),
+            pygame.Rect(right_x + 200, body.y + 16, 300, 26),
             list(ON_COMPLETE_MODES), npc.get_on_complete())
+        self.__tab: ChipRow = ChipRow(
+            pygame.Rect(right_x + 520, body.y + 16, right_w - 520, 26),
+            ["lines", "replies"], "lines")
 
         self.__chains: RowTable = RowTable(
             pygame.Rect(body.x, body.y + 56, left_w, 200), "CHAINS")
+        # The two right-hand tables share one rectangle; only the one
+        # the toggle names is drawn or given events.
         self.__lines: RowTable = RowTable(
             pygame.Rect(right_x, body.y + 56, right_w, 200), "LINES")
+        self.__replies: RowTable = RowTable(
+            pygame.Rect(right_x, body.y + 56, right_w, 200), "REPLIES")
 
         self.__chain_id: TextInput = TextInput(
             pygame.Rect(body.x, body.y + 312, left_w, 30), "", 32)
         self.__line_text: TextInput = TextInput(
             pygame.Rect(right_x, body.y + 312, right_w, 30), "", 60)
+        self.__reply_label: TextInput = TextInput(
+            pygame.Rect(right_x, body.y + 312, right_w, 30), "", 40)
         self.__emotion: ChipRow = ChipRow(
             pygame.Rect(body.x, body.y + 364, left_w, 26),
             self.__emotions or ["neutral"],
             self.__emotions[0] if self.__emotions else "neutral")
+        # Row shared with the emotion chips, on the right half: where a
+        # reply jumps to, and the strip drawn above the whole list.
+        self.__goto: Cycler = Cycler(
+            pygame.Rect(right_x, body.y + 364, 340, 30), [self.END_TALK],
+            self.END_TALK)
+        self.__choice_prompt: TextInput = TextInput(
+            pygame.Rect(right_x + 368, body.y + 364, right_w - 368, 30),
+            "", 28)
 
         self.__chain_buttons: List[pygame.Rect] = self.__button_row(
             body.x, body.y + 262, left_w)
@@ -1066,23 +1108,58 @@ class NpcDialogPopup(Modal):
         """The chain the tables are showing, or None."""
         return self.__npc.get_chain(self.__chains.get_selected())
 
+    def __on_replies(self) -> bool:
+        """True while the right column is editing replies, not lines."""
+        return self.__tab.get_value() == "replies"
+
+    def __options(self) -> List[Dict[str, str]]:
+        """The selected chain's replies, as a mutable copy."""
+        chain = self.__selected_chain()
+        return chain.get_choice_options() if chain is not None else []
+
+    def __write_options(self, options: List[Dict[str, str]]) -> None:
+        """
+        Push a whole reply list back onto the chain.
+
+        DialogChain exposes the branch wholesale rather than per-reply,
+        so every edit here is read-modify-write. An empty list clears
+        the branch, which is what makes "- REPLY" on the last row turn
+        the chain back into one that simply ends.
+        """
+        chain = self.__selected_chain()
+        if chain is None:
+            return
+        chain.set_choice(self.__choice_prompt.get_text(), options)
+
+    def __goto_choices(self) -> List[str]:
+        """
+        What a reply may jump to: end the talk, or any chain on this NPC.
+
+        Rebuilt on every refresh because renaming or adding a chain
+        changes it, and a cycler holding a stale id would write a
+        dangling goto the validator then has to warn about.
+        """
+        return [self.END_TALK] + [c.get_chain_id()
+                                  for c in self.__npc.get_chains()]
+
     def __refresh(self) -> None:
         """
         Re-read the tables and fields from the working NPC copy. Rows are
         filled BEFORE any selection is applied, because a table refuses a
         selection index it has no row for yet.
         """
-        self.__chains.set_rows(
-            [f"{c.get_chain_id()}  ({c.get_line_count()} lines)"
-             for c in self.__npc.get_chains()])
+        self.__refresh_chain_rows()
         if self.__chains.get_selected() < 0 and self.__npc.get_chain_count():
             self.__chains.set_selected(0)
 
         chain = self.__selected_chain()
         if chain is None:
             self.__lines.set_rows([])
+            self.__replies.set_rows([])
             self.__chain_id.set_text("")
             self.__line_text.set_text("")
+            self.__reply_label.set_text("")
+            self.__choice_prompt.set_text("")
             return
 
         self.__chain_id.set_text(chain.get_chain_id())
@@ -1096,9 +1173,35 @@ class NpcDialogPopup(Modal):
         index = self.__lines.get_selected()
         self.__line_text.set_text(lines[index] if 0 <= index < len(lines)
                                   else "")
+        self.__refresh_replies(chain)
+
+    def __refresh_chain_rows(self) -> None:
+        """Re-read the chains TABLE only, leaving the id field alone."""
+        self.__chains.set_rows(
+            [f"{c.get_chain_id()}  ({c.get_line_count()} lines"
+             f"{', branches' if c.has_choice() else ''})"
+             for c in self.__npc.get_chains()])
+
+    def __refresh_replies(self, chain) -> None:
+        """Re-read the branch half of the form."""
+        options = chain.get_choice_options()
+        self.__refresh_reply_rows()
+        if self.__replies.get_selected() < 0 and options:
+            self.__replies.set_selected(0)
+        self.__choice_prompt.set_text(chain.get_choice_prompt())
+
+        self.__goto.set_options(self.__goto_choices())
+        index = self.__replies.get_selected()
+        if 0 <= index < len(options):
+            self.__reply_label.set_text(options[index]["label"])
+            self.__goto.set_value(options[index].get("goto")
+                                  or self.END_TALK)
+        else:
+            self.__reply_label.set_text("")
+            self.__goto.set_value(self.END_TALK)
 
     def __commit_fields(self) -> None:
-        """Push the two text fields back into the working copy."""
+        """Push every text field back into the working copy."""
         chain = self.__selected_chain()
         if chain is None:
             return
@@ -1108,6 +1211,31 @@ class NpcDialogPopup(Modal):
         if index >= 0:
             chain.set_line(index, self.__line_text.get_text())
         chain.set_emotion(self.__emotion.get_value())
+        self.__commit_reply()
+
+    def __commit_reply(self) -> None:
+        """
+        Push the reply editor back onto the selected reply.
+
+        Runs even on the LINES tab so a half-typed label is not lost by
+        flipping the toggle; with no replies authored it is a no-op and
+        the prompt stays unwritten, which keeps a chain that has no
+        branch free of an empty `choice` block.
+        """
+        options = self.__options()
+        if not options:
+            return
+        index = self.__replies.get_selected()
+        if 0 <= index < len(options):
+            label = self.__reply_label.get_text().strip()
+            # An emptied label would be dropped by set_choice() and the
+            # reply would silently vanish mid-edit, so the old text
+            # stands until something replaces it. "- REPLY" deletes.
+            if label:
+                options[index]["label"] = label
+            goto = self.__goto.get_value()
+            options[index]["goto"] = "" if goto == self.END_TALK else goto
+        self.__write_options(options)
 
     # ── input ─────────────────────────────────────────────────
 
@@ -1121,6 +1249,12 @@ class NpcDialogPopup(Modal):
                 self.__interactable.handle_event(event) or \
                 self.__on_complete.handle_event(event):
             return
+        if self.__tab.handle_event(event):
+            # Flipping the toggle commits whatever was being typed, so a
+            # half-edited line or label is never lost to a tab change.
+            self.__commit_fields()
+            self.__refresh()
+            return
         if self.__emotion.handle_event(event):
             self.__commit_fields()
             self.__refresh()
@@ -1133,31 +1267,101 @@ class NpcDialogPopup(Modal):
                 return
             index = th.hit(self.__line_buttons, event.pos)
             if index >= 0:
-                self.__line_action(index)
+                if self.__on_replies():
+                    self.__reply_action(index)
+                else:
+                    self.__line_action(index)
                 return
 
         previous_chain = self.__chains.get_selected()
         if self.__chains.handle_event(event):
             if self.__chains.get_selected() != previous_chain:
                 self.__lines.set_selected(-1)
+                self.__replies.set_selected(-1)
             self.__refresh()
             return
-        if self.__lines.handle_event(event):
+        if self.__on_replies():
+            if self.__handle_reply_event(event):
+                return
+        elif self.__lines.handle_event(event):
             self.__refresh()
             return
         if self.__chain_id.handle_event(event):
+            # Rows only, never the field itself — set_chain_id() strips,
+            # so refreshing here would eat spaces mid-word.
             self.__commit_fields()
-            self.__chains.set_rows(
-                [f"{c.get_chain_id()}  ({c.get_line_count()} lines)"
-                 for c in self.__npc.get_chains()])
+            self.__refresh_chain_rows()
             return
-        if self.__line_text.handle_event(event):
+        if not self.__on_replies() and self.__line_text.handle_event(event):
             self.__commit_fields()
             chain = self.__selected_chain()
             if chain is not None:
                 self.__lines.set_rows(chain.get_lines())
             return
         super().handle_event(event)
+
+    def __handle_reply_event(self, event: pygame.event.Event) -> bool:
+        """
+        Route one event to the branch editor. True when consumed.
+
+        A TEXT FIELD IS NEVER REFRESHED FROM THE MODEL WHILE IT IS BEING
+        TYPED INTO — only the table rows are, exactly as the LINES side
+        already does. Writing the stored value back on every keystroke
+        makes the field uneditable in two ways: set_choice() strips a
+        label, so the space in "Teach me" is deleted as fast as it is
+        typed; and __commit_reply() keeps the old label when the field
+        goes empty, so the last character can never be backspaced away.
+        """
+        if self.__replies.handle_event(event):
+            # A selection change is the one time the fields must be
+            # repopulated. Whatever was being typed is already in the
+            # model, because every keystroke below commits it.
+            self.__refresh()
+            return True
+        if self.__goto.handle_event(event):
+            self.__commit_fields()
+            self.__refresh()
+            return True
+        if self.__reply_label.handle_event(event):
+            self.__commit_fields()
+            self.__refresh_reply_rows()
+            return True
+        if self.__choice_prompt.handle_event(event):
+            self.__commit_fields()
+            return True
+        return False
+
+    def __refresh_reply_rows(self) -> None:
+        """Re-read the replies TABLE only, leaving the editors alone."""
+        chain = self.__selected_chain()
+        if chain is None:
+            return
+        self.__replies.set_rows(
+            ["%s   ->   %s" % (o["label"], o.get("goto") or self.END_TALK)
+             for o in chain.get_choice_options()])
+
+    def __reply_action(self, index: int) -> None:
+        """+ REPLY / - REPLY / move up / move down."""
+        self.__commit_fields()
+        options = self.__options()
+        selected = self.__replies.get_selected()
+        if index == 0:
+            if len(options) >= CHOICE_OPTIONS_MAX:
+                return          # the box draws at most four (see schema)
+            options.append({"label": "New reply.", "goto": ""})
+            self.__replies.set_selected(len(options) - 1)
+        elif index == 1 and 0 <= selected < len(options):
+            del options[selected]
+            self.__replies.set_selected(min(selected, len(options) - 1))
+        elif index in (2, 3) and 0 <= selected < len(options):
+            target = selected + (-1 if index == 2 else 1)
+            if not 0 <= target < len(options):
+                return
+            options[selected], options[target] = \
+                options[target], options[selected]
+            self.__replies.set_selected(target)
+        self.__write_options(options)
+        self.__refresh()
 
     def __chain_action(self, index: int) -> None:
         """+ CHAIN / - CHAIN / move up / move down."""
@@ -1250,6 +1454,8 @@ class NpcDialogPopup(Modal):
         """Carets, the preview typewriter and the arrow pulse."""
         self.__chain_id.update(dt)
         self.__line_text.update(dt)
+        self.__reply_label.update(dt)
+        self.__choice_prompt.update(dt)
         self.__pulse += dt
         if self.__preview:
             self.__preview_elapsed += dt
@@ -1265,35 +1471,48 @@ class NpcDialogPopup(Modal):
         th.draw_text(surface, label, "FACING", (body.x, body.y), th.CREDIT_HL)
         th.draw_text(surface, label, "INTERACTABLE", (right_x, body.y),
                      th.CREDIT_HL)
-        th.draw_text(surface, label, "WHEN ALL CHAINS HAVE PLAYED",
+        th.draw_text(surface, label, "REPEAT MODE",
                      (right_x + 200, body.y), th.CREDIT_HL)
+        th.draw_text(surface, label, "EDITING",
+                     (right_x + 520, body.y), th.CREDIT_HL)
         self.__facing.render(surface)
         self.__interactable.render(surface)
         self.__on_complete.render(surface, th.BAR_AMBER)
+        self.__tab.render(surface, th.BAR_AMBER)
 
         self.__chains.render(surface)
-        self.__lines.render(surface)
 
         for rect, text in zip(self.__chain_buttons,
                               ("+ CHAIN", "- CHAIN", "UP", "DOWN")):
-            th.draw_button(surface, rect, text, th.HEADER_TAN,
-                           th.fit_font(text, rect.w - 6))
-        for rect, text in zip(self.__line_buttons,
-                              ("+ LINE", "- LINE", "UP", "DOWN")):
             th.draw_button(surface, rect, text, th.HEADER_TAN,
                            th.fit_font(text, rect.w - 6))
 
         th.draw_text(surface, label, "CHAIN ID", (body.x, body.y + 298),
                      th.CREDIT_HL)
         self.__chain_id.render(surface, "intro")
-        th.draw_text(surface, label, "LINE TEXT", (right_x, body.y + 298),
-                     th.CREDIT_HL)
-        self.__line_text.render(surface, "select a line to edit it")
-
         th.draw_text(surface, label, "PORTRAIT EMOTION",
                      (body.x, body.y + 350), th.CREDIT_HL)
         self.__emotion.render(surface)
 
+        if self.__on_replies():
+            self.__render_replies(surface, label, body, right_x)
+        else:
+            self.__render_lines(surface, label, body, right_x)
+
+        if self.__preview:
+            self.__render_preview(surface)
+
+    def __render_lines(self, surface: pygame.Surface, label, body,
+                       right_x: int) -> None:
+        """The right column while the LINES tab is up — unchanged."""
+        self.__lines.render(surface)
+        for rect, text in zip(self.__line_buttons,
+                              ("+ LINE", "- LINE", "UP", "DOWN")):
+            th.draw_button(surface, rect, text, th.HEADER_TAN,
+                           th.fit_font(text, rect.w - 6))
+        th.draw_text(surface, label, "LINE TEXT", (right_x, body.y + 298),
+                     th.CREDIT_HL)
+        self.__line_text.render(surface, "select a line to edit it")
         th.draw_text(surface, label,
                      "CHAINS PLAY IN ORDER, ONE PER INTERACTION.",
                      (right_x, body.y + 356), th.STAT_BROWN)
@@ -1301,8 +1520,30 @@ class NpcDialogPopup(Modal):
                      "LINES ARE PRE-SPLIT — KEEP THEM SHORT.",
                      (right_x, body.y + 372), th.STAT_BROWN)
 
-        if self.__preview:
-            self.__render_preview(surface)
+    def __render_replies(self, surface: pygame.Surface, label, body,
+                         right_x: int) -> None:
+        """The right column while the REPLIES tab is up."""
+        self.__replies.render(surface)
+        full = len(self.__options()) >= CHOICE_OPTIONS_MAX
+        for index, (rect, text) in enumerate(zip(
+                self.__line_buttons,
+                ("+ REPLY", "- REPLY", "UP", "DOWN"))):
+            # "+ REPLY" greys out at the cap rather than doing nothing
+            # when clicked: four is what ui/choice_box.py draws.
+            fill = th.PANEL_TAN if (index == 0 and full) else th.HEADER_TAN
+            th.draw_button(surface, rect, text, fill,
+                           th.fit_font(text, rect.w - 6))
+
+        th.draw_text(surface, label, "REPLY TEXT", (right_x, body.y + 298),
+                     th.CREDIT_HL)
+        self.__reply_label.render(
+            surface, "+ REPLY to give this chain a branch")
+        th.draw_text(surface, label, "THIS REPLY JUMPS TO",
+                     (right_x, body.y + 350), th.CREDIT_HL)
+        self.__goto.render(surface)
+        th.draw_text(surface, label, "PROMPT",
+                     (right_x + 368, body.y + 350), th.CREDIT_HL)
+        self.__choice_prompt.render(surface, "CHOOSE A REPLY")
 
     def __render_preview(self, surface: pygame.Surface) -> None:
         """
@@ -1448,7 +1689,9 @@ class GatePopup(Modal):
         self.__skill: Cycler = Cycler(
             pygame.Rect(left, body.y + 240, 420, 30),
             [self.NONE_SKILL] + list(SKILL_IDS),
-            gate_now.get_required_skill_id() or self.NONE_SKILL)
+            gate_now.get_required_skill_id() or self.NONE_SKILL,
+            {skill_id: get_skill_display_name(skill_id)
+             for skill_id in SKILL_IDS})
         self.__skill_level: Stepper = Stepper(
             pygame.Rect(left, body.y + 296, 210, 30),
             gate_now.get_required_skill_level(), GATE_SKILL_LEVEL_MIN,

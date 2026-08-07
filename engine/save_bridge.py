@@ -59,6 +59,7 @@ def capture(ctx) -> dict:
         spawn_x=spawn[0], spawn_y=spawn[1],
         triggered_prop_uids=sorted(ctx.triggered_prop_uids),
         talked_npc_uids=sorted(ctx.talked_npc_uids),
+        dialogue_choices=dict(getattr(ctx, "dialogue_choices", {}) or {}),
         global_career_clock_days=ctx.session.get_global_career_clock_days(),
         playtime_seconds=int(ctx.playtime_seconds),
     )
@@ -139,9 +140,28 @@ def restore(ctx, state: dict) -> bool:
                          int(w.get("spawn_y", 0) or 0))
     ctx.triggered_prop_uids = set(w.get("triggered_prop_uids") or [])
     ctx.talked_npc_uids = set(w.get("talked_npc_uids") or [])
+    # Branching-dialogue replies. Missing from saves written before
+    # branches existed, and the int() guard keeps a hand-edited file
+    # from putting a string where a reply index belongs.
+    answers = w.get("dialogue_choices")
+    ctx.dialogue_choices = {}
+    if isinstance(answers, dict):
+        for key, value in answers.items():
+            try:
+                ctx.dialogue_choices[str(key)] = int(value)
+            except (TypeError, ValueError):
+                continue
     ctx.level = None                 # STAGE 5 reloads from ctx.level_id
 
     # -- reset transient screen state ---------------------------
+    # The conversation refs point into the level document that is about
+    # to be dropped, so they go with it — a loaded game never resumes
+    # mid-sentence.
+    ctx.dialogue_npc = None
+    ctx.dialogue_chain = None
+    ctx.choice_options = []
+    ctx.choice_prompt = ""
+    ctx.choice_result = None
     ctx.playtime_seconds = float(state.get("playtime_seconds", 0) or 0)
     ctx.exam = {"course_index": 0, "tier_index": 0,
                 "answers": {}, "message": None}

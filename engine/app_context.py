@@ -81,14 +81,20 @@ class AppContext:
         self.monologue = None
         self.dialog_box = None            # owned by DialogueManager
         self.choice_box = ChoiceBox(screen_w, screen_h)
-        self.choice_options = []
-        self.choice_result = None
+        self.choice_options = []       # non-empty = a branch is open
+        self.choice_prompt = ""        # the strip above the replies
+        self.choice_result = None      # the index the player picked
         self.monologue_title = ""
         self.monologue_subtitle = ""
         self.monologue_lines = []
         self.monologue_next = None     # ScreenState to enter after beat
         self.dialogue_return = None    # ScreenState to return to
         self.dialogue_portrait = None
+        # Owned by engine/dialogue_flow.py for the length of one talk.
+        self.dialogue_npc = None       # NpcData being spoken to
+        self.dialogue_chain = None     # DialogChain currently playing
+        # {"<level>:<uid>:<chain>": reply index} — survives save/load.
+        self.dialogue_choices = {}
 
         # -- STAGE 5: world -----------------------------------------
         from ui.interaction_prompt import InteractionPrompt

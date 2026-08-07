@@ -17,10 +17,16 @@ to draw.
 
 The node set is the 12 canonical IDs from
 engine/endgame_manager.py::TRACKED_SKILL_IDS (Build Plan §1.4).
-NOTE the deliberate, owner-ruled divergence: content/level_registry.py
-::SKILL_IDS is a DIFFERENT, shorter 9-entry authoring list used by
-level gates. Both stay as they are; the lead reconciles at
-integration.
+
+SKILL_NODES IS NOW THE AUTHORING LIST TOO. content/level_registry.py
+::SKILL_IDS used to be a separate, shorter 9-entry list for level
+gates and skill props; the two were reconciled onto Saif's twelve by
+owner ruling on 2026-08-08, and level_registry now DERIVES SKILL_IDS
+by reading the keys of this dict. Adding or renaming a node here
+therefore changes what the level editor offers — check
+engine/save_bridge.py::TRACKED_SKILL_IDS and
+engine/endgame_manager.py::TRACKED_SKILL_IDS at the same time, since
+those two are still hand-written copies of the same twelve.
 
 Structural data only — no narrative prose (Build Plan §F10). The
 description lines are terse factual capability notes, not story text.
