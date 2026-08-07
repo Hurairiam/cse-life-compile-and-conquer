@@ -45,9 +45,12 @@ from content.level_registry import (
     LAYER_GROUND,
     LAYER_OVERLAY,
     TILE_SIZE_PX,
+    TILE_SOURCE_PX,
     get_npc_def,
     get_prop_def,
+    get_prop_draw_size,
     get_prop_footprint,
+    get_prop_pixel_size,
     get_tile_def,
     npc_blit_offset,
     npc_sprite_px,
@@ -85,6 +88,11 @@ GATE_OUTLINE_W = 2              # §4.4 border weight on a gated cell
 BADGE_SIZE = 16                 # the little lock chip on a gated cell
 BADGE_INSET = 4                 # gap from the cell corner to the badge
 BADGE_BORDER_W = 2
+
+# How many cells beyond the visible window a prop's ANCHOR may sit and
+# still be drawn. Props are anchored bottom-left and can be any size, so
+# a tall one is still on screen after its anchor has scrolled off.
+PROP_CULL_PAD = 8
 
 PLAYER_FRAMES = 4               # frames in one walk cycle
 NPC_FRAMES_DEFAULT = 4          # frames in a 192x48 idle strip
@@ -183,9 +191,16 @@ class MapScreen:
             if sheet.get_rect().contains(area):
                 surface = pygame.transform.scale(sheet.subsurface(area),
                                                  (size, size))
+            elif (col, row) == (0, 0):
+                # A single-image asset that is not the shape the
+                # registry expected -- a tile drawn at some size other
+                # than 16x16. Scale the WHOLE file into the cell: a tile
+                # IS one cell, and showing all of the art beats showing
+                # one corner of it or the missing-art square. Props are
+                # the ones that draw at true size (__prop_sprite).
+                surface = pygame.transform.scale(sheet, (size, size))
             else:
-                # The file exists but is the wrong shape. Treat it as
-                # missing art rather than crashing mid-frame.
+                # A real sheet whose grid does not add up is broken art.
                 self.__missing.add(path)
         self.__cells[key] = surface
         return surface
@@ -232,29 +247,43 @@ class MapScreen:
 
     def __prop_sprite(self, type_id: str) -> Optional[pygame.Surface]:
         """
-        The sprite for a prop type, or None when its art is gone.
+        The sprite for a prop type, at its TRUE proportions, or None
+        when its art is gone.
 
-        One cell for an ordinary prop; footprint-sized for a tree or
-        anything else taller than a tile. Multi-cell art is not square,
-        so __load_cell (which slices squares) cannot serve it — the
-        whole image is scaled to the footprint instead.
+        Props are the one thing on the map that is not cell-shaped. The
+        art is scaled against the 16 px source cell and nothing else, so
+        a 16x16 rock fills one cell, a 16x48 tree is one by three and a
+        24x40 signboard is one and a half by two and a half. Slicing a
+        square out of the sheet — which is what this used to do for
+        anything the registry called 1x1 — cropped every prop that was
+        not square down to its top-left corner.
         """
         entry = get_prop_def(type_id)
         if entry is None:
             return None
-        cells_w, cells_h = get_prop_footprint(type_id)
-        if (cells_w, cells_h) == (1, 1):
-            return self.__load_cell(str(entry.get("sheet", "")),
-                                    int(entry.get("col", 0)),
-                                    int(entry.get("row", 0)),
-                                    int(entry.get("cell_px", 16)), CELL)
         path = str(entry.get("sheet", ""))
-        key = ("prop_footprint", path, cells_w, cells_h)
+        px_w, px_h = get_prop_pixel_size(type_id)
+        key = ("prop_native", path, px_w, px_h,
+               int(entry.get("col", 0)), int(entry.get("row", 0)))
         if key not in self.__cells:
             sheet = self.__load_sheet(path)
-            self.__cells[key] = None if sheet is None else \
-                pygame.transform.scale(sheet,
-                                       (cells_w * CELL, cells_h * CELL))
+            if sheet is None:
+                self.__cells[key] = None
+            else:
+                area = pygame.Rect(int(entry.get("col", 0)) * px_w,
+                                   int(entry.get("row", 0)) * px_h,
+                                   px_w, px_h)
+                # Registry and file disagree (art replaced since the
+                # scan): the FILE wins, because scaling the real image
+                # keeps every pixel where slicing a stale rect loses them.
+                if not sheet.get_rect().contains(area):
+                    area = sheet.get_rect()
+                self.__cells[key] = pygame.transform.scale(
+                    sheet.subsurface(area),
+                    get_prop_draw_size(type_id, CELL)
+                    if area.size == (px_w, px_h) else
+                    (max(1, round(area.w * CELL / TILE_SOURCE_PX)),
+                     max(1, round(area.h * CELL / TILE_SOURCE_PX))))
         return self.__cells[key]
 
     def __npc_sprite(self, type_id: str,
@@ -409,8 +438,10 @@ class MapScreen:
                        the fallback NPC animation when npc_frames is None
 
         Draw order is ground, overlay, props (y-sorted), NPCs, player,
-        ambient tint, gate markers. Y-sorting the props is what lets the
-        player walk behind a rock that is further down the screen.
+        walk-behind props, ambient tint, gate markers. Y-sorting the
+        props is what lets the player walk behind a rock that is
+        further down the screen; the second prop pass is what lets a
+        prop marked PASS BEHIND stand in front of them entirely.
         """
         self.__anim_clock += max(0.0, float(dt))
         viewport = self.get_viewport_rect(screen)
@@ -424,12 +455,17 @@ class MapScreen:
                               bounds, level, LAYER_GROUND)
             self.__draw_layer(screen, level.get_overlay_rows(), camera,
                               bounds, level, LAYER_OVERLAY)
-            self.__draw_props(screen, level, camera, bounds,
-                              (int(player_px[0]) // CELL,
-                               int(player_px[1]) // CELL))
+            player_cell = (int(player_px[0]) // CELL,
+                           int(player_px[1]) // CELL)
+            self.__draw_props(screen, level, camera, bounds, player_cell)
             self.__draw_npcs(screen, level, camera, bounds, npc_frames)
             self.__draw_player(screen, camera, player_px, player_dir,
                                player_frame)
+            # PASS BEHIND props go on top of the player, faded while
+            # they are inside one. Everything else about them is
+            # identical to an ordinary prop.
+            self.__draw_props(screen, level, camera, bounds, player_cell,
+                              overhead=True)
             self.__draw_edge(screen, level, camera)
             self.__draw_ambient(screen, level, viewport)
             self.__draw_gates(screen, level, camera, bounds, gate_states)
@@ -471,41 +507,89 @@ class MapScreen:
                     pygame.draw.rect(screen, PLACEHOLDER, rect)
 
     @staticmethod
+    def __is_overhead(prop: Any) -> bool:
+        """
+        True for a prop the player walks BEHIND rather than in front of.
+
+        These are drawn in a second pass, after the player, which is the
+        whole point of the setting: the player disappears behind the
+        shopfront and the shopfront goes see-through so they can still
+        be followed.
+        """
+        return bool(getattr(prop, "get_pass_behind", lambda: False)())
+
+    @staticmethod
     def __player_is_behind(prop: Any,
                            player_cell: Optional[Tuple[int, int]]) -> bool:
         """
-        True when the player is under a prop's canopy and would be hidden.
+        True when the player is under a prop and would be hidden.
 
-        Only the NON-root rows count. Standing beside a trunk should not
-        fade the tree; standing behind the leaves should, or the player
-        vanishes into the foliage with no way to tell where they are.
+        Two ways that happens. A prop set to PASS BEHIND counts on every
+        cell of its footprint — the author asked for exactly this. A
+        plain multi-cell prop counts only on its NON-root rows: standing
+        beside a trunk should not fade the tree, standing under the
+        leaves should, or the player vanishes into the foliage with no
+        way to tell where they are.
         """
         if player_cell is None:
             return False
         type_id = prop.get_type_id()
         cells_w, cells_h = get_prop_footprint(type_id)
+        px, py = prop.get_position()
+        if MapScreen.__is_overhead(prop):
+            return any((cx, cy) == player_cell
+                       for cx, cy, _ in prop_cells(type_id, px, py))
         if (cells_w, cells_h) == (1, 1):
             return False
-        px, py = prop.get_position()
         return any((cx, cy) == player_cell and not is_root
                    for cx, cy, is_root in prop_cells(type_id, px, py))
+
+    @staticmethod
+    def __behind_alpha(prop: Any) -> int:
+        """
+        How faded a prop goes while the player is behind it.
+
+        A PASS BEHIND prop carries its own number (the author set it in
+        the editor, 35% transparent by default). Everything else uses
+        the one canopy value this file has always used.
+        """
+        if MapScreen.__is_overhead(prop):
+            return prop.get_behind_alpha()
+        return BEHIND_ALPHA
 
     def __draw_props(self, screen: pygame.Surface, level: Any,
                      camera: Sequence[int],
                      bounds: Tuple[int, int, int, int],
-                     player_cell: Optional[Tuple[int, int]] = None) -> None:
+                     player_cell: Optional[Tuple[int, int]] = None,
+                     overhead: bool = False) -> None:
         """
         Draw the visible props, sorted by row so a prop lower on the
         screen overlaps one above it.
 
-        `player_cell` lets a multi-cell prop fade while the player is
-        behind it. None disables that, which is what the level editor
-        (no player) passes.
+        Called TWICE per frame. The first pass (overhead=False) draws
+        the ordinary props under the player; the second (overhead=True)
+        draws the PASS BEHIND ones over them. Splitting the list is
+        what puts the player behind a prop at all — one pass can only
+        ever put every prop on the same side of them.
+
+        Within a pass, props keep their document order for a given row,
+        so the layering set in the editor with [ and ] is what shows.
+
+        `player_cell` lets a prop fade while the player is behind it.
+        None disables that, which is what the level editor (no player)
+        passes.
         """
         first_col, first_row, last_col, last_row = bounds
+        # Padded by the tallest thing likely to be standing there: a
+        # prop is anchored bottom-left and may be several cells tall, so
+        # one whose anchor is just off the bottom of the screen still
+        # has art on it.
         visible = [p for p in level.get_props()
-                   if first_col <= p.get_position()[0] <= last_col
-                   and first_row <= p.get_position()[1] <= last_row]
+                   if self.__is_overhead(p) == overhead
+                   and first_col - PROP_CULL_PAD <= p.get_position()[0]
+                   <= last_col + PROP_CULL_PAD
+                   and first_row - PROP_CULL_PAD <= p.get_position()[1]
+                   <= last_row + PROP_CULL_PAD]
         for prop in sorted(visible, key=lambda p: p.get_position()[1]):
             # Portals draw NOTHING in game (owner ruling). The doorway
             # is painted into the tiles; the portal prop is only the
@@ -532,7 +616,7 @@ class MapScreen:
             top = rect.bottom - sprite.get_height()
             if self.__player_is_behind(prop, player_cell):
                 sprite = sprite.copy()
-                sprite.set_alpha(BEHIND_ALPHA)
+                sprite.set_alpha(self.__behind_alpha(prop))
             screen.blit(sprite, (rect.x, top))
 
     def __draw_npcs(self, screen: pygame.Surface, level: Any,
@@ -660,9 +744,27 @@ class MapScreen:
                 colour = BAR_RED if locked else BAR_GREEN
                 rect = self.get_screen_rect_for_cell(x, y, camera)
                 pygame.draw.rect(screen, colour, rect, GATE_OUTLINE_W)
-                prop = level.get_prop_at(x, y)
-                if (prop is not None and prop.is_gated()) or (x, y) in anchors:
+                # Any gated prop in the stack earns the badge, not just
+                # the one drawn on top: a locked door with a sign hung
+                # over it is still a locked door.
+                gated_prop = any(prop.is_gated()
+                                 for prop in self.__props_on(level, x, y))
+                if gated_prop or (x, y) in anchors:
                     self.__draw_lock_badge(screen, rect, colour)
+
+    @staticmethod
+    def __props_on(level: Any, x: int, y: int) -> List[Any]:
+        """
+        Every prop on a cell, tolerating a Level that predates stacking.
+
+        This renderer is handed whatever object the runner has; the
+        older one only answers get_prop_at(), so falling back to it
+        keeps this file drawable against both.
+        """
+        if hasattr(level, "get_props_at"):
+            return list(level.get_props_at(x, y))
+        prop = level.get_prop_at(x, y)
+        return [prop] if prop is not None else []
 
     def __draw_lock_badge(self, screen: pygame.Surface, cell: pygame.Rect,
                           colour: Tuple[int, int, int]) -> None:

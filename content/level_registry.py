@@ -34,6 +34,8 @@ import random
 from typing import Any, Dict, List, Optional
 
 from content.asset_scanner import (
+    SOURCE_CELL_PX,
+    cells_for_px,
     family_of_path,
     scan_npcs,
     scan_props,
@@ -71,6 +73,12 @@ def resolve_asset(relative_path: str) -> str:
 
 TILE_SIZE_PX: int = 48          # on-screen size of one cell (Style Guide §5.4)
 EMPTY_TILE: int = -1            # "no tile here" — overlay layer only
+
+# One cell of SOURCE art, the unit every sprite is measured in. Owned
+# by content/asset_scanner.py (which runs with no pygame and no
+# registry) and re-exported here so nothing outside content/ has to
+# know which of the two modules holds it.
+TILE_SOURCE_PX: int = SOURCE_CELL_PX
 
 # ─────────────────────────────────────────────────────────────
 # NPC DRAW SIZE
@@ -258,13 +266,54 @@ def next_rotation(value: Any) -> int:
     return ROTATIONS[(ROTATIONS.index(current) + 1) % len(ROTATIONS)]
 
 
+def get_prop_pixel_size(type_id: str) -> tuple:
+    """
+    (width, height) of a prop's art in SOURCE pixels.
+
+    This is what the renderers scale from, so a prop is drawn at its
+    own proportions rather than squeezed into a square. Entries that
+    never declared px_w/px_h — every hand-written 16x16 prop above —
+    fall back to their footprint, which for those is the same number.
+    """
+    entry = PROP_REGISTRY.get(type_id)
+    if entry is None:
+        return (TILE_SOURCE_PX, TILE_SOURCE_PX)
+    if entry.get("px_w") and entry.get("px_h"):
+        return (max(1, int(entry["px_w"])), max(1, int(entry["px_h"])))
+    cell = max(1, int(entry.get("cell_px", TILE_SOURCE_PX)))
+    return (max(1, int(entry.get("cells_w", 1))) * cell,
+            max(1, int(entry.get("cells_h", 1))) * cell)
+
+
+def get_prop_draw_size(type_id: str, cell_px: int = TILE_SIZE_PX) -> tuple:
+    """
+    The on-screen (width, height) of a prop at a given cell size.
+
+    Scaled from the art's own pixels against the 16 px cell unit, so a
+    16x16 prop is exactly one cell, a 16x48 tree is one by three, and a
+    24x40 signboard is one and a half by two and a half. Fractions of a
+    cell are fine here — only COLLISION rounds to whole cells.
+    """
+    px_w, px_h = get_prop_pixel_size(type_id)
+    scale = max(1, int(cell_px)) / TILE_SOURCE_PX
+    return (max(1, int(round(px_w * scale))),
+            max(1, int(round(px_h * scale))))
+
+
 def get_prop_footprint(type_id: str) -> tuple:
-    """(cells_w, cells_h) for a prop type. Unknown types are 1x1."""
+    """
+    (cells_w, cells_h) of GRID a prop claims. Unknown types are 1x1.
+
+    Declared values win; anything else is derived from the art, rounded
+    up, so a prop drawn 24 px wide reserves the two cells it physically
+    overlaps instead of the one it would fit in.
+    """
     entry = PROP_REGISTRY.get(type_id)
     if entry is None:
         return (1, 1)
-    return (max(1, int(entry.get("cells_w", 1))),
-            max(1, int(entry.get("cells_h", 1))))
+    px_w, px_h = get_prop_pixel_size(type_id)
+    return (max(1, int(entry.get("cells_w", cells_for_px(px_w)))),
+            max(1, int(entry.get("cells_h", cells_for_px(px_h)))))
 
 
 def get_prop_root_height(type_id: str) -> int:
@@ -667,6 +716,54 @@ SPEED_MODIFIER_MAX: float = 2.0
 SPEED_MODIFIER_BASE: float = 1.0
 SPEED_MODIFIER_STEP: float = 0.05
 SPEED_SMOOTH_RATE: float = 5.0     # eased per second, never snaps (Spec §5.2)
+
+# ─────────────────────────────────────────────────────────────
+# PASS FROM BEHIND  (per-prop collision mode)
+# ─────────────────────────────────────────────────────────────
+# A third collision mode beside "blocking" and "passthrough": the
+# player WALKS INTO the prop's cells and comes out BEHIND it. The prop
+# is drawn over the player and fades, so they are never lost inside a
+# bookshelf or a shopfront.
+#
+# Stored as a TRANSPARENCY percentage rather than an alpha byte
+# because that is the number an author types: 35 means "35% see-through
+# while somebody is behind it", and a hand-edited level reads plainly.
+# 0 is fully solid-looking (and therefore hides the player, which is
+# why the popup warns about it); the maximum stops short of 100 so a
+# faded prop never vanishes completely and leaves an invisible object
+# on the map.
+#
+# Distinct from the automatic canopy fade a multi-cell tree already
+# gets: that one is derived from the footprint, this one is a switch
+# the author throws on any prop of any size.
+# ─────────────────────────────────────────────────────────────
+
+PASS_BEHIND_DEFAULT: bool = False
+BEHIND_TRANSPARENCY_DEFAULT: int = 35      # percent see-through
+BEHIND_TRANSPARENCY_MIN: int = 0
+BEHIND_TRANSPARENCY_MAX: int = 95
+BEHIND_TRANSPARENCY_STEP: int = 5
+
+
+def normalise_transparency(value: Any) -> int:
+    """Clamp a transparency percentage into the legal range."""
+    try:
+        percent = int(round(float(value)))
+    except (TypeError, ValueError):
+        return BEHIND_TRANSPARENCY_DEFAULT
+    return max(BEHIND_TRANSPARENCY_MIN,
+               min(BEHIND_TRANSPARENCY_MAX, percent))
+
+
+def transparency_to_alpha(percent: Any) -> int:
+    """
+    Blit alpha (0-255) for a transparency percentage.
+
+    35% transparent is 65% opaque, which is 166 — the one conversion
+    in the codebase, so the editor's preview and the game's fade can
+    never drift apart.
+    """
+    return int(round(255 * (100 - normalise_transparency(percent)) / 100))
 
 BASE_PLAYER_SPEED_PX_S: float = 150.0
 

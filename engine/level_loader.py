@@ -119,8 +119,12 @@ class Level:
             for x in range(self.__grid_width)
             for y in range(self.__grid_height)
             if document.get_tile_rotation(layer, x, y)}
-        self.__prop_at: Dict[Tuple[int, int], PropData] = {
-            p.get_position(): p for p in self.__props}
+        # A list per cell, not one prop: props STACK in the editor, so
+        # a cell can hold a rug, the table on it and the lamp on that.
+        # Bottom of the stack first, which is also draw order.
+        self.__props_at: Dict[Tuple[int, int], List[PropData]] = {}
+        for prop in self.__props:
+            self.__props_at.setdefault(prop.get_position(), []).append(prop)
         self.__npc_at: Dict[Tuple[int, int], NpcData] = {
             n.get_position(): n for n in self.__npcs}
 
@@ -191,11 +195,17 @@ class Level:
         """
         Speed multiplier the player eases toward on this cell (Spec
         §5.2). 1.0 anywhere without a modifier prop.
+
+        With props stacked, the TOPMOST one that actually declares a
+        modifier wins. Mud under a walkable puddle should still slow
+        the player down, and reading only the top of the stack would
+        cancel the setting the moment anything was laid over it.
         """
-        prop = self.__prop_at.get((x, y))
-        if prop is None or not prop.get_passthrough():
-            return SPEED_MODIFIER_BASE
-        return prop.get_speed_modifier()
+        for prop in reversed(self.__props_at.get((x, y), ())):
+            if prop.get_passthrough() and \
+                    prop.get_speed_modifier() != SPEED_MODIFIER_BASE:
+                return prop.get_speed_modifier()
+        return SPEED_MODIFIER_BASE
 
     # ── entities ──────────────────────────────────────────────
 
@@ -203,9 +213,16 @@ class Level:
         """Every placed prop."""
         return list(self.__props)
 
+    def get_props_at(self, x: int, y: int) -> List[PropData]:
+        """Every prop on a cell, bottom of the stack first."""
+        return list(self.__props_at.get((x, y), ()))
+
     def get_prop_at(self, x: int, y: int) -> Optional[PropData]:
-        """The prop on a cell, or None."""
-        return self.__prop_at.get((x, y))
+        """
+        The TOPMOST prop on a cell, or None — the one the player sees.
+        """
+        stack = self.__props_at.get((x, y))
+        return stack[-1] if stack else None
 
     def get_npcs(self) -> List[NpcData]:
         """Every placed NPC."""
@@ -220,17 +237,26 @@ class Level:
         The portal prop on a cell, or None. Stepping onto one is what
         moves the player between campus locations (Spec §9) — the
         state manager reads target_level_id / target_spawn off it.
+
+        Searched through the whole stack, topmost first: a portal is
+        invisible in game, so it is very often UNDER the doorway art
+        an author laid over it.
         """
-        prop = self.__prop_at.get((x, y))
-        if prop is not None and prop.is_portal():
-            return prop
+        for prop in reversed(self.__props_at.get((x, y), ())):
+            if prop.is_portal():
+                return prop
         return None
 
     def get_interactable_at(self, x: int, y: int) -> Optional[PropData]:
-        """The prop on a cell that the player may trigger, or None."""
-        prop = self.__prop_at.get((x, y))
-        if prop is not None and prop.get_interactable():
-            return prop
+        """
+        The prop on a cell that the player may trigger, or None.
+
+        Topmost first, for the same reason: the interactable thing on a
+        cell is not always the thing drawn on top of it.
+        """
+        for prop in reversed(self.__props_at.get((x, y), ())):
+            if prop.get_interactable():
+                return prop
         return None
 
     # ── zones + gates  (F7 addition, over the F5 schema extension) ──
@@ -272,10 +298,14 @@ class Level:
 
         engine/gate_evaluator.py (F8) is what weighs the returned gate
         against a player; this only says which gate applies.
+
+        The first GATED prop in the stack wins, topmost first. A gate
+        buried under a decoration must still hold — layering is a
+        drawing decision and can never open a lock.
         """
-        prop = self.__prop_at.get((x, y))
-        if prop is not None and prop.get_gate().has_requirements():
-            return prop.get_gate()
+        for prop in reversed(self.__props_at.get((x, y), ())):
+            if prop.get_gate().has_requirements():
+                return prop.get_gate()
         zone = self.get_zone_at(x, y)
         if zone is not None and zone.get_gate().has_requirements():
             return zone.get_gate()

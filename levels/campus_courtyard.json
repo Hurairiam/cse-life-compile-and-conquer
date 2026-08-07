@@ -114,272 +114,8 @@
         3,
         3,
         2,
-        104,
-        106,
         3,
         3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        116,
-        4
-      ],
-      [
-        3,
-        3,
-        2,
-        104,
-        106,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        113,
-        4
-      ],
-      [
-        3,
-        3,
-        2,
-        104,
-        106,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        111,
-        4
-      ],
-      [
-        3,
-        3,
-        2,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        113,
-        4
-      ],
-      [
-        3,
-        3,
-        2,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        118,
-        4
-      ],
-      [
-        3,
-        3,
-        2,
-        104,
-        106,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        2,
-        4
-      ],
-      [
-        3,
-        3,
-        2,
-        104,
-        106,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        2,
-        4
-      ],
-      [
-        3,
-        3,
-        2,
-        104,
-        106,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        2,
-        4
-      ],
-      [
-        3,
-        3,
-        2,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        2,
-        4
-      ],
-      [
-        3,
-        3,
-        2,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        117,
-        4
-      ],
-      [
-        3,
-        3,
-        2,
-        104,
-        106,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        111,
-        4
-      ],
-      [
-        3,
-        3,
-        2,
-        104,
-        106,
         3,
         3,
         3,
@@ -402,8 +138,6 @@
         3,
         3,
         2,
-        104,
-        106,
         3,
         3,
         3,
@@ -419,7 +153,9 @@
         3,
         3,
         3,
-        115,
+        3,
+        3,
+        114,
         4
       ],
       [
@@ -443,7 +179,271 @@
         3,
         3,
         3,
-        117,
+        114,
+        4
+      ],
+      [
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        114,
+        4
+      ],
+      [
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        114,
+        4
+      ],
+      [
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2,
+        4
+      ],
+      [
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2,
+        4
+      ],
+      [
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2,
+        4
+      ],
+      [
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2,
+        4
+      ],
+      [
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        114,
+        4
+      ],
+      [
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        114,
+        4
+      ],
+      [
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        114,
+        4
+      ],
+      [
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        114,
+        4
+      ],
+      [
+        3,
+        3,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        114,
         4
       ],
       [
@@ -569,7 +569,31 @@
         -1
       ],
       [
+        130,
         127,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        132,
         127,
         -1,
         -1,
@@ -594,6 +618,78 @@
       ],
       [
         127,
+        132,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        127,
+        130,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        130,
+        127,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        132,
         127,
         -1,
         -1,
@@ -618,6 +714,126 @@
       ],
       [
         127,
+        130,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        132,
+        127,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        132,
+        130,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        127,
+        131,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        130,
+        127,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        132,
         127,
         -1,
         -1,
@@ -642,6 +858,54 @@
       ],
       [
         127,
+        130,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        132,
+        127,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        130,
         127,
         -1,
         -1,
@@ -666,6 +930,30 @@
       ],
       [
         127,
+        131,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        132,
         127,
         -1,
         -1,
@@ -689,8 +977,8 @@
         -1
       ],
       [
-        127,
-        127,
+        131,
+        132,
         -1,
         -1,
         -1,
@@ -714,6 +1002,30 @@
       ],
       [
         127,
+        130,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      [
+        131,
         127,
         -1,
         -1,
@@ -737,319 +1049,7 @@
         -1
       ],
       [
-        127,
-        127,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        127,
-        127,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        127,
-        127,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        127,
-        127,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        127,
-        127,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        127,
-        127,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        127,
-        127,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        127,
-        127,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        127,
-        127,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        127,
-        127,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        127,
-        127,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        127,
-        127,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        127,
-        127,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        127,
+        130,
         127,
         -1,
         -1,
@@ -1075,6 +1075,23 @@
     ]
   },
   "props": [
+    {
+      "uid": "prop_0215",
+      "type_id": "bush1",
+      "x": 20,
+      "y": 17,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
     {
       "uid": "prop_0001",
       "type_id": "small_stool",
@@ -1370,7 +1387,7 @@
       "type_id": "oaktree_1",
       "x": 2,
       "y": 1,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1378,14 +1395,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0021",
       "type_id": "oaktree_2",
       "x": 3,
       "y": 1,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1393,14 +1412,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0022",
       "type_id": "oaktree_3",
       "x": 2,
       "y": 2,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1408,14 +1429,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0023",
       "type_id": "oaktree_4",
       "x": 3,
       "y": 2,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1423,14 +1446,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0024",
       "type_id": "oaktree_5",
       "x": 2,
       "y": 3,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1438,14 +1463,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0025",
       "type_id": "oaktree_6",
       "x": 3,
       "y": 3,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1453,14 +1480,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0026",
       "type_id": "oaktree_1",
       "x": 2,
       "y": 7,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1468,14 +1497,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0027",
       "type_id": "oaktree_1",
       "x": 2,
       "y": 12,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1483,14 +1514,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0028",
       "type_id": "oaktree_1",
       "x": 2,
       "y": 17,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1498,14 +1531,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0029",
       "type_id": "oaktree_2",
       "x": 3,
       "y": 7,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1513,14 +1548,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0030",
       "type_id": "oaktree_2",
       "x": 3,
       "y": 12,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1528,29 +1565,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
-    },
-    {
-      "uid": "prop_0031",
-      "type_id": "oaktree_2",
-      "x": 3,
-      "y": 17,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0032",
       "type_id": "oaktree_3",
       "x": 2,
       "y": 8,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1558,14 +1582,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0033",
       "type_id": "oaktree_3",
       "x": 2,
       "y": 13,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1573,14 +1599,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0034",
       "type_id": "oaktree_3",
       "x": 2,
       "y": 18,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1588,14 +1616,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0036",
       "type_id": "oaktree_4",
       "x": 3,
       "y": 13,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1603,14 +1633,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0037",
       "type_id": "oaktree_4",
       "x": 3,
       "y": 8,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1618,14 +1650,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0038",
       "type_id": "oaktree_5",
       "x": 2,
       "y": 9,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1633,14 +1667,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0039",
       "type_id": "oaktree_5",
       "x": 2,
       "y": 14,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1648,14 +1684,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0040",
       "type_id": "oaktree_5",
       "x": 2,
       "y": 19,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1663,14 +1701,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0041",
       "type_id": "oaktree_1",
       "x": 5,
       "y": 18,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1678,14 +1718,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0042",
       "type_id": "oaktree_1",
       "x": 8,
       "y": 19,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1693,14 +1735,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0043",
       "type_id": "oaktree_1",
       "x": 12,
       "y": 19,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1708,14 +1752,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0044",
       "type_id": "oaktree_1",
       "x": 16,
       "y": 18,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1723,14 +1769,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0045",
       "type_id": "oaktree_1",
       "x": 19,
       "y": 17,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1738,14 +1786,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0046",
       "type_id": "oaktree_2",
       "x": 20,
       "y": 17,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1753,14 +1803,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0047",
       "type_id": "oaktree_2",
       "x": 17,
       "y": 18,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1768,14 +1820,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0048",
       "type_id": "oaktree_2",
       "x": 13,
       "y": 19,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1783,14 +1837,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0049",
       "type_id": "oaktree_2",
       "x": 9,
       "y": 19,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1798,14 +1854,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0050",
       "type_id": "oaktree_2",
       "x": 6,
       "y": 18,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1813,14 +1871,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0051",
       "type_id": "oaktree_3",
       "x": 5,
       "y": 19,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1828,14 +1888,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0052",
       "type_id": "oaktree_3",
       "x": 8,
       "y": 20,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1843,14 +1905,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0053",
       "type_id": "oaktree_3",
       "x": 12,
       "y": 20,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1858,14 +1922,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0054",
       "type_id": "oaktree_3",
       "x": 16,
       "y": 19,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1873,14 +1939,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0055",
       "type_id": "oaktree_3",
       "x": 19,
       "y": 18,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1888,14 +1956,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0056",
       "type_id": "oaktree_4",
       "x": 17,
       "y": 19,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1903,14 +1973,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0057",
       "type_id": "oaktree_4",
       "x": 20,
       "y": 18,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1918,14 +1990,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0058",
       "type_id": "oaktree_4",
       "x": 13,
       "y": 20,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1933,14 +2007,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0059",
       "type_id": "oaktree_4",
       "x": 9,
       "y": 20,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1948,14 +2024,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0060",
       "type_id": "oaktree_4",
       "x": 6,
       "y": 19,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1963,7 +2041,9 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0061",
@@ -2000,7 +2080,7 @@
       "type_id": "oaktree_6",
       "x": 9,
       "y": 21,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2008,14 +2088,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0064",
       "type_id": "oaktree_6",
       "x": 13,
       "y": 21,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2023,14 +2105,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0065",
       "type_id": "oaktree_6",
       "x": 17,
       "y": 20,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2038,7 +2122,9 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0066",
@@ -2060,7 +2146,7 @@
       "type_id": "oaktree_5",
       "x": 19,
       "y": 19,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2068,14 +2154,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0068",
       "type_id": "oaktree_5",
       "x": 16,
       "y": 20,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2083,14 +2171,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0069",
       "type_id": "oaktree_5",
       "x": 12,
       "y": 21,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2098,14 +2188,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0070",
       "type_id": "oaktree_5",
       "x": 8,
       "y": 21,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2113,14 +2205,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0071",
       "type_id": "oaktree_5",
       "x": 5,
       "y": 20,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2128,7 +2222,9 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0072",
@@ -2180,7 +2276,7 @@
       "type_id": "oaktree_small_3",
       "x": 3,
       "y": 21,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2188,14 +2284,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0076",
       "type_id": "oaktree_small_4",
       "x": 4,
       "y": 21,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2203,14 +2301,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0077",
       "type_id": "oaktree_small_1",
       "x": 14,
       "y": 18,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2218,14 +2318,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0078",
       "type_id": "oaktree_small_2",
       "x": 15,
       "y": 18,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2233,14 +2335,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0079",
       "type_id": "oaktree_small_3",
       "x": 14,
       "y": 19,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2248,14 +2352,16 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0080",
       "type_id": "oaktree_small_4",
       "x": 15,
       "y": 19,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -2263,7 +2369,9 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      }
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     },
     {
       "uid": "prop_0081",
@@ -2326,66 +2434,6 @@
       }
     },
     {
-      "uid": "prop_0085",
-      "type_id": "oaktree_small_2",
-      "x": 5,
-      "y": 0,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
-      "uid": "prop_0086",
-      "type_id": "oaktree_small_1",
-      "x": 4,
-      "y": 0,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
-      "uid": "prop_0087",
-      "type_id": "oaktree_small_4",
-      "x": 5,
-      "y": 1,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
-      "uid": "prop_0088",
-      "type_id": "oaktree_small_3",
-      "x": 4,
-      "y": 1,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
       "uid": "prop_0089",
       "type_id": "oaktree_small_stump",
       "x": 4,
@@ -2420,21 +2468,6 @@
       "type_id": "oaktree_small_stump",
       "x": 11,
       "y": 21,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
-      "uid": "prop_0092",
-      "type_id": "oaktree_small_stump",
-      "x": 18,
-      "y": 17,
       "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": false,
@@ -2506,40 +2539,10 @@
       }
     },
     {
-      "uid": "prop_0097",
-      "type_id": "rock1",
-      "x": 6,
-      "y": 21,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
       "uid": "prop_0098",
       "type_id": "rock1",
       "x": 16,
       "y": 21,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
-      "uid": "prop_0099",
-      "type_id": "rock1",
-      "x": 19,
-      "y": 16,
       "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": false,
@@ -2671,9 +2674,640 @@
       }
     },
     {
-      "uid": "prop_0108",
+      "uid": "prop_0111",
+      "type_id": "oaktree_6",
+      "x": 3,
+      "y": 14,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0117",
+      "type_id": "oaktree_small_shadow_2",
+      "x": 5,
+      "y": 16,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0118",
+      "type_id": "oaktree_2",
+      "x": 4,
+      "y": 9,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0119",
+      "type_id": "oaktree_1",
+      "x": 3,
+      "y": 9,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0120",
+      "type_id": "oaktree_3",
+      "x": 3,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0121",
+      "type_id": "oaktree_4",
+      "x": 4,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0122",
+      "type_id": "oaktree_5",
+      "x": 3,
+      "y": 11,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0123",
+      "type_id": "oaktree_6",
+      "x": 4,
+      "y": 11,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0124",
+      "type_id": "oaktree_small_stump",
+      "x": 2,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0130",
+      "type_id": "oaktree_small_stump",
+      "x": 4,
+      "y": 16,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0132",
+      "type_id": "oaktree_small_stump",
+      "x": 4,
+      "y": 12,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0133",
+      "type_id": "oaktree_1",
+      "x": 4,
+      "y": 4,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0134",
+      "type_id": "oaktree_2",
+      "x": 5,
+      "y": 4,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0135",
+      "type_id": "oaktree_3",
+      "x": 4,
+      "y": 5,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0136",
+      "type_id": "oaktree_4",
+      "x": 5,
+      "y": 5,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0137",
+      "type_id": "oaktree_5",
+      "x": 4,
+      "y": 6,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0138",
+      "type_id": "oaktree_6",
+      "x": 5,
+      "y": 6,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0139",
+      "type_id": "oaktree_small_1",
+      "x": 2,
+      "y": 4,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0140",
+      "type_id": "oaktree_small_2",
+      "x": 3,
+      "y": 4,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0141",
+      "type_id": "oaktree_small_3",
+      "x": 2,
+      "y": 5,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0142",
+      "type_id": "oaktree_small_4",
+      "x": 3,
+      "y": 5,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0143",
+      "type_id": "oaktree_small_shadow",
+      "x": 2,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0145",
+      "type_id": "rock1",
+      "x": 3,
+      "y": 0,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0146",
+      "type_id": "oaktree_small_1",
+      "x": 6,
+      "y": 2,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0147",
+      "type_id": "oaktree_small_2",
+      "x": 7,
+      "y": 2,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0148",
+      "type_id": "oaktree_small_3",
+      "x": 6,
+      "y": 3,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0149",
+      "type_id": "oaktree_small_4",
+      "x": 7,
+      "y": 3,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0150",
+      "type_id": "oaktree_small_shadow_1",
+      "x": 6,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0151",
+      "type_id": "oaktree_small_shadow_2",
+      "x": 7,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0152",
+      "type_id": "oaktree_small_stump",
+      "x": 6,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0155",
       "type_id": "rock2",
-      "x": 17,
+      "x": 6,
+      "y": 16,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0156",
+      "type_id": "oaktree_1",
+      "x": 8,
+      "y": 1,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0157",
+      "type_id": "oaktree_2",
+      "x": 9,
+      "y": 1,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0158",
+      "type_id": "oaktree_3",
+      "x": 8,
+      "y": 2,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0159",
+      "type_id": "oaktree_4",
+      "x": 9,
+      "y": 2,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0160",
+      "type_id": "oaktree_5",
+      "x": 8,
+      "y": 3,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0161",
+      "type_id": "oaktree_6",
+      "x": 9,
+      "y": 3,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0162",
+      "type_id": "rock2",
+      "x": 8,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0163",
+      "type_id": "oaktree_small_stump",
+      "x": 7,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0165",
+      "type_id": "rock",
+      "x": 5,
       "y": 17,
       "passthrough": false,
       "speed_modifier": 1.0,
@@ -2686,10 +3320,10 @@
       }
     },
     {
-      "uid": "prop_0109",
-      "type_id": "rock2",
-      "x": 18,
-      "y": 18,
+      "uid": "prop_0166",
+      "type_id": "rock",
+      "x": 6,
+      "y": 21,
       "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": false,
@@ -2699,6 +3333,821 @@
         "skill_id": null,
         "triggers_per_semester": 1
       }
+    },
+    {
+      "uid": "prop_0167",
+      "type_id": "rock",
+      "x": 10,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0168",
+      "type_id": "rock",
+      "x": 3,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0169",
+      "type_id": "rock2",
+      "x": 5,
+      "y": 11,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0208",
+      "type_id": "oaktree_5",
+      "x": 20,
+      "y": 21,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0170",
+      "type_id": "rock",
+      "x": 20,
+      "y": 21,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0171",
+      "type_id": "oaktree_small_1",
+      "x": 3,
+      "y": 18,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0172",
+      "type_id": "oaktree_small_2",
+      "x": 4,
+      "y": 18,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0173",
+      "type_id": "oaktree_small_3",
+      "x": 3,
+      "y": 19,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0174",
+      "type_id": "oaktree_small_4",
+      "x": 4,
+      "y": 19,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0175",
+      "type_id": "oaktree_small_shadow",
+      "x": 3,
+      "y": 20,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0176",
+      "type_id": "oaktree_small_shadow_2",
+      "x": 4,
+      "y": 20,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0183",
+      "type_id": "oaktree_small_1",
+      "x": 6,
+      "y": 20,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0184",
+      "type_id": "oaktree_small_2",
+      "x": 7,
+      "y": 20,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0185",
+      "type_id": "oaktree_small_3",
+      "x": 6,
+      "y": 21,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0186",
+      "type_id": "oaktree_small_4",
+      "x": 7,
+      "y": 21,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0187",
+      "type_id": "oaktree_small_1",
+      "x": 4,
+      "y": 11,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0188",
+      "type_id": "oaktree_small_2",
+      "x": 5,
+      "y": 11,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0189",
+      "type_id": "oaktree_small_3",
+      "x": 4,
+      "y": 12,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0190",
+      "type_id": "oaktree_small_4",
+      "x": 5,
+      "y": 12,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0191",
+      "type_id": "oaktree_small_shadow",
+      "x": 4,
+      "y": 13,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0192",
+      "type_id": "oaktree_small_shadow_2",
+      "x": 5,
+      "y": 13,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0193",
+      "type_id": "oaktree_1",
+      "x": 14,
+      "y": 20,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0194",
+      "type_id": "oaktree_2",
+      "x": 15,
+      "y": 20,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0195",
+      "type_id": "oaktree_3",
+      "x": 14,
+      "y": 21,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0196",
+      "type_id": "oaktree_4",
+      "x": 15,
+      "y": 21,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0197",
+      "type_id": "oaktree_2",
+      "x": 3,
+      "y": 17,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0198",
+      "type_id": "oaktree_1",
+      "x": 3,
+      "y": 14,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0199",
+      "type_id": "oaktree_2",
+      "x": 4,
+      "y": 14,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0200",
+      "type_id": "oaktree_3",
+      "x": 3,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0201",
+      "type_id": "oaktree_4",
+      "x": 4,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0202",
+      "type_id": "oaktree_5",
+      "x": 3,
+      "y": 16,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0203",
+      "type_id": "oaktree_6",
+      "x": 4,
+      "y": 16,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0204",
+      "type_id": "oaktree_1",
+      "x": 20,
+      "y": 19,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0205",
+      "type_id": "oaktree_2",
+      "x": 21,
+      "y": 19,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0206",
+      "type_id": "oaktree_3",
+      "x": 20,
+      "y": 20,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0207",
+      "type_id": "oaktree_4",
+      "x": 21,
+      "y": 20,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0209",
+      "type_id": "oaktree_6",
+      "x": 21,
+      "y": 21,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0210",
+      "type_id": "rock2",
+      "x": 18,
+      "y": 19,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0211",
+      "type_id": "bush1",
+      "x": 20,
+      "y": 13,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0212",
+      "type_id": "bush1",
+      "x": 20,
+      "y": 14,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0213",
+      "type_id": "bush1",
+      "x": 20,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0214",
+      "type_id": "bush1",
+      "x": 20,
+      "y": 16,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0216",
+      "type_id": "bush1",
+      "x": 20,
+      "y": 8,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0217",
+      "type_id": "bush1",
+      "x": 20,
+      "y": 7,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0218",
+      "type_id": "bush1",
+      "x": 20,
+      "y": 6,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0219",
+      "type_id": "bush1",
+      "x": 20,
+      "y": 5,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0220",
+      "type_id": "bush1",
+      "x": 20,
+      "y": 4,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0221",
+      "type_id": "flower2",
+      "x": 20,
+      "y": 9,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0222",
+      "type_id": "flower2",
+      "x": 20,
+      "y": 12,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
     }
   ],
   "npcs": [
