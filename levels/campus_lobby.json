@@ -1804,75 +1804,109 @@
       "uid": "prop_0076",
       "type_id": "flower1",
       "x": 12,
-      "y": 10,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
-      "uid": "prop_0077",
-      "type_id": "flower1",
-      "x": 8,
-      "y": 9,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
-      "uid": "prop_0078",
-      "type_id": "flower2",
-      "x": 1,
-      "y": 1,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
-      "uid": "prop_0079",
-      "type_id": "flower2",
-      "x": 12,
-      "y": 0,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
-      "uid": "prop_0080",
-      "type_id": "rock2",
-      "x": 10,
-      "y": 0,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
+      "y": 20,
+      "facing": "down",
+      "interactable": true,
+      "dialog": {
+        "chains": [
+          {
+            "chain_id": "c1",
+            "lines": [
+              "Hello. You must be new around here I assume?",
+              "I'm Roya. I handle career advising for your year.",
+              "You did't sign up forthe appointment yourself,did you?",
+              "That's okay.We don't have to sign up for resumes today."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "chain_2",
+            "lines": [
+              "You've missed your last two appointments.",
+              "Kept your slot open anyways.No plans are needed to sit here.",
+              "Not repoting the no-shows to anyone.",
+              "I just wanted you to know the doors are always open."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_3",
+            "lines": [
+              "I had a student change majors three times thiss year.",
+              "Everyone panicked except for him.",
+              "HE told me every 'wrong' choice taught him something.",
+              "I think about that a lot in this job.",
+              "Somtimes we have to allow yourselves to be unsure of stuffs.",
+              "Doubting doesn't mean you're falling behind."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_4",
+            "lines": [
+              "You actually brought in a draft resume.That's new.",
+              "It's rough, but a rough draft beats a blank paper anyday.",
+              "I won't ask what changed. I'm just glad to see you building.",
+              "Let's clean this up together."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "chain_5",
+            "lines": [
+              "Remember your first appointment?You barely said 10 words.",
+              "You still don't say much but atleast you show up.",
+              "That's a bigger shift than most students make in 4 years.",
+              "Proud of you. Genuinely."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "chain_6",
+            "lines": [
+              "Had a nervous freshman here today-kept apologizing every sec",
+              "Reminded me a lot of you,back in fourth semester.",
+              "I told her something I should've told you sooner.",
+              "You're allowed to not know yet.",
+              "Fugured I'd finally say it to you properly,too."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "chain_7",
+            "lines": [
+              "Job market talk today,but you don't look as anxious.",
+              "Something's steadier in you lately.",
+              "I used to worry you'd leave with a degree and nothing else.",
+              "Looks like I was wrong to worry."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "chain_8",
+            "lines": [
+              "Final semester prep.",
+              "But before that,I want you to know that this office",
+              "was never about the paperwork.",
+              "You came in carrying more than career questions.",
+              "Wherever you land next,",
+              "I hope you remember you don't have to carry it alone either."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_9",
+            "lines": [
+              "Last appointment. Feels weird to say that out loud",
+              "Thanks for letting this office be more than a checkbox.",
+              "You didn't say much but I noticed the progress anyway.",
+              "Go build whatever you're building.",
+              "You've more than earned the confidence to."
+            ],
+            "emotion": "neutral"
+          }
+        ],
+        "on_complete": "loop_last"
       }
     },
     {
