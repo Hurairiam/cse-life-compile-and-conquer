@@ -22,16 +22,30 @@ def enter(ctx):
 
 
 def __leave(ctx):
+    ctx.choice_options = []
+    if ctx.choice_box is not None:
+        ctx.choice_box.reset()
     ctx.go(ctx.dialogue_return or ScreenState.EXPLORATION)
-
 
 def __advance(ctx):
     """SPACE/click: finish the line first, then move to the next one."""
     if ctx.dialogue_manager.skip_reveal():
         return
     ctx.play_sfx("page_turn")
-    if not ctx.dialogue_manager.advance():
-        __leave(ctx)
+    if ctx.dialogue_manager.advance():
+        return
+    if ctx.choice_options:
+        # Choices are already showing — wait for the choice box's own
+        # input (arrows + Enter, or a click). SPACE must not fall
+        # through to __leave() while a decision is pending.
+        return
+    if ctx.pending_quest_npc:
+        from content.npc_quest_offers import SEMESTER_QUEST_OFFERS
+        offer = SEMESTER_QUEST_OFFERS[ctx.pending_quest_npc]
+        ctx.dialogue_manager.load_dialogue(offer["offer_lines"])
+        ctx.choice_options = ["Accept", "Decline"]
+        return
+    __leave(ctx)
 
 
 def handle_events(ctx, events):
@@ -44,9 +58,21 @@ def handle_events(ctx, events):
             if ctx.choice_box.handle_event(event, len(options)):
                 if ctx.choice_box.take_confirmed():
                     ctx.play_sfx("confirm")
-                    ctx.choice_result = ctx.choice_box.get_selected()
+                    picked_index = ctx.choice_box.get_selected()
                     ctx.choice_options = []
                     ctx.choice_box.reset()
+                    if ctx.pending_quest_npc:
+                        from content.npc_quest_offers import SEMESTER_QUEST_OFFERS
+                        offer = SEMESTER_QUEST_OFFERS[ctx.pending_quest_npc]
+                        if picked_index == 0:  # Accept
+                            ctx.unlocked_side_quests.add(offer["quest_id"])
+                            ctx.dialogue_manager.load_dialogue(offer["accept_lines"])
+                        else:  # Decline
+                            ctx.dialogue_manager.load_dialogue(offer["decline_lines"])
+                        ctx.decided_quest_semesters.add(ctx.pending_quest_npc)
+                        ctx.pending_quest_npc = None
+                    else:
+                        __leave(ctx)
                 continue
         advance = (
             (event.type == pygame.KEYDOWN
