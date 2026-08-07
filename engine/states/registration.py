@@ -9,6 +9,7 @@ import pygame
 
 from engine.screen_manager import ScreenState
 from ui.registration_screen import RegistrationScreen
+from content.dialogues import has_cutscene
 
 # Where a confirmed registration drops the player. Their own room is
 # the fixed start of every term (owner ruling), so this is not read
@@ -70,7 +71,10 @@ def __confirm(ctx, courses):
     ctx.level_id = START_LEVEL_ID
     ctx.level = None
     ctx.pending_spawn = None
-    ctx.go(ScreenState.EXPLORATION)
+    if has_cutscene(ctx.semester().get_semester_number()):
+        ctx.go(ScreenState.CUTSCENE)
+    else:
+        ctx.go(ScreenState.EXPLORATION)
 
 
 def handle_events(ctx, events):

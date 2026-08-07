@@ -97,6 +97,7 @@ class AppContext:
         self.level_id = "campus_main"
         self.walker = None
         self.map_screen = MapScreen()
+        self.snapshot_surface = pygame.Surface((screen_w, screen_h))
         self.prompt = InteractionPrompt()
         self.prop_trigger_counts = {}
         self.npc_chain_index = {}
