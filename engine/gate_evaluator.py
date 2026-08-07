@@ -28,12 +28,14 @@ through a small read-only protocol (the seven getters below); a
 real core.character.Player satisfies it today with no adapter, and
 the sandbox's fake state satisfies the same seven.
 
-DIVERGENCE NOTE (Build Plan §1.4): a gate's required_skill_id lives
-in content/level_registry.py::SKILL_IDS (the 9-entry authoring
-list), NOT the 12 canonical endgame ids. The two lists are left
-unreconciled by owner ruling; this evaluator reads whichever id the
-gate carries straight off the player's skill tree and never tries
-to map between them.
+SKILL IDS (Build Plan §1.4): a gate's required_skill_id is validated
+against content/level_registry.py::SKILL_IDS, which as of the owner
+ruling on 2026-08-08 IS the 12 canonical endgame set — it used to be
+a separate 9-entry authoring list that overlapped them on
+"networking" alone. A gate therefore now requires a level in a node
+the skill tree actually draws and the player can actually invest in.
+This evaluator still reads whichever id the gate carries straight off
+the player's skill tree and never maps between vocabularies.
 ─────────────────────────────────────────────────────────────
 Created by Nangiba Tasnim (Dev 3), branch nangiba-temp-01.
 """

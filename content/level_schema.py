@@ -32,11 +32,12 @@ import json
 import os
 import re
 from collections import deque
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from content.level_registry import (
     AMBIENT_DEFAULT,
     AMBIENT_PRESETS,
+    CHOICE_OPTIONS_MAX,
     DEFAULT_GROUND_TILE,
     EMPTY_TILE,
     EXP_MAX,
@@ -1195,6 +1196,23 @@ class DialogChain:
     in-game chat box can show the right NPC face (owner request:
     "in interaction chatboxes it should be the npc images with the
     emotions"). Chains without it fall back to the NPC's default.
+
+    CHOICE (owner request, 2026-08-08). A chain may end in a branch
+    instead of simply finishing: `choice` carries a prompt and up to
+    CHOICE_OPTIONS_MAX replies, each naming the chain to jump to.
+
+        {"prompt": "WHAT DO YOU SAY?",
+         "options": [{"label": "Sure.",       "goto": "rafi_yes"},
+                     {"label": "Not today.",  "goto": "rafi_no"}]}
+
+    An option whose `goto` is "" ends the conversation, which is what
+    makes a plain accept/decline pair work without authoring a dead
+    chain for the decline arm. A `goto` naming a chain that does not
+    exist is a WARNING, not a blocker — the conversation just ends,
+    and a typo in one reply must never stop a level loading.
+
+    Serialised only when there IS a choice, so every level file that
+    predates this still round-trips byte for byte.
     """
 
     def __init__(self, chain_id: str, lines: Optional[List[str]] = None,
@@ -1202,6 +1220,8 @@ class DialogChain:
         self.__chain_id: str = chain_id
         self.__lines: List[str] = list(lines) if lines else []
         self.__emotion: str = emotion
+        self.__choice_prompt: str = ""
+        self.__choice_options: List[Dict[str, str]] = []
         self.__extra: Dict[str, Any] = {}
 
     def get_chain_id(self) -> str:
@@ -1264,12 +1284,86 @@ class DialogChain:
         """Set the portrait emotion; validated against the NPC later."""
         self.__emotion = emotion or ""
 
+    # ── choice (owner request, 2026-08-08) ────────────────────
+
+    def has_choice(self) -> bool:
+        """True when this chain ends in a branch rather than just stopping."""
+        return len(self.__choice_options) > 0
+
+    def get_choice_prompt(self) -> str:
+        """The ALL-CAPS strip above the replies ("" = the box default)."""
+        return self.__choice_prompt
+
+    def set_choice_prompt(self, prompt: str) -> None:
+        """Label the reply list. Empty falls back to the box's own text."""
+        self.__choice_prompt = str(prompt or "").strip()
+
+    def get_choice_options(self) -> List[Dict[str, str]]:
+        """Copy of the reply list — mutate via set_choice()."""
+        return [dict(option) for option in self.__choice_options]
+
+    def get_choice_labels(self) -> List[str]:
+        """Just the reply text, in order, for the ChoiceBox to draw."""
+        return [option["label"] for option in self.__choice_options]
+
+    def get_choice_goto(self, index: int) -> str:
+        """
+        The chain id reply `index` jumps to, or "".
+
+        "" covers both "this reply ends the conversation" and "there is
+        no such reply", because the caller does the same thing for each.
+        """
+        if not 0 <= index < len(self.__choice_options):
+            return ""
+        return self.__choice_options[index].get("goto", "")
+
+    def set_choice(self, prompt: str,
+                   options: Optional[Sequence[Any]]) -> bool:
+        """
+        Replace the branch. An empty list clears it.
+
+        `options` accepts dicts ({"label":..., "goto":...}), (label, goto)
+        pairs, or bare strings for a reply that just ends the talk.
+        Options past CHOICE_OPTIONS_MAX are dropped rather than accepted
+        and then silently not drawn — ui/choice_box.py renders at most
+        that many, and a reply the player cannot see is worse than one
+        the author is told about.
+        """
+        cleaned: List[Dict[str, str]] = []
+        for option in (options or []):
+            if isinstance(option, dict):
+                label = str(option.get("label", "")).strip()
+                goto = str(option.get("goto", "")).strip()
+            elif isinstance(option, (tuple, list)) and option:
+                label = str(option[0]).strip()
+                goto = str(option[1]).strip() if len(option) > 1 else ""
+            else:
+                label, goto = str(option).strip(), ""
+            if label:
+                cleaned.append({"label": label, "goto": goto})
+        self.__choice_prompt = str(prompt or "").strip()
+        self.__choice_options = cleaned[:CHOICE_OPTIONS_MAX]
+        return True
+
+    def clear_choice(self) -> None:
+        """Drop the branch; the chain then simply ends."""
+        self.__choice_prompt = ""
+        self.__choice_options = []
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialise, re-emitting unknown keys."""
         data: Dict[str, Any] = dict(self.__extra)
         data.update({"chain_id": self.__chain_id, "lines": list(self.__lines)})
         if self.__emotion:
             data["emotion"] = self.__emotion
+        # Omitted entirely when there is no branch, so a level authored
+        # before choices existed serialises exactly as it did before.
+        if self.__choice_options:
+            choice: Dict[str, Any] = {
+                "options": [dict(o) for o in self.__choice_options]}
+            if self.__choice_prompt:
+                choice["prompt"] = self.__choice_prompt
+            data["choice"] = choice
         return data
 
     @staticmethod
@@ -1278,9 +1372,13 @@ class DialogChain:
         lines = [str(line) for line in (data.get("lines") or [])]
         chain = DialogChain(str(data.get("chain_id", "chain")), lines,
                             str(data.get("emotion", "")))
+        raw_choice = data.get("choice")
+        if isinstance(raw_choice, dict):
+            chain.set_choice(str(raw_choice.get("prompt", "")),
+                             raw_choice.get("options"))
         chain.__extra = {
             k: v for k, v in data.items()
-            if k not in ("chain_id", "lines", "emotion")
+            if k not in ("chain_id", "lines", "emotion", "choice")
         }
         return chain
 
@@ -1360,6 +1458,27 @@ class NpcData:
         if 0 <= index < len(self.__chains):
             return self.__chains[index]
         return None
+
+    def find_chain(self, chain_id: str) -> Optional[DialogChain]:
+        """
+        Chain by its authored id, or None — what a choice's `goto` needs.
+
+        Ids are unique per NPC (add_chain suffixes a duplicate), so the
+        first match is the only match.
+        """
+        if not chain_id:
+            return None
+        for chain in self.__chains:
+            if chain.get_chain_id() == chain_id:
+                return chain
+        return None
+
+    def find_chain_index(self, chain_id: str) -> int:
+        """The position of a chain by id, or -1."""
+        for index, chain in enumerate(self.__chains):
+            if chain.get_chain_id() == chain_id:
+                return index
+        return -1
 
     def get_chain_count(self) -> int:
         """Number of chains."""
@@ -2419,6 +2538,18 @@ class LevelData:
                         f"npc '{npc.get_uid()}' chain "
                         f"'{chain.get_chain_id()}' uses emotion "
                         f"'{emotion}' with no portrait", (x, y)))
+                # A reply pointing at a chain that is not there just ends
+                # the conversation, so this is advisory: a mistyped goto
+                # must never stop the level loading.
+                for option in chain.get_choice_options():
+                    goto = option.get("goto", "")
+                    if goto and npc.find_chain(goto) is None:
+                        issues.append(ValidationIssue(
+                            SEVERITY_WARNING, "DANGLING_CHOICE_GOTO",
+                            f"npc '{npc.get_uid()}' chain "
+                            f"'{chain.get_chain_id()}' reply "
+                            f"'{option.get('label', '')}' jumps to "
+                            f"'{goto}', which does not exist", (x, y)))
 
         total_money = 0.0
         total_exp = 0

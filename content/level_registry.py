@@ -654,6 +654,13 @@ FACING_DEFAULT: str = "down"
 ON_COMPLETE_MODES: tuple = ("loop_last", "loop_all", "silent")
 ON_COMPLETE_DEFAULT: str = "loop_last"
 
+# How many replies a DialogChain's branch may offer. MUST stay equal to
+# ui/choice_box.py::MAX_OPTIONS — that is what actually gets drawn, and
+# a fifth reply would be authored, saved and then silently invisible.
+# Declared here rather than imported because content/ is pure data and
+# may not pull in pygame; ui/choice_box.py carries the matching comment.
+CHOICE_OPTIONS_MAX: int = 4
+
 # ─────────────────────────────────────────────────────────────
 # PROP INTERACTION BOUNDS  (Spec §5.3)
 # ─────────────────────────────────────────────────────────────
@@ -781,23 +788,91 @@ MAX_PROP_EXP_PER_SEMESTER: int = 20
 # ─────────────────────────────────────────────────────────────
 # SKILL IDS
 # ─────────────────────────────────────────────────────────────
-# SkillTree keys are free-form strings, so the game has no formal
-# skill list yet. This is the canonical set the editor's skill
-# dropdown offers, so level data can never invent a typo'd node.
-# Extend here when the skill tree content lands.
+# The set the editor's skill dropdown offers, so level data can never
+# invent a typo'd node.
+#
+# RECONCILED (owner ruling, 2026-08-08). This used to be a separate
+# 9-entry authoring list — programming, algorithms, mathematics,
+# hardware, networking, databases, software_engineering, communication,
+# general — that overlapped the real skill tree on "networking" alone.
+# A skill prop or a gate authored against it therefore named a node the
+# tree never draws, the save file never stores and the endgame never
+# counts. Saif's twelve are the source of truth:
+#
+#     academic/side_quest_catalog.py      the 12 SideQuest topics
+#     engine/endgame_manager.py           TRACKED_SKILL_IDS
+#     engine/save_bridge.py               TRACKED_SKILL_IDS
+#     content/skill_tree_layout.py        SKILL_NODES  (mirrors them)
+#
+# DERIVED, not hand-copied. SKILL_NODES is the one content-package
+# module that already carries the full set, and reading it here is the
+# same trick _bind_roster_fields() uses on npc_roster: a change to the
+# tree cannot silently disagree with the editor, because there is only
+# one list. _SKILL_IDS_FALLBACK mirrors it purely so this module stays
+# importable on its own; it is never consulted when the import works.
+#
+# "general" is deliberately NOT offered. SideQuest.execute_action() and
+# exploration.__trigger_prop() still fall back to it in code when no id
+# is set, but it is not a tree node and nothing counts it, so an author
+# must never be able to pick it.
 # ─────────────────────────────────────────────────────────────
 
-SKILL_IDS: tuple = (
-    "programming",
-    "algorithms",
-    "mathematics",
-    "hardware",
-    "networking",
-    "databases",
-    "software_engineering",
-    "communication",
-    "general",
+_SKILL_IDS_FALLBACK: tuple = (
+    "programming_language", "git", "networking", "technical_communication",
+    "dsa", "oop", "linux_cli", "databases_sql", "debugging_testing",
+    "ai_tools", "docker", "web_app_dev",
 )
+
+
+def _load_skill_ids() -> tuple:
+    """The canonical skill ids, read from the skill tree's own node set."""
+    try:
+        from content.skill_tree_layout import SKILL_NODES
+    except ImportError:                      # pragma: no cover
+        return _SKILL_IDS_FALLBACK
+    return tuple(SKILL_NODES) or _SKILL_IDS_FALLBACK
+
+
+SKILL_IDS: tuple = _load_skill_ids()
+
+# Human-readable labels for the editor's dropdowns. Raw ids like
+# "technical_communication" are what the level file stores, but they are
+# not what an author should have to read off a 450 px cycler.
+_SKILL_NAME_FALLBACK: Dict[str, str] = {
+    "programming_language": "Programming",
+    "git": "Version Control",
+    "networking": "Networking",
+    "technical_communication": "Tech Writing",
+    "dsa": "Data Structures",
+    "oop": "OOP",
+    "linux_cli": "Linux CLI",
+    "databases_sql": "Databases & SQL",
+    "debugging_testing": "Debug & Test",
+    "ai_tools": "AI Tools",
+    "docker": "Docker",
+    "web_app_dev": "Web App Dev",
+}
+
+
+def get_skill_display_name(skill_id: str) -> str:
+    """
+    The label the editor shows for a skill id.
+
+    Falls back to the id with underscores opened out, so a node added to
+    the tree without a label here still reads sensibly instead of
+    vanishing from the dropdown.
+    """
+    if not skill_id:
+        return ""
+    try:
+        from content.skill_tree_layout import SKILL_NODES
+        node = SKILL_NODES.get(skill_id)
+        if node and node.get("display_name"):
+            return str(node["display_name"])
+    except ImportError:                      # pragma: no cover
+        pass
+    name = _SKILL_NAME_FALLBACK.get(skill_id)
+    return name if name else skill_id.replace("_", " ").title()
 
 # ─────────────────────────────────────────────────────────────
 # GATE BOUNDS  (Feature 6, phase F5)

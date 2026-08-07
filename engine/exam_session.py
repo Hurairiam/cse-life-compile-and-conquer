@@ -79,10 +79,10 @@ SKILL_PASS_MIN_AVERAGE_LEVEL: float = 3.0
 
 # The 12 canonical skill IDs the optional skill component averages over
 # (Build Plan §1.4). Imported from the manager that owns them so there
-# is one list, not two. NOTE the deliberate, owner-ruled divergence:
-# content/level_registry.py::SKILL_IDS is a DIFFERENT, shorter 9-entry
-# authoring list used by level gates. Both stay as they are; the lead
-# reconciles at integration.
+# is one list, not two. content/level_registry.py::SKILL_IDS used to be
+# a DIFFERENT, shorter 9-entry authoring list; it was reconciled onto
+# these same twelve by owner ruling on 2026-08-08, so a gate or a skill
+# prop now names an id this average actually counts.
 try:                                    # pragma: no cover - trivial guard
     from engine.endgame_manager import EndgameEvaluationManager
     TRACKED_SKILL_IDS = tuple(EndgameEvaluationManager.TRACKED_SKILL_IDS)

@@ -436,6 +436,7 @@ def build_state(display_name: str = "", character_id: str = "",
                 level_id: str = "", spawn_x: int = 0, spawn_y: int = 0,
                 triggered_prop_uids: Optional[List[str]] = None,
                 talked_npc_uids: Optional[List[str]] = None,
+                dialogue_choices: Optional[Dict[str, int]] = None,
                 global_career_clock_days: int = 0,
                 playtime_seconds: int = 0) -> Dict[str, Any]:
     """
@@ -474,6 +475,10 @@ def build_state(display_name: str = "", character_id: str = "",
             "spawn_y": int(spawn_y),
             "triggered_prop_uids": list(triggered_prop_uids or []),
             "talked_npc_uids": list(talked_npc_uids or []),
+            # Replies the player gave to branching dialogue, keyed
+            # "<level>:<npc uid>:<chain id>". Absent from any save
+            # written before branches existed, which loads as {}.
+            "dialogue_choices": dict(dialogue_choices or {}),
         },
         "clock": {
             "global_career_clock_days": int(global_career_clock_days),

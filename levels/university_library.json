@@ -1665,7 +1665,20 @@
               "I'm Rafi and  I was just color-coding the term syllabus.",
               "If you plan from day one, nothing can surprise you."
             ],
-            "emotion": "neutral"
+            "emotion": "neutral",
+            "choice": {
+              "options": [
+                {
+                  "label": "Teach me how.",
+                  "goto": "s1_yes"
+                },
+                {
+                  "label": "I'll wing it.",
+                  "goto": "s1_no"
+                }
+              ],
+              "prompt": "WHAT DO YOU SAY?"
+            }
           },
           {
             "chain_id": "s2",
@@ -1775,6 +1788,24 @@
               "Difference is, I don't apologize to the notebook anymore."
             ],
             "emotion": "happy"
+          },
+          {
+            "chain_id": "s1_yes",
+            "lines": [
+              "Good. Then start with one notebook, not five.",
+              "Write the deadline down the day it's announced, not the night before.",
+              "That's the whole trick. Everything after that is just upkeep."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "s1_no",
+            "lines": [
+              "Suit yourself.",
+              "Half the batch says that in week one. Week ten is less relaxed about it.",
+              "Offer stands though. I'm here most days."
+            ],
+            "emotion": "serious"
           }
         ],
         "on_complete": "loop_last"
