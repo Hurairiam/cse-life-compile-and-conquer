@@ -36,7 +36,10 @@ the common case.
         makes them behave as walls (level_registry WALKABILITY RULE).
 
     assets/props/<name>.png
-        A prop, solid by default.
+        A prop, solid by default. ANY pixel size works and is drawn at
+        its own proportions: the art is measured against a 16 px cell,
+        so 16x16 is one cell, 32x48 is two by three, and 24x40 is one
+        and a half by two and a half (claiming 2x3 cells of grid).
         <name> containing "passthrough" or ending _open -> walk-through
 
     assets/npcs/npc_<id>_idle.png          the map sprite (required)
@@ -100,6 +103,37 @@ DISCOVERED_TILE_BASE: int = 100
 
 TILE_OVERRIDES_FILE: str = "_tiles.json"
 PROP_OVERRIDES_FILE: str = "_props.json"
+
+# ─────────────────────────────────────────────────────────────
+# THE SOURCE UNIT
+# ─────────────────────────────────────────────────────────────
+# One grid cell of SOURCE art. Every prop is measured against this
+# single number, never against its own shortest side.
+#
+# The old rule took min(width, height) as one cell, which is right
+# only when the art is a whole number of cells in BOTH directions.
+# A 32x48 tree came back as one 32 px cell, so two thirds of it were
+# sliced off and the rest squeezed into a square. Measured against a
+# fixed 16, the same file is two cells wide and three tall and draws
+# in full.
+# ─────────────────────────────────────────────────────────────
+
+SOURCE_CELL_PX: int = 16
+
+
+def cells_for_px(pixels: Any, unit: int = SOURCE_CELL_PX) -> int:
+    """
+    How many whole cells a run of pixels covers, ROUNDED UP.
+
+    Rounding up is deliberate: a 24 px wide prop physically covers part
+    of a second cell, and a footprint that claimed one would let the
+    player walk through the half of it that hangs over.
+    """
+    try:
+        count = -(-int(pixels) // max(1, int(unit)))
+    except (TypeError, ValueError):
+        return 1
+    return max(1, count)
 
 # ─────────────────────────────────────────────────────────────
 # FILENAME CONVENTIONS
@@ -388,29 +422,38 @@ def scan_props(claimed_paths: Optional[set] = None
     for stem, path in _list_pngs(PROPS_DIR):
         if path in claimed_paths:
             continue
-        # Footprint straight off the art: the SHORTER side is taken as
-        # one cell, so a 16x48 tree is 1 wide and 3 tall and a 16x16
-        # rock stays 1x1. Drawing a prop bigger is all an artist has to
+        # Two different measurements, both taken straight off the art:
+        #
+        #   px_w / px_h        what the file actually IS. The renderers
+        #                      scale from this, so the sprite keeps its
+        #                      own proportions at every zoom — nothing
+        #                      is cropped to a square and nothing is
+        #                      stretched to a whole number of cells.
+        #   cells_w / cells_h  how much GRID it claims, rounded up.
+        #
+        # For 16x16 art the two agree and the prop is one cell, exactly
+        # as before. Drawing a prop bigger is still all an artist has to
         # do to make it cover more ground.
         size = read_png_size(os.path.join(PROJECT_ROOT, path))
-        if size is None:
-            cell, cells_w, cells_h = 16, 1, 1
-        else:
-            width, height = size
-            cell = min(width, height)
-            cells_w = max(1, width // cell)
-            cells_h = max(1, height // cell)
+        px_w, px_h = size or (SOURCE_CELL_PX, SOURCE_CELL_PX)
         entry: Dict[str, Any] = {
             "name": stem.replace("_", " "),
             "sheet": path,
             "col": 0,
             "row": 0,
-            "cell_px": cell,
-            "cells_w": cells_w,
-            "cells_h": cells_h,
+            "cell_px": SOURCE_CELL_PX,
+            "px_w": px_w,
+            "px_h": px_h,
+            "cells_w": cells_for_px(px_w),
+            "cells_h": cells_for_px(px_h),
             "default_passthrough": _is_passthrough_prop(stem),
             "discovered": True,
         }
+        # An override may widen or shrink the FOOTPRINT — a hedge that
+        # should block all the way up, a signpost whose base is one
+        # cell. It deliberately does not touch px_w/px_h: how much grid
+        # a prop claims is an authoring decision, how big the art is
+        # is not.
         entry.update(overrides.get(stem, {}))
         discovered[stem] = entry
     return discovered

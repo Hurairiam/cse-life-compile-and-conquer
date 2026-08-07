@@ -28,6 +28,9 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import pygame
 
 from content.level_registry import (
+    BEHIND_TRANSPARENCY_MAX,
+    BEHIND_TRANSPARENCY_MIN,
+    BEHIND_TRANSPARENCY_STEP,
     EXP_MAX,
     EXP_MIN,
     EXP_STEP,
@@ -520,16 +523,39 @@ class PropSettingsPopup(Modal):
     the skill tree, the results board — instead of paying out. Menus
     have no amount and no per-semester trigger cap, because opening a
     screen is not a reward to budget.
+
+    COLLISION is three-way rather than a pair of switches. "blocking",
+    "passthrough" and "pass behind" are the three things a prop can do
+    to a player who walks into it, and only one can be true at a time —
+    expressed as two independent toggles, the author could ask for a
+    solid prop that is also walked behind, and something downstream
+    would have to break the tie silently.
+
+    The LAYER buttons are staged, not immediate: this popup edits a
+    DETACHED copy and the canvas is behind it, so the move is applied
+    with everything else when OK is pressed. `[` and `]` on the canvas
+    are the live version.
     """
+
+    # chip value -> (passthrough, pass_behind)
+    COLLISION_MODES = {
+        "blocking": (False, False),
+        "passthrough": (True, False),
+        "pass behind": (True, True),
+    }
+
+    LAYER_ACTIONS = (("back", "|<"), ("backward", "<"),
+                     ("forward", ">"), ("front", ">|"))
 
     def __init__(self, prop: PropData) -> None:
         definition = get_prop_def(prop.get_type_id()) or {}
         name = definition.get("name", prop.get_type_id())
-        # 560, not 486: a "travel" prop stacks the interaction-kind
+        # 590, not 486: a "travel" prop stacks the interaction-kind
         # chips, a destination field, an arrive-at mode and a spawn
         # cell. The kind can be switched while the popup is open, so
         # the height has to suit the tallest branch from the start.
-        super().__init__((660, 560),
+        # The last 30 px are the LAYER row on the button strip.
+        super().__init__((660, 590),
                          f"PROP SETTINGS - {name} ({prop.get_uid()})",
                          th.BORDER_BROWN,
                          [(CANCEL, "CANCEL", th.BTN_CANCEL),
@@ -542,17 +568,30 @@ class PropSettingsPopup(Modal):
 
         body = self.get_body_rect()
         self.__solid: ChipRow = ChipRow(
-            pygame.Rect(body.x, body.y + 16, 300, 26),
-            ["blocking", "passthrough"],
-            "passthrough" if prop.get_passthrough() else "blocking")
+            pygame.Rect(body.x, body.y + 16, 430, 26),
+            list(self.COLLISION_MODES),
+            "pass behind" if prop.get_pass_behind() else
+            ("passthrough" if prop.get_passthrough() else "blocking"))
+        # 240, not 300: the slider draws its own `x1.00` readout to the
+        # right of the track, and at 300 that readout ran into the
+        # transparency stepper sharing the row.
         self.__speed: Slider = Slider(
-            pygame.Rect(body.x, body.y + 66, 300, 20),
+            pygame.Rect(body.x, body.y + 66, 240, 20),
             prop.get_speed_modifier(), SPEED_MODIFIER_MIN,
             SPEED_MODIFIER_MAX, SPEED_MODIFIER_STEP, SPEED_MODIFIER_BASE)
         self.__speed.set_enabled(prop.get_passthrough())
+        # Shares the speed row: both describe what happens to a player
+        # who walks into this prop, and only one of them is ever the
+        # interesting one.
+        self.__transparency: Stepper = Stepper(
+            pygame.Rect(body.x + 320, body.y + 62, 210, 30),
+            prop.get_behind_transparency(), BEHIND_TRANSPARENCY_MIN,
+            BEHIND_TRANSPARENCY_MAX, BEHIND_TRANSPARENCY_STEP, 0, "%")
         self.__interactable: ChipRow = ChipRow(
             pygame.Rect(body.x, body.y + 122, 180, 26), ["yes", "no"],
             "yes" if prop.get_interactable() else "no")
+        # Staged layer move, applied by the editor after the settings.
+        self.__layer_action: str = ""
 
         inner_x = body.x + 12
         self.__kind: ChipRow = ChipRow(
@@ -619,6 +658,36 @@ class PropSettingsPopup(Modal):
         """Whether the interaction sub-box should be live."""
         return self.__interactable.get_value() == "yes"
 
+    def __collision(self) -> Tuple[bool, bool]:
+        """(passthrough, pass_behind) for the chosen collision mode."""
+        return self.COLLISION_MODES.get(self.__solid.get_value(),
+                                        (False, False))
+
+    def __layer_button_rects(self) -> List[pygame.Rect]:
+        """
+        The four LAYER buttons, on the button strip beside OK / CANCEL.
+
+        Down here rather than in the body because layering is not a
+        property of the prop: it is something done TO the level, like
+        OK and CANCEL are. It also leaves the collision row wide enough
+        for the transparency stepper and its note.
+        """
+        card = self.get_rect()
+        return [pygame.Rect(card.x + 26 + index * 74, card.bottom - 62,
+                            66, th.BTN_H)
+                for index in range(len(self.LAYER_ACTIONS))]
+
+    def take_layer_action(self) -> str:
+        """
+        The staged layer move, cleared as it is read.
+
+        Public because the EDITOR applies it: reordering is a document
+        operation, and a popup that reached into the level would break
+        the one-popup-one-undo-step rule every other control here keeps.
+        """
+        action, self.__layer_action = self.__layer_action, ""
+        return action
+
     def __shows_travel(self) -> bool:
         """True when the destination controls should be on screen."""
         return self.__is_portal or self.__kind.get_value() == "travel"
@@ -627,13 +696,23 @@ class PropSettingsPopup(Modal):
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """Widgets first (in draw order), then the frame."""
-        passthrough = self.__solid.get_value() == "passthrough"
+        passthrough, pass_behind = self.__collision()
         if self.__solid.handle_event(event):
-            self.__speed.set_enabled(
-                self.__solid.get_value() == "passthrough")
+            self.__speed.set_enabled(self.__collision()[0])
             return
         if passthrough and self.__speed.handle_event(event):
             return
+        if pass_behind and self.__transparency.handle_event(event):
+            return
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            index = th.hit(self.__layer_button_rects(), event.pos)
+            if index >= 0:
+                # Clicking the staged move again cancels it, the same
+                # way clicking a selected palette item unselects it.
+                action = self.LAYER_ACTIONS[index][0]
+                self.__layer_action = "" if action == self.__layer_action \
+                    else action
+                return
         if self.__interactable.handle_event(event):
             return
         if self.__is_interactable():
@@ -673,7 +752,13 @@ class PropSettingsPopup(Modal):
             self.set_result(CANCEL)
             return
         prop = self.__prop
-        prop.set_passthrough(self.__solid.get_value() == "passthrough")
+        passthrough, pass_behind = self.__collision()
+        # set_passthrough first: it CLEARS pass-behind on a prop turned
+        # solid, so setting them the other way round would drop the
+        # flag that was just switched on.
+        prop.set_passthrough(passthrough)
+        prop.set_behind_transparency(self.__transparency.get_value())
+        prop.set_pass_behind(pass_behind)
         prop.set_speed_modifier(self.__speed.get_value())
         prop.set_interactable(self.__is_interactable())
         if self.__shows_travel():
@@ -708,7 +793,7 @@ class PropSettingsPopup(Modal):
         """Collision controls, then the interaction sub-box."""
         body = self.get_body_rect()
         label = th.load_font(th.SIZE_LABEL)
-        passthrough = self.__solid.get_value() == "passthrough"
+        passthrough, pass_behind = self.__collision()
 
         th.draw_text(surface, label, "COLLISION", (body.x, body.y),
                      th.CREDIT_HL)
@@ -719,14 +804,22 @@ class PropSettingsPopup(Modal):
                      (body.x, body.y + 50), speed_colour)
         self.__speed.render(surface)
         if not passthrough:
+            # +92, not +88: the slider draws its snap notch four pixels
+            # below its own track, and at +88 that tick struck through
+            # this line.
             th.draw_text(surface, label, "(BLOCKING - NOT WALKABLE)",
-                         (body.x + 380, body.y + 70), th.STAT_BROWN)
+                         (body.x, body.y + 92), th.STAT_BROWN)
+
+        self.__render_behind_fields(surface, label, pass_behind)
 
         th.draw_text(surface, label, "INTERACTABLE", (body.x, body.y + 106),
                      th.CREDIT_HL)
         self.__interactable.render(surface)
+        self.__render_layer_buttons(surface, label)
 
-        box = pygame.Rect(body.x, body.y + 158, body.w, body.h - 158)
+        # 22 px short of the body's bottom: the LAYER label sits in
+        # that gap, above the button strip.
+        box = pygame.Rect(body.x, body.y + 158, body.w, body.h - 180)
         th.draw_panel(surface, box, th.HEADER_TAN, th.BORDER_ROW)
         if not self.__is_interactable():
             th.draw_text_centered(surface, th.load_font(th.SIZE_SUB),
@@ -741,6 +834,47 @@ class PropSettingsPopup(Modal):
             self.__render_portal_fields(surface, label)
         else:
             self.__render_reward_fields(surface, label)
+
+    def __render_behind_fields(self, surface: pygame.Surface,
+                               label: pygame.font.Font,
+                               pass_behind: bool) -> None:
+        """
+        The walk-behind transparency, beside the speed slider.
+
+        Drawn greyed rather than hidden when the mode is off, so the
+        author can see the setting exists — and see the number it will
+        use — before they switch to it.
+        """
+        body = self.get_body_rect()
+        x = body.x + 320
+        th.draw_text(surface, label, "BEHIND TRANSPARENCY", (x, body.y + 46),
+                     th.CREDIT_HL if pass_behind else th.STAT_BROWN)
+        self.__transparency.render(surface)
+        percent = int(self.__transparency.get_value())
+        if not pass_behind:
+            note, colour = "(PASS BEHIND IS OFF)", th.STAT_BROWN
+        elif percent <= 0:
+            note, colour = "0% HIDES THE PLAYER", th.BAR_RED
+        else:
+            note, colour = f"FADES TO {100 - percent}% SOLID", th.ROW_GREEN
+        th.draw_text(surface, label, note, (x, body.y + 96), colour)
+
+    def __render_layer_buttons(self, surface: pygame.Surface,
+                               label: pygame.font.Font) -> None:
+        """
+        Send to back / back one / forward one / bring to front.
+
+        Amber on the staged move, tan on the rest. Nothing has happened
+        to the level yet — the editor performs the move when this popup
+        returns, so CANCEL leaves the stack exactly as it was.
+        """
+        rects = self.__layer_button_rects()
+        th.draw_text(surface, label, "LAYER  ( [ AND ] ON THE MAP )",
+                     (rects[0].x, rects[0].y - 16), th.CREDIT_HL)
+        for rect, (action, glyph) in zip(rects, self.LAYER_ACTIONS):
+            th.draw_button(surface, rect, glyph,
+                           th.BAR_AMBER if action == self.__layer_action
+                           else th.HEADER_TAN, label)
 
     def __render_portal_fields(self, surface: pygame.Surface,
                                label: pygame.font.Font) -> None:

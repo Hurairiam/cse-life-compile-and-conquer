@@ -24,11 +24,18 @@ Layout (Spec §3.1):
 Hotkeys (Spec §8): 1-5 tabs · LMB paint · RMB entity settings ·
 X+LMB erase · MMB/arrows pan · +/- zoom · Ctrl+S/O/N ·
 Ctrl+Z/Y undo/redo · G grid · B badges · R randomise variants ·
-T rotate brush · F11 fullscreen · ESC close popup / clear selection.
+T rotate brush · [ / ] layer back / forward (Shift for back / front) ·
+F11 fullscreen · ESC close popup / clear selection.
 
 Tiles, props and NPCs are read from content/level_registry.py, which
 tops itself up from whatever is sitting in assets/ — so new art shows
 up in the palette on the next launch with no edit here.
+
+PROPS are drawn at whatever size their PNG actually is, measured
+against the 16 px cell: 16x16 fills a cell, 32x48 covers two by
+three, 24x40 covers one and a half by two and a half. Nothing is
+cropped to a square. They also STACK — several on one cell, drawn
+in list order, reordered with [ and ].
 ─────────────────────────────────────────────────────────────
 """
 
@@ -153,6 +160,19 @@ ERASER_KEY = "__eraser__"
 # the other tabs keep every pixel of grid they had before.
 RANDOM_ROW_H = 44
 
+# How many cells beyond the visible window a prop's ANCHOR may sit and
+# still be drawn. A prop is anchored bottom-left and any size, so a tall
+# one is still on screen after its anchor has scrolled off the bottom.
+# Eight cells covers a 128 px tall piece of art with room to spare.
+PROP_CULL_PAD = 8
+
+# Which way `[` and `]` move a prop through the draw order (Feature:
+# layering). Shift makes each one absolute.
+LAYER_FORWARD = "forward"
+LAYER_BACKWARD = "backward"
+LAYER_FRONT = "front"
+LAYER_BACK = "back"
+
 
 # ─────────────────────────────────────────────────────────────
 # UNDO
@@ -194,6 +214,20 @@ class UndoStack:
             return None
         self.__undo.append(current.clone())
         return self.__redo.pop()
+
+    def discard(self) -> bool:
+        """
+        Throw away the newest snapshot, for a change that turned out to
+        be a no-op.
+
+        Without this, pressing "bring forward" on a prop that is already
+        at the front would leave an undo step that restores the state it
+        is already in — the author presses Ctrl+Z and nothing happens.
+        """
+        if not self.__undo:
+            return False
+        self.__undo.pop()
+        return True
 
     def clear(self) -> None:
         """Drop all history — used when a different file is opened."""
@@ -256,6 +290,11 @@ class LevelEditorApp:
         self.__spawn_arm: bool = False
         self.__hover_cell: Optional[Tuple[int, int]] = None
         self.__editing_uid: str = ""
+        # The prop the layer keys are currently moving. Sending one
+        # backward changes which prop is topmost, so without this a
+        # second press would grab a DIFFERENT prop and the stack would
+        # shuffle instead of one piece sinking through it.
+        self.__layer_uid: str = ""
 
         # Variant randomising. `__stroke_cells` remembers what the
         # current drag has already painted: without it, dragging back
@@ -500,7 +539,10 @@ class LevelEditorApp:
         if kind == "tile":
             return self.__assets.get_tile(int(item.get_key()), size)
         if kind == "prop":
-            return self.__assets.get_prop(item.get_key(), size)
+            # A swatch, not a cell: props are no longer square, so the
+            # palette fits the art into the cell instead of forcing it
+            # to fill one (PaletteGrid centres what it is handed).
+            return self.__assets.get_prop_swatch(item.get_key(), size)
         if kind == "npc":
             return self.__assets.get_npc_editor(item.get_key(), size)
         return None
@@ -699,6 +741,61 @@ class LevelEditorApp:
         """True while the eraser tool or the X-key shortcut is active."""
         return (self.__selection_kind == TOOL_ERASER
                 or pygame.key.get_pressed()[pygame.K_x])
+
+    # ── layering ──────────────────────────────────────────────
+
+    def __layer_target(self):
+        """
+        The prop the layer keys act on: the one under the cursor.
+
+        Whichever prop was last moved keeps the keys as long as the
+        cursor is still over it; otherwise it is the TOPMOST prop
+        covering the cell, which is the one the author can see.
+        """
+        if self.__hover_cell is None:
+            return None
+        stack = self.__level.get_props_covering(*self.__hover_cell)
+        if not stack:
+            return None
+        held = next((prop for prop in stack
+                     if prop.get_uid() == self.__layer_uid), None)
+        return held or stack[-1]
+
+    def __reorder_hovered(self, action: str) -> None:
+        """Move the prop under the cursor through the draw order."""
+        prop = self.__layer_target()
+        if prop is None:
+            self.__set_status("Point at a prop to change its layer")
+            return
+        self.__reorder_prop(prop.get_uid(), action)
+
+    def __reorder_prop(self, uid: str, action: str) -> None:
+        """
+        Apply one layering move as one undo step, and say what happened.
+
+        Two props of the same art on one cell look identical, so the
+        readout names the layer the prop landed on ("2 of 3"). Without
+        it there is no way to tell a move that worked from one that had
+        nowhere to go.
+        """
+        was_dirty = self.__dirty
+        self.__record()
+        if not self.__level.reorder_prop(uid, action):
+            # Nothing moved: drop the snapshot rather than leave an undo
+            # step that restores the state the document is already in.
+            self.__undo.discard()
+            self.__set_dirty(was_dirty)
+            self.__set_status(
+                "Already at the front" if action in (LAYER_FORWARD,
+                                                     LAYER_FRONT)
+                else "Already at the back")
+            return
+        self.__layer_uid = uid
+        prop = self.__level.get_prop_by_uid(uid)
+        name = PROP_REGISTRY.get(prop.get_type_id(), {}).get(
+            "name", prop.get_type_id()) if prop is not None else "prop"
+        position, total = self.__level.get_prop_depth(uid)
+        self.__set_status(f"{name}: layer {position} of {total}")
 
     # ── zone tool (Feature 6, phase F6) ───────────────────────
 
@@ -1011,6 +1108,14 @@ class LevelEditorApp:
         elif event.key == pygame.K_t:
             self.__rotation = next_rotation(self.__rotation)
             self.__set_status(f"Brush rotation {self.__rotation} degrees")
+        elif event.key == pygame.K_RIGHTBRACKET:
+            self.__reorder_hovered(
+                LAYER_FRONT if event.mod & pygame.KMOD_SHIFT
+                else LAYER_FORWARD)
+        elif event.key == pygame.K_LEFTBRACKET:
+            self.__reorder_hovered(
+                LAYER_BACK if event.mod & pygame.KMOD_SHIFT
+                else LAYER_BACKWARD)
 
     def __handle_mouse_down(self, event: pygame.event.Event) -> None:
         """Clicks on the top bar, the side panel or the canvas."""
@@ -1150,6 +1255,13 @@ class LevelEditorApp:
         elif isinstance(modal, PropSettingsPopup) and result != CANCEL:
             self.__record()
             self.__level.replace_prop(self.__editing_uid, result)
+            # The popup only STAGES a layer move (it edits a detached
+            # copy and cannot touch the document); applying it here
+            # keeps the whole popup session one undo step.
+            action = modal.take_layer_action()
+            if action:
+                self.__level.reorder_prop(self.__editing_uid, action)
+                self.__layer_uid = self.__editing_uid
         elif isinstance(modal, NpcDialogPopup) and result != CANCEL:
             self.__record()
             self.__level.replace_npc(self.__editing_uid, result)
@@ -1281,11 +1393,22 @@ class LevelEditorApp:
         """
         Props then NPCs. NPCs use their `level_editor` art here — the
         `idle` sheet is what stands in the actual map (owner ruling).
+
+        Props are drawn in LIST order, which is the layering: the last
+        one placed (or brought forward) draws over the rest.
         """
         surface = self.__window
         for prop in self.__level.get_props():
             x, y = prop.get_position()
-            if not (first_x <= x < last_x and first_y <= y < last_y):
+            # A prop wider or taller than its cell is still on screen
+            # when its ANCHOR has scrolled off, so the visible window is
+            # widened by the biggest footprint rather than tested cell
+            # by cell. Cheaper than measuring every prop, and a prop
+            # that pops in at the edge of the canvas is worse than a few
+            # blits that end up clipped.
+            if not (first_x - PROP_CULL_PAD <= x < last_x + PROP_CULL_PAD
+                    and first_y - PROP_CULL_PAD <= y
+                    < last_y + PROP_CULL_PAD):
                 continue
             rect = self.__cell_screen_rect(x, y)
             # Portals are invisible in game, so this marker is the ONLY
@@ -1296,10 +1419,18 @@ class LevelEditorApp:
                 self.__render_portal_marker(prop, rect)
             else:
                 sprite = self.__turn(
-                    self.__assets.get_prop_footprint_sprite(
-                        prop.get_type_id(), cell_px),
+                    self.__assets.get_prop(prop.get_type_id(), cell_px),
                     prop.get_rotation())
                 if sprite is not None:
+                    # Hovering a walk-behind prop previews the fade the
+                    # player will see. It is the only way to judge the
+                    # transparency number without launching the game,
+                    # and it costs one surface copy on one prop.
+                    if prop.get_pass_behind() and \
+                            self.__hover_cell is not None and \
+                            prop.covers_cell(*self.__hover_cell):
+                        sprite = sprite.copy()
+                        sprite.set_alpha(prop.get_behind_alpha())
                     # Bottom-left anchored, same as the game: a tree
                     # stands ON the cell you clicked and hangs upward.
                     surface.blit(sprite,
@@ -1308,6 +1439,8 @@ class LevelEditorApp:
                     th.draw_placeholder(surface, rect, prop.get_type_id())
             if self.__show_badges:
                 self.__render_prop_badges(prop, rect)
+        if self.__show_badges:
+            self.__render_stack_badges(first_x, first_y, last_x, last_y)
 
         for npc in self.__level.get_npcs():
             x, y = npc.get_position()
@@ -1395,7 +1528,7 @@ class LevelEditorApp:
         """
         Editor-only corner badges (Spec §4.2) — never drawn in game.
         Red dot = blocking, green dot = interactable, » / « = speed up
-        or down.
+        or down, hollow blue square = walked behind.
         """
         surface = self.__window
         if not prop.get_passthrough():
@@ -1404,6 +1537,13 @@ class LevelEditorApp:
         if prop.get_interactable():
             pygame.draw.rect(surface, th.ROW_GREEN,
                              pygame.Rect(rect.right - 8, rect.y + 2, 6, 6))
+        # Hollow, where every other badge is filled: the prop itself is
+        # about to go partly hollow too, so the mark reads as "you can
+        # see through this" rather than as one more status dot.
+        if prop.get_pass_behind():
+            pygame.draw.rect(surface, th.ROW_BLUE,
+                             pygame.Rect(rect.right - 9, rect.bottom - 9,
+                                         7, 7), 2)
         modifier = prop.get_speed_modifier()
         if modifier != 1.0:
             glyph = ">>" if modifier > 1.0 else "<<"
@@ -1411,6 +1551,36 @@ class LevelEditorApp:
                          (rect.x + 3, rect.bottom - 13), th.TITLE_SLATE)
         if prop.is_gated():
             self.__render_lock_badge(rect)
+
+    def __render_stack_badges(self, first_x: int, first_y: int, last_x: int,
+                              last_y: int) -> None:
+        """
+        A small count chip on every cell holding more than one prop.
+
+        Stacking is otherwise invisible: two props on one cell look
+        exactly like the top one alone, so a stray double-click would
+        leave a hidden duplicate behind and a deliberate stack would
+        give the author nothing to aim the layer keys at. The chip is
+        the only on-canvas evidence either exists.
+        """
+        counts: dict = {}
+        for prop in self.__level.get_props():
+            cell = prop.get_position()
+            counts[cell] = counts.get(cell, 0) + 1
+
+        surface = self.__window
+        font = th.load_font(th.SIZE_LABEL)
+        for (x, y), count in counts.items():
+            if count < 2 or not (first_x <= x < last_x
+                                 and first_y <= y < last_y):
+                continue
+            rect = self.__cell_screen_rect(x, y)
+            text = f"x{count}"
+            width = font.size(text)[0] + 6
+            chip = pygame.Rect(rect.centerx - width // 2, rect.bottom - 15,
+                               width, 13)
+            th.draw_panel(surface, chip, th.CARD_TAN, th.BORDER_ROW)
+            th.draw_text_centered(surface, font, text, chip, th.TEXT_COFFEE)
 
     def __render_npc_badges(self, npc, rect: pygame.Rect) -> None:
         """Green dot when the NPC can be talked to, amber when mute."""
@@ -1471,7 +1641,12 @@ class LevelEditorApp:
             else:
                 ghost = ghost.copy()
             ghost.set_alpha(128)
-            self.__window.blit(ghost, rect.topleft)
+            # Bottom-left anchored for props, exactly like the real
+            # placement: a ghost drawn from the cell's TOP corner would
+            # promise a tall prop one place higher than it lands.
+            self.__window.blit(
+                ghost, (rect.x, rect.bottom - ghost.get_height())
+                if self.__selection_kind == "prop" else rect.topleft)
         outline = th.BAR_OVER if self.__is_erasing() else th.ROW_BLUE
         pygame.draw.rect(self.__window, outline, rect, 2)
 
@@ -1726,6 +1901,32 @@ class LevelEditorApp:
             th.draw_text(self.__window, font,
                          f"{self.__selection_kind.upper()} TO EDIT IT",
                          (x, footer_y + 14), th.STAT_BROWN)
+        if self.__tab == TAB_PROPS:
+            self.__render_stack_line(x, footer_y + 28, font)
+
+    def __render_stack_line(self, x: int, y: int,
+                            font: pygame.font.Font) -> None:
+        """
+        One line naming what `[` and `]` would move right now.
+
+        Layering is the one editor action with no cursor of its own —
+        it acts on whatever the mouse is over — so without this the
+        author has to press a key to find out what it was pointing at.
+        """
+        stack = [] if self.__hover_cell is None else \
+            self.__level.get_props_covering(*self.__hover_cell)
+        target = self.__layer_target()
+        if not stack or target is None:
+            th.draw_text(self.__window, font, "[ / ] LAYER: HOVER A PROP",
+                         (x, y), th.STAT_BROWN)
+            return
+        position, total = self.__level.get_prop_depth(target.get_uid())
+        name = PROP_REGISTRY.get(target.get_type_id(), {}).get(
+            "name", target.get_type_id())
+        th.draw_text(self.__window, font,
+                     th.truncate(font, f"[ ] {name.upper()} {position}/{total}",
+                                 SIDE_PANEL.w - PANEL_PAD * 2),
+                     (x, y), th.ROW_BLUE if total > 1 else th.STAT_BROWN)
 
     def __render_variant_line(self, x: int, y: int, font: pygame.font.Font,
                               tile_index: int) -> None:

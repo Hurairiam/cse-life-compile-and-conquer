@@ -8,8 +8,8 @@
     "ambient": "day",
     "music": "menu",
     "spawn": {
-      "x": 8,
-      "y": 8
+      "x": 4,
+      "y": 5
     }
   },
   "layers": {
@@ -129,7 +129,7 @@
         0,
         0,
         0,
-        0,
+        128,
         128,
         128,
         0
@@ -251,7 +251,7 @@
         5,
         5,
         5,
-        5,
+        -1,
         -1,
         -1,
         5
@@ -368,23 +368,6 @@
       "uid": "prop_0013",
       "type_id": "portal",
       "x": 7,
-      "y": 9,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": true,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "target_level_id": "campus_lobby",
-      "target_spawn": null
-    },
-    {
-      "uid": "prop_0014",
-      "type_id": "portal",
-      "x": 8,
       "y": 9,
       "passthrough": true,
       "speed_modifier": 1.0,
@@ -625,6 +608,21 @@
         "triggers_per_semester": 1
       },
       "rotation": 270
+    },
+    {
+      "uid": "prop_0030",
+      "type_id": "rug",
+      "x": 7,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
     }
   ],
   "npcs": [],
