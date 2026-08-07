@@ -93,6 +93,39 @@ class DialogueManager:
         if portrait_path:
             self.__current_portrait = self.__load_portrait(portrait_path)
 
+    def load_npc_chain(self, chain, portrait_path=None, display_name="") -> bool:
+        """
+        Loads a semester dialogue chain.
+
+        Parameters
+        ----------
+        chain : DialogueChain
+            Chain object from the level editor.
+        portrait_path : str | None
+            Portrait image path.
+        display_name : str
+            NPC name shown above the dialogue.
+
+        Returns
+        -------
+        bool
+            True if dialogue was loaded successfully.
+        """
+        if chain is None:
+            return False
+
+        try:
+            lines = chain.get_lines()
+        except AttributeError:
+            return False
+
+        if not lines:
+            return False
+
+        self.load_dialogue(lines, portrait_path)
+        self.set_speaker(display_name)
+        return True
+
     def advance(self) -> bool:
         """
         Advances to the next dialogue line.

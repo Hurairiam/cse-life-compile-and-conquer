@@ -39,6 +39,7 @@ class ScreenState(Enum):
     # rather than inserted: auto() numbers by position, and moving an
     # existing member would renumber the ones after it.
     ACTIVITY = auto()
+    CUTSCENE = auto()
 
 
 class ScreenManager:
