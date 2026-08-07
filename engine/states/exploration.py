@@ -208,21 +208,46 @@ def __interact(ctx):
 
 
 def __talk(ctx, npc_data):
-    from content.level_registry import get_npc_roster_id
-    roster_id = get_npc_roster_id(npc_data.get_type_id())
-    if npc_data.get_effective_min_semester() > \
-            ctx.semester().get_semester_number():
+    from content.level_registry import (
+        get_npc_display_name, get_npc_portrait_path)
+
+    current_semester = ctx.semester().get_semester_number()
+
+    if npc_data.get_effective_min_semester() > current_semester:
         ctx.play_sfx("error")
         ctx.message_popup.open(
-            "NOT YET", ["They are not around this semester."], SEVERITY_INFO)
+            "NOT YET",
+            ["They are not around this semester."],
+            SEVERITY_INFO
+        )
         return
-    if not ctx.dialogue_manager.load_npc_dialogue(roster_id, "greeting"):
+
+    chains = npc_data.get_chains()
+    if not chains:
         ctx.play_sfx("error")
         return
-    ctx.talked_npc_uids.add("%s:%s" % (ctx.level_id, npc_data.get_uid()))
+
+    # Determine which dialogue chain should play based on the semester.
+    start_semester = npc_data.get_effective_min_semester()
+
+    chain_index = current_semester - start_semester
+    chain_index = max(0, min(chain_index, len(chains) - 1))
+
+    chain = chains[chain_index]
+
+    display_name = get_npc_display_name(npc_data.get_type_id())
+    emotion = chain.get_emotion() or "neutral"
+    portrait = get_npc_portrait_path(npc_data.get_type_id(), emotion)
+
+    if not ctx.dialogue_manager.load_npc_chain(chain, portrait, display_name):
+        ctx.play_sfx("error")
+        return
+
+    key = "%s:%s" % (ctx.level_id, npc_data.get_uid())
+    ctx.talked_npc_uids.add(key)
+
     ctx.dialogue_return = ScreenState.EXPLORATION
     ctx.go(ScreenState.DIALOGUE)
-
 
 def __trigger_prop(ctx, prop):
     # Menu and travel props are doors, not payouts, so both are checked
