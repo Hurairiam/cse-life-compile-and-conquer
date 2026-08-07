@@ -1121,30 +1121,130 @@
       "dialog": {
         "chains": [
           {
-            "chain_id": "greeting",
+            "chain_id": "1",
             "lines": [
-              "Oh, you're in the CSE program too?",
-              "I'm Purnno by the way. Just grabbed some food\u2014 this place gets crowded really fast.",
-              "Join us please!"
+              "Aren't we in the same CSE1101 course? I'm Purnno by the way.",
+              "Did you successfully navigate through course checklists?",
+              "You can find me somewhere around here.Join me anytime!",
+              "Let's survive this new journey together."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "2",
+            "lines": [
+              "Good to see you again.",
+              "Midterms are coming up already. The library is so packed.",
+              "I ended up staying here till 9 pm yesterday to sort my notes",
+              "Saw some freshmen and helped them sort their notes as well.",
+              "I don't mind it, really. I like feeling useful."
             ],
             "emotion": "neutral"
           },
           {
-            "chain_id": "offer",
+            "chain_id": "3",
             "lines": [
-              "I found something we could work on together.",
-              "A few days of focused practice \u2014 nothing crazy.",
-              "Interested?"
+              "Morning...the lab queues are endless today.",
+              "Sorry if I seem a bit out of it.Haven't been sleeping much.",
+              "Between classes and assignments, the days just blur together",
+              "Reached that level of tiredness where coffee is like water."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_4",
+            "lines": [
+              "Oh....hey.Sorry for bumping into you.",
+              "Just a bit distracted.",
+              "Dad lost is job recently,so I've taken on some tutoring gigs",
+              "It's a lot. But I don't really have a choice right now."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_5",
+            "lines": [
+              "...",
+              "Sorry,didn't notice you there.",
+              "Running between 3 different tutoring sessions after lectures",
+              "Sleep's becoming optional.",
+              "IF I stop moving now,pretty sure my body will shut down."
             ],
             "emotion": "neutral"
           },
           {
-            "chain_id": "farewell",
+            "chain_id": "chain_6",
             "lines": [
-              "No pressure. Food's getting cold so I gotta dash.",
-              "You know where to find me."
+              "Not a very good day.",
+              "I missed my presentation today. Slept right through it.",
+              "I think...I'm slowly reaching my limit.",
+              "I keep trying to fix everything,but I'm just dropping pieces"
             ],
             "emotion": "neutral"
+          },
+          {
+            "chain_id": "chain_7",
+            "lines": [
+              "Morning.Notice anything different?",
+              "I actually look awake today. ",
+              "My friends took over my group study duties for my sake.",
+              "It took everything in me not to refuse,but..I let them.",
+              "Accepting help feels like getting caught doing a wrong deed"
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "chain_8",
+            "lines": [
+              "Hey!Good to see you!",
+              "Midterm season again,but the camous feels a bit lighter.",
+              "My dad started a contract job,so things are settling down.",
+              "Finally I'm getting some free time for myself.",
+              "FEels weird when you've spent the last two years sprinting."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "chain_9",
+            "lines": [
+              "Hey there. ",
+              "I was just helping some juniors with their project proposals",
+              "Catch you later okay?"
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "chain_10",
+            "lines": [
+              "Senior year stress is hitting everyone isn't it?",
+              "But I'm holding up alright.Things at home are back on track.",
+              "The house doesn't feel like a pressure cooker anymore.",
+              "Spent so many months waiting for a collapse that never came."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_11",
+            "lines": [
+              "Look at us..Almost done.",
+              "Everyone's rushing around submitting thesis drafts.",
+              "I used to think university was about a degree.",
+              "But it's mostly just stress-testing your joints.",
+              "Four years ago,a C grade was the end of the world for me.",
+              "Now I barely flinch."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "chain_12",
+            "lines": [
+              "Look at the courtyard. Exact same crowd.",
+              "Just different faces pretending they know their way around.",
+              "Thanks for drpping by all these semesters.",
+              "You never said much,but always around when things got loud.",
+              "Don't be a stranger.Or do-sometimes that's easier."
+            ],
+            "emotion": "happy"
           }
         ],
         "on_complete": "loop_last"
