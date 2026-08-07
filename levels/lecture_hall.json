@@ -1656,29 +1656,84 @@
       "dialog": {
         "chains": [
           {
-            "chain_id": "greeting",
+            "chain_id": "sem05",
             "lines": [
-              "You are registered in my course.",
-              "I am Prof. Hoque. I do not repeat instructions.",
-              "Come prepared. Every single time."
+              "Welcome to my class.",
+              "You will make mistakes here. That is expected.",
+              "My job is not to make the path easy; but make you capable.",
+              "Consistency matters far more than talent."
+            ],
+            "emotion": "strict"
+          },
+          {
+            "chain_id": "sem06",
+            "lines": [
+              "Good morning.",
+              "I notice you attend lectures regularly.",
+              "I hope you know the difference between attendance & presence",
+              "Showing up is the bare minimum."
+            ],
+            "emotion": "strict"
+          },
+          {
+            "chain_id": "sem7",
+            "lines": [
+              "Hello.",
+              "The department board meeting was...lengthy.",
+              "Administration seems more concerned with pass percentages.",
+              "Quality education rarely depends on numbers."
             ],
             "emotion": "neutral"
           },
           {
-            "chain_id": "offer",
+            "chain_id": "chain_8",
             "lines": [
-              "There is an activity this week.",
-              "It will be difficult. That is the point.",
-              "If you are serious about this field \u2014 show up."
+              "Ah- good to see you again.",
+              "Here- take these files to the main office for me,please.",
+              "I prefer giving responsibilities to those who don't loiter.",
+              "See you soon."
             ],
             "emotion": "neutral"
           },
           {
-            "chain_id": "farewell",
+            "chain_id": "chain_9",
             "lines": [
-              "Your choice. The work still needs to be done."
+              "...",
+              "Another syllabus revision passed down from the dean.",
+              "Sometimes I wonder if we're just cultivating intellect.",
+              "It's tiring to fight a system from inside."
             ],
             "emotion": "neutral"
+          },
+          {
+            "chain_id": "chain_10",
+            "lines": [
+              "Good day.",
+              "A former student stopped by my office this morning.",
+              "They secured a research grant using our framework.",
+              "Sometimes, the cultivation produces something remarkable."
+            ],
+            "emotion": "approving"
+          },
+          {
+            "chain_id": "chain_11",
+            "lines": [
+              "You're preparing your final submissions,right?",
+              "Do not rush the details.",
+              "Finish as precisely as you began.",
+              "How you completea task tells a lot about your discipline."
+            ],
+            "emotion": "strict"
+          },
+          {
+            "chain_id": "chain_12",
+            "lines": [
+              "Final semester.",
+              "You've grown into a fine scholar.",
+              "You're no longer just my student.",
+              "Go build something worth remembering."
+            ],
+            "emotion": "approving"
           }
         ],
         "on_complete": "loop_last"
@@ -1694,29 +1749,121 @@
       "dialog": {
         "chains": [
           {
-            "chain_id": "greeting",
+            "chain_id": "semester_1",
             "lines": [
-              "Ah, a student who actually comes to office hours.",
-              "Prof. Rahman here. Sit down \u2014 I don't bite.",
-              "Tell me what you're struggling with. That's what I'm here for."
+              "Good day.",
+              "Welcome to the department.",
+              "Academia demands discipline, not shortcuts.",
+              "A strong foundation takes time,do not rush the concrete."
             ],
             "emotion": "neutral"
           },
           {
-            "chain_id": "offer",
+            "chain_id": "semester_2",
             "lines": [
-              "There is a study group forming this week.",
-              "I think it would help you. A few days of focused work.",
-              "Think about it."
+              "Hello.",
+              "Midterms are coming up. PLease prepare accordingly,",
+              "Many students focus on their grades instead of clarity.",
+              "A mark is merely a metric,not a measure of character."
             ],
             "emotion": "neutral"
           },
           {
-            "chain_id": "farewell",
+            "chain_id": "semester_3",
             "lines": [
-              "My door is open. Remember that."
+              "Ah,hello.",
+              "Grading papers all afternoon.",
+              "Students keep quoting textbooks without any original thought",
+              "True learning requires processing."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "semester_4",
+            "lines": [
+              "Good afternoon.",
+              "The university wants to shorten project timeline.",
+              "True learning cannot be accelerated by administrative order.",
+              "You can;t bake a cake by turning the oven to maximum."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "semester_5",
+            "lines": [
+              "Hello.",
+              "I spent an hour speaking with a struggling student.",
+              "Sometimes the best teachings happen outside curriculum.",
+              "Syllabi cover topics;teachers cover people."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "sem_6",
+            "lines": [
+              "...",
+              "The department is pushing more standardized testing.",
+              "They want predictable results over genuine inquiry.",
+              "Excellence is a far fetched goal now."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "sem_7",
+            "lines": [
+              "Good day.",
+              "I have decided to stop following university lecture template",
+              "I'm spending more times on open discussions now.",
+              "Rules are never supposed to exist to suffocate."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "sem_8",
+            "lines": [
+              "Nothing makes a professor prouder than this.",
+              "A student corrected my lecture notes today.",
+              "Nothing makes a professor prouder than this.",
+              "The goal of a teacher is to make themselves obsolete."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "sem_9",
+            "lines": [
+              "Good morning.",
+              "Preparing my courses for what might be my final years here.",
+              "Legacy isn't about books written-but about minds opened.",
+              "We plant trees under whose shade we may never sit."
             ],
             "emotion": "neutral"
+          },
+          {
+            "chain_id": "sem_10",
+            "lines": [
+              "Ah,good to see you.",
+              "Senior thesis reviews are my favorite time of the year.",
+              "Seeing raw curiosity turn into structured argument is good.",
+              "Thought takes shape when pushed against resistance."
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "sem_11",
+            "lines": [
+              "You're nearly finished.",
+              "Remember, real education starts after you leave these halls."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "sem_12",
+            "lines": [
+              "Final days.",
+              "It's been a pleasure watching your silent determination.",
+              "Speak through your actions, and the world will listen."
+            ],
+            "emotion": "happy"
           }
         ],
         "on_complete": "loop_last"
