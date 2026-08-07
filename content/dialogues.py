@@ -82,6 +82,75 @@ DEFAULT_SEMESTER_INTRO: list[str] = [
     "80 days. Choose carefully.",
 ]
 
+CUTSCENES = {
+    1: {
+        "title": "First Impressions",
+        "lines": [
+            "Everything is unfamiliar today — the sounds, the faces, the version of yourself you haven't figured out yet.",
+            "Somewhere in this crowd are several people whose names you don't know yet.",
+            "You won't remember this moment later. But it's the one everything else grows out of."
+        ]
+    },
+    3: {
+        "title": "Cracks You Don't Notice Yet",
+        "lines": [
+            "The newness has worn off, and campus feels almost familiar now — which is its own kind of strange.",
+            "Small things are starting to slip, quietly, in places nobody's paying attention to.",
+            "You keep going, the way everyone does right before they notice they've stopped noticing things."
+        ]
+    },
+    4: {
+        "title": "Seen",
+        "lines": [
+            "Someone sits you down and actually looks at you.",
+            "For the first time, you're not just passing through.",
+            "Whatever she's seeing, it's the first time anyone's looked this closely.",
+            "This is what she sees."
+        ]
+    },
+    5: {
+        "title": "Quiet Hours",
+        "lines": [
+            "There's a version of tonight happening behind closed doors all over campus — the kind no one talks about after.",
+            "A few people you think you know are quietly unraveling, each in their own way.",
+            "You're unraveling a little yourself, in a way you haven't said out loud to anyone.",
+            "Somewhere, someone keeps a chair empty for you anyway — whether or not you ever show up to sit in it."
+        ]
+    },
+    6: {
+        "title": "What Breaks, Bends",
+        "lines": [
+            "Something breaks today. Somewhere. You can feel it before you can name it.",
+            "Not everyone survives a semester the same way they started it.",
+            "For you, it starts smaller — walking back into a room you'd been avoiding, just once.",
+            "You're not sure what you did to be noticed. Maybe nothing. Maybe that was the point."
+        ]
+    },
+    9: {
+        "title": "Passing It On",
+        "lines": [
+            "Campus looks the same as it did on your first day here, except now you're not the one who's lost.",
+            "Somewhere, someone is being handed the exact thing that once got handed to you.",
+            "Somewhere else, someone tells a stranger the thing they probably should have told you sooner.",
+            "You've become part of a story you didn't realize you were writing."
+        ]
+    },
+    12: {
+        "title": "Commencement",
+        "lines": [
+            "Four years compress into a single afternoon that feels both too long and nowhere near long enough.",
+            "For the only time in this whole story, everyone you've known is standing in the same place at once.",
+            "Then, one by one, they disappear back into a crowd that's already forgotten they were ever new here too.",
+            "The story doesn't really end. It just stops being about you."
+        ]
+    }
+}
+
+
+def has_cutscene(semester: int) -> bool:
+    return semester in CUTSCENES
+
+
 # ── NPC DIALOGUE SCRIPTS ──────────────────────────────────────────
 NPC_DIALOGUES: dict[str, dict[str, list[str]]] = {
     "warm_classmate_purnno": {

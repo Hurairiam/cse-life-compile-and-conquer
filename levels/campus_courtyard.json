@@ -4161,27 +4161,110 @@
       "dialog": {
         "chains": [
           {
-            "chain_id": "greeting",
+            "chain_id": "sem2",
             "lines": [
-              "Oh hey. We met in class before.",
-              "I'm Zayan. Been sitting out here avoiding the library.",
-              "Don't tell me you actually did the readings."
+              "What's up!",
+              "The name's Zayan.I saw you around here a couple of times.",
+              "Class? Oh,right.The thing between tea breaks.",
+              "See you in class later buddy!Or maybe not;)"
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "sem3",
+            "lines": [
+              "Yo man wanna grab some coffee together?",
+              "Midterms are close, but why stress today?",
+              "People keep asking me how I stay so relaxed.",
+              "It's easy to look calm when you're ignoring the check-engine"
+            ],
+            "emotion": "happy"
+          },
+          {
+            "chain_id": "chain_4",
+            "lines": [
+              "Hey...",
+              "My parents visited the campus yesterday.",
+              "Spent an hour asking why don;t my grades match my cousin's.",
+              "Nothing ruins a good joke like a reality check."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_5",
+            "lines": [
+              "...",
+              "You're really quiet.",
+              "Honestly? I don't mind. Can i ask you something though?",
+              "How can you feel lonely in a room that's full of people."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_6",
+            "lines": [
+              "Hey man.",
+              "Quiet day today. Didn't feel like performing for the crowd.",
+              "Funny thing happens when you stop this-they think I'm upset.",
+              "Turns out being the funny guy means you can't have bad days."
             ],
             "emotion": "neutral"
           },
           {
-            "chain_id": "offer",
+            "chain_id": "chain_7",
             "lines": [
-              "Okay so I found this thing we could work on.",
-              "I'm probably not going to do it alone if I'm honest.",
-              "You in?"
+              "Hey.",
+              "I actually sat in the library and studied a bit today.",
+              "No jokes, no distractions.Just me and the study materials.",
+              "Failing does't feel nice y'know? Specially failing quietly."
             ],
             "emotion": "neutral"
           },
           {
-            "chain_id": "farewell",
+            "chain_id": "chain_8",
             "lines": [
-              "Fair enough. I'll probably just sit here a bit longer."
+              "What's up?",
+              "Passed my presentation with a decent grade today.",
+              "Did't rely on improvised comedy this time-just my prep work.",
+              "It's weird getting praised for effort and not entertainment."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "chain_9",
+            "lines": [
+              "Hey.",
+              "Club elections were today. I...withdrew my name.",
+              "Handed it to someone who actually wanted the work.",
+              "Validation sounds nice, but it doesn't keep you warm."
+            ],
+            "emotion": "neutral"
+          },
+          {
+            "chain_id": "chain_10",
+            "lines": [
+              "Hey.Everyone's worried about job interviews.",
+              "Forthe first time I think I'll show up as myself.",
+              "If hey don't like the real version,atleast I saved on energy"
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_11",
+            "lines": [
+              "It's weird how time flies so fast.",
+              "If not anything,atleast I learned to be myself.",
+              "It does take a lot of effort to stop wearinf a mask."
+            ],
+            "emotion": "serious"
+          },
+          {
+            "chain_id": "chain_12",
+            "lines": [
+              "Final year.",
+              "Thanks for letting me talk your ear off.",
+              "It felt nice not being the 'entertainer' with you.",
+              "You were a good friend."
             ],
             "emotion": "neutral"
           }
