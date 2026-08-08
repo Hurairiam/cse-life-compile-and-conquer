@@ -123,13 +123,20 @@ class Modal:
     """
 
     def __init__(self, screen_w: int, screen_h: int,
-                 box_w: int = BOX_W, box_h: int = BOX_H) -> None:
-        """Centre a `box_w` x `box_h` popup inside the given screen."""
+                 box_w: int = BOX_W, box_h: int = BOX_H,
+                 box_y: Optional[int] = None) -> None:
+        """
+        Centre a `box_w` x `box_h` popup inside the given screen.
+
+        box_y overrides the vertical position (e.g. a top banner
+        instead of dead-centre). None keeps the original centred
+        behaviour, so every existing popup is unaffected.
+        """
         self.__screen_w: int = int(screen_w)
         self.__screen_h: int = int(screen_h)
+        y = box_y if box_y is not None else (self.__screen_h - box_h) // 2
         self.__box_rect: pygame.Rect = pygame.Rect(
-            (self.__screen_w - box_w) // 2, (self.__screen_h - box_h) // 2,
-            box_w, box_h)
+            (self.__screen_w - box_w) // 2, y, box_w, box_h)
 
         buttons_y = self.__box_rect.bottom - BTN_BOTTOM_GAP - BTN_H
         centre_x = self.__box_rect.centerx
@@ -308,9 +315,10 @@ class MessagePopup(Modal):
     """
 
     def __init__(self, screen_w: int, screen_h: int,
-                 box_w: int = BOX_W, box_h: int = BOX_H) -> None:
-        """Centre a message popup inside the given screen."""
-        super().__init__(screen_w, screen_h, box_w, box_h)
+                 box_w: int = BOX_W, box_h: int = BOX_H,
+                 box_y: Optional[int] = None) -> None:
+        """Position a message popup inside the given screen."""
+        super().__init__(screen_w, screen_h, box_w, box_h, box_y)
         self.__ok_label: str = "OK"
         self.__ok_colour: Tuple[int, int, int] = BTN_CANCEL
 

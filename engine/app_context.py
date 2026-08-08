@@ -82,6 +82,11 @@ class AppContext:
         self.dialog_box = None            # owned by DialogueManager
         self.choice_box = ChoiceBox(screen_w, screen_h)
         self.choice_options = []
+        self.unlocked_side_quests = set()
+        self.decided_quest_semesters = set()
+        self.pending_quest_npc = None
+        self.seen_quest_intro_semesters = set()
+        self.quest_intro_popup = MessagePopup(screen_w, screen_h, box_y=40)
         self.choice_result = None
         self.monologue_title = ""
         self.monologue_subtitle = ""
