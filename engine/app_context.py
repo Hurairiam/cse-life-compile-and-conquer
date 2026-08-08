@@ -91,6 +91,19 @@ class AppContext:
         self.choice_options = []       # non-empty = a branch is open
         self.choice_prompt = ""        # the strip above the replies
         self.choice_result = None      # the index the player picked
+        # TWO different things can dock that reply list, and this says
+        # which one currently owns it: an authored per-chain branch
+        # (dialogue_flow.open_choice) or the semester quest offer
+        # (dialogue_flow.open_offer). They share the widget, never the
+        # screen, and the answer routes differently for each.
+        self.quest_offer_open = False
+        # The semester side-quest offer. One named NPC per term asks
+        # once; content/npc_quest_offers.py holds the table.
+        self.unlocked_side_quests = set()
+        self.decided_quest_semesters = set()
+        self.pending_quest_npc = None
+        self.seen_quest_intro_semesters = set()
+        self.quest_intro_popup = MessagePopup(screen_w, screen_h, box_y=40)
         self.monologue_title = ""
         self.monologue_subtitle = ""
         self.monologue_lines = []

@@ -196,23 +196,17 @@ produces the *byte-identical* conflict set with and without this phase's changes
   block, which is what hazards #2 and #3 ask for, and the merged result reads correctly
   with main's own entries intact.
 
-⚠ **`origin/main` has moved 10 commits since Phase 4's log was written, and HEAD now
-conflicts with it in three files this phase never opened:**
+⚠ **`origin/main` had moved 10 commits since Phase 4's log was written, and HEAD
+conflicted with it in three files this phase never opened** — `engine/app_context.py`,
+`engine/states/dialogue.py`, `engine/states/exploration.py`, all from
+`#23 dev2-saif-academic` and `#24 dev4-aysha-narrative`. Those conflicts existed at
+`819a068` before any Phase 5 change and were unchanged by it.
 
-```
-CONFLICT (content): engine/app_context.py
-CONFLICT (content): engine/states/dialogue.py
-CONFLICT (content): engine/states/exploration.py
-```
-
-Those come from `#23 dev2-saif-academic` and `#24 dev4-aysha-narrative` landing on main —
-a quest-intro popup, `choice_options` fixes and NPC side-quest offer dialogue, all in the
-same three files this branch already diverges on. They exist at `819a068` before any
-Phase 5 change and are unchanged by it. Resolving them is an integration job across the
-whole branch, not something a phase scoped to a teleport prop should reach into.
+**They were resolved in a follow-up merge commit, on the owner's instruction** — see
+"Integrating `origin/main`" below.
 
 `levels/cafeteria.json` was already modified in the working tree when this phase started
-and was **left untouched and uncommitted**.
+and was **left untouched and uncommitted** throughout, including across the merge.
 
 ---
 
@@ -292,3 +286,82 @@ Headless, `SDL_VIDEODRIVER=dummy`. **63 checks, all passing.**
 its menu to **Teleport** in the level editor, save, then press **E** on it in game — the
 `WHERE TO GO?` card opens over the map with a scrollable list of the nine areas, and
 picking one puts the player there.
+
+---
+
+## Integrating `origin/main`
+
+Done after Phase 5 shipped, on the owner's instruction, as a separate merge commit so the
+teleport work stays reviewable on its own.
+
+### The maps were never at risk
+
+Recon hazard #1 calls level JSON effectively unmergeable, so the merge was rehearsed in a
+throwaway `git worktree` first. It touched **no level file at all** — `git diff HEAD --
+levels/` after the trial merge was empty. This branch's maps already descend from main's,
+so there was nothing to reconcile; the enormous `git diff HEAD origin/main` over `levels/`
+is one-sided evolution, not divergence.
+
+### The real conflict was one feature written twice
+
+Both branches built dialogue branching, independently, on the same widget:
+
+| | this branch (`dev3`) | `origin/main` (`#24`) |
+|---|---|---|
+| Lives in | `engine/dialogue_flow.py` | inlined in `exploration.__talk` + `dialogue.py` |
+| What opens the reply list | an authored per-chain `choice` block with `goto` targets | one fixed Accept / Decline per semester, from `content/npc_quest_offers.py` |
+| Persisted | yes, `ctx.dialogue_choices` → the save | `ctx.unlocked_side_quests` / `decided_quest_semesters` |
+| Shared | `ctx.choice_options`, `ui/choice_box.py` | same |
+
+Main had **re-inlined into `exploration.__talk` the ~36 lines the 2026-08-08 amendment
+took out of it**, and built the quest offer on top. Taking either side wholesale would
+have deleted a shipped feature, so both were kept.
+
+### How it was resolved
+
+- **`engine/states/exploration.py` → ours verbatim, zero net change.** Main's inlined
+  semester gate, chain pick and portrait lookup are what `dialogue_flow.start_talk()`
+  already does. The quest-offer arming moved into `dialogue_flow` instead, so the busiest
+  shared file in the repo still carries a two-line call and no branch.
+- **`engine/dialogue_flow.py`** gained the offer as a second, clearly separated section:
+  `arm_offer()`, `open_offer()`, `is_offer_open()`, `resolve_offer()` and the
+  `OFFER_*` constants. It now owns the whole conversation flow, both reasons the reply
+  list can open.
+- **`engine/app_context.py`** — union. `choice_prompt` (ours) and main's five quest fields
+  both survive, plus one new `quest_offer_open` flag, because two things can now dock the
+  same widget and the answer routes differently for each.
+- **`engine/states/dialogue.py`** — both advance paths, in a defined order:
+
+  ```
+  last line still on screen  ->  authored branch      (open_choice)
+  chain has actually run out  ->  semester offer      (open_offer)
+  ```
+
+  An authored branch is asked first because it is part of the chain being told. The offer
+  is second because it *replaces* the chain with its own lines — which is also why our
+  "ask before `advance()` deactivates the box" rule does not apply to it.
+
+Two behaviours were reconciled rather than merged:
+
+- **ESC during a choice.** Main let it leave; ours swallows it, deliberately and with the
+  reasoning in the docstring. Ours kept — it also stops ESC skipping a quest offer, which
+  is strictly better for main's feature than what main shipped.
+- **An offer left unanswered.** Only `resolve_offer()` writes `decided_quest_semesters`,
+  so walking out mid-conversation re-asks next time instead of silently burning the term's
+  one offer.
+
+**No collision exists in the shipped content:** semester 3's offer is Rafi's, and Rafi's
+only authored branch is on his semester-**1** chain, so the two never contend for the
+widget. The order above is what would happen if they ever did.
+
+### Verification — 63 further checks, all passing
+
+| Group | Cases |
+|---|---|
+| Context | all eight fields from both sides present; `quest_intro_popup` is a real modal and the router dispatches it; roster bridge intact |
+| **Authored branch (ours)** | Rafi's `s1` plays; the branch docks at the last line and is *not* the offer; the authored prompt is used; ESC cannot skip it; the answer lands in `ctx.dialogue_choices`; the `goto` jumps to the follow-up chain |
+| **Quest offer (main)** | arms only for the named NPC; docks once the chain runs out; offer lines replace the chain with the box still up; Accept unlocks the quest id and plays `accept_lines`; Decline unlocks nothing but still decides; re-talking does not re-ask; leaving mid-talk re-arms next time |
+| **Both together** | in semester 3 Rafi arms an offer while off his branching chain, and only one reply list is ever open |
+| Regression | all 12 maps load and validate; `main`, both editor modules, `save_bridge`, `state_router`, `teleport` and `map_directory` all import; the save still carries `dialogue_choices` *and* `return_positions` at `schema_version` 1 |
+
+Phase 5's own 63 checks were re-run after the merge and are still green — **126 in total**.

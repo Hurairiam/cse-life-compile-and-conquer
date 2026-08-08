@@ -119,6 +119,7 @@ def start_talk(ctx: Any, npc_data: Any) -> bool:
 
     ctx.talked_npc_uids.add("%s:%s" % (ctx.level_id, npc_data.get_uid()))
     reset_choice(ctx)
+    arm_offer(ctx, npc_data)
     ctx.dialogue_return = ScreenState.EXPLORATION
     ctx.go(ScreenState.DIALOGUE)
     return True
@@ -164,6 +165,7 @@ def reset_choice(ctx: Any) -> None:
     ctx.choice_options = []
     ctx.choice_prompt = ""
     ctx.choice_result = None
+    ctx.quest_offer_open = False
     if ctx.choice_box is not None:
         ctx.choice_box.reset()
 
@@ -230,3 +232,125 @@ def end_talk(ctx: Any) -> None:
     reset_choice(ctx)
     ctx.dialogue_npc = None
     ctx.dialogue_chain = None
+    # An offer left armed but unanswered is not a decision — walking
+    # away and coming back must ask it again, so only resolve_offer()
+    # ever writes to decided_quest_semesters.
+    ctx.pending_quest_npc = None
+
+
+# ── the semester side-quest offer ──────────────────────────────
+# A SECOND reason the reply list can open, and a different kind of
+# reason. The branch above is authored per chain in the level editor
+# and can jump anywhere; this is one fixed Accept / Decline from
+# content/npc_quest_offers.py, offered by one named NPC per term.
+#
+# They share ui/choice_box.py and ctx.choice_options, so they must
+# never be open at once. engine/states/dialogue.py asks the authored
+# branch FIRST — it is part of the chain the player is being told —
+# and the offer only once that chain has genuinely run out. Nothing in
+# the shipped content puts both on the same conversation: semester 3's
+# offer is Rafi's, and Rafi's only authored branch is on his
+# semester-1 chain.
+
+OFFER_PROMPT: str = "YOUR DECISION"
+OFFER_REPLIES: tuple = ("Accept", "Decline")
+OFFER_ACCEPT: int = 0
+
+
+def pending_offer(ctx: Any) -> Optional[dict]:
+    """The offer this conversation still owes the player, or None."""
+    semester = getattr(ctx, "pending_quest_npc", None)
+    if semester is None:
+        return None
+    from content.npc_quest_offers import SEMESTER_QUEST_OFFERS
+    return SEMESTER_QUEST_OFFERS.get(semester)
+
+
+def arm_offer(ctx: Any, npc_data: Any) -> bool:
+    """
+    Note that this NPC owes the player a quest offer this term.
+
+    Armed at the START of every talk and cleared at the end, so the
+    state cannot outlive the conversation it belongs to. A semester
+    already answered is never re-armed — walking back to Purnno after
+    declining does not put the question a second time.
+    """
+    from content.level_registry import get_npc_roster_id
+    from content.npc_quest_offers import SEMESTER_QUEST_OFFERS
+
+    ctx.pending_quest_npc = None
+    semester = ctx.semester().get_semester_number()
+    offer = SEMESTER_QUEST_OFFERS.get(semester)
+    if offer is None:
+        return False
+    if offer.get("npc") != get_npc_roster_id(npc_data.get_type_id()):
+        return False
+    if semester in getattr(ctx, "decided_quest_semesters", set()):
+        return False
+    ctx.pending_quest_npc = semester
+    return True
+
+
+def open_offer(ctx: Any) -> bool:
+    """
+    Put the offer, once the chain has run out. False = nothing owed.
+
+    Unlike an authored branch this REPLACES what is in the dialogue
+    box: the offer carries its own lines, so it is asked after
+    advance() has emptied the chain rather than while its last line is
+    still up. Loading them reactivates the manager, so the reply list
+    still has a card to dock above.
+    """
+    offer = pending_offer(ctx)
+    if offer is None:
+        return False
+    ctx.dialogue_manager.load_dialogue(list(offer["offer_lines"]))
+    ctx.choice_options = list(OFFER_REPLIES)
+    ctx.choice_prompt = OFFER_PROMPT
+    ctx.choice_result = None
+    ctx.quest_offer_open = True
+    if ctx.choice_box is not None:
+        ctx.choice_box.reset()
+    ctx.play_sfx("select")
+    return True
+
+
+def is_offer_open(ctx: Any) -> bool:
+    """True while the open reply list is the quest offer, not a branch."""
+    return bool(getattr(ctx, "quest_offer_open", False))
+
+
+def resolve_offer(ctx: Any, index: int) -> bool:
+    """
+    Act on Accept / Decline. True = the conversation goes on.
+
+    Accepting unlocks the quest id; either way the semester is marked
+    decided, so the offer is not put again this term. The reply lines
+    then play out on their own and the talk ends when they run out.
+
+    ctx.dialogue_chain is dropped first: the chain is over and its
+    lines are gone from the box, so leaving it set would let an
+    authored branch on it re-open behind the reply lines.
+    """
+    offer = pending_offer(ctx)
+    semester = getattr(ctx, "pending_quest_npc", None)
+    ctx.choice_options = []
+    ctx.choice_prompt = ""
+    ctx.choice_result = None
+    ctx.quest_offer_open = False
+    ctx.dialogue_chain = None
+    if ctx.choice_box is not None:
+        ctx.choice_box.reset()
+    if offer is None:
+        return False
+
+    if int(index) == OFFER_ACCEPT:
+        ctx.unlocked_side_quests.add(offer["quest_id"])
+        lines = offer["accept_lines"]
+    else:
+        lines = offer["decline_lines"]
+    ctx.decided_quest_semesters.add(semester)
+    ctx.pending_quest_npc = None
+    ctx.play_sfx("page_turn")
+    ctx.dialogue_manager.load_dialogue(list(lines))
+    return True
