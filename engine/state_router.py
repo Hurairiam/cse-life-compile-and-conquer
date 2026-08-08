@@ -17,7 +17,7 @@ import importlib
 
 import pygame
 
-from engine import soundtrack
+from engine import day_warning, soundtrack
 from engine.screen_manager import ScreenState
 
 # HUD is hidden on these. Everything else shows it.
@@ -121,6 +121,10 @@ class StateRouter:
                 credits=ctx.player().get_accumulated_credits(),
                 location=(ctx.level.get_level_name()
                           if ctx.level is not None else ""),
+                # Derived every frame rather than remembered, so the
+                # chip follows the day count down and disappears by
+                # itself when advance_semester() refills the pool.
+                low_days=day_warning.hud_days(ctx),
             )
         if ctx.pause_menu is not None and ctx.pause_menu.is_open():
             ctx.pause_menu.render(screen, ctx.pause_focus)

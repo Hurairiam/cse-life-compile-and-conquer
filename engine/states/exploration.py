@@ -9,10 +9,16 @@ step-on portal draws no chip, because it fires the moment the player
 walks onto it and never needs the key. The chip therefore still never
 promises something E will not do -- it simply stays quiet about a
 threshold that announces itself by working.
+
+MOVING BETWEEN AREAS NEVER NEEDS A KEY (owner ruling, Phase 6).
+__check_cell_transition() crosses a portal AND a travel prop on entry,
+so every link between two maps is walked through rather than pressed
+through. E remains a second route to the same place on both.
 """
 import pygame
 
-from engine import gate_service, menu_prop, return_points, soundtrack
+from engine import (
+    day_warning, gate_service, menu_prop, return_points, soundtrack)
 from engine.level_loader import LevelLoadError, load_level
 from engine.player_mover import PlayerMover
 from engine.screen_manager import ScreenState
@@ -101,9 +107,14 @@ def update(ctx, dt):
         return
     ctx.pulse = (ctx.pulse + dt) % 3600.0
 
-    if not ctx.game_clock.is_eligible_for_side_activities():
-        ctx.go(ScreenState.EXAM)
-        return
+    # The 15-day firewall used to BOUNCE the player into ScreenState.EXAM
+    # here, the frame is_eligible_for_side_activities() went False. That
+    # is gone by owner ruling (Phase 6): exploring costs no days, so
+    # there is nothing to protect the player from, and a warning they
+    # were yanked out of the world to read would have nowhere to live.
+    # What the threshold costs them now is NEW SIDE QUESTS (Phase 17) —
+    # engine/day_warning.py is where both that phase and this popup ask.
+    day_warning.check(ctx)
 
     dx, dy = (0, 0) if __blocked(
         ctx) else __read_axis(pygame.key.get_pressed())
@@ -155,6 +166,21 @@ def __check_cell_transition(ctx):
             ctx.last_cell = previous
             return
 
+    # A travel prop crosses on entry too, so NOTHING has to be pressed
+    # to move between areas (owner ruling, Phase 6). E still works on
+    # one — it is a second route to the same place, the way it already
+    # is for a portal — but a doorway the player has walked into should
+    # never sit there waiting for a key.
+    #
+    # Below the gate rather than above it, unlike the portal step: a
+    # travel prop is a door somebody may have locked, and a lock that
+    # opens because you walked at it is not a lock.
+    door = ctx.level.get_interactable_at(*cell)
+    if door is not None and door.travels_on_interact():
+        ctx.last_cell = cell
+        __travel(ctx, door, previous)
+        return
+
     ctx.last_cell = cell
 
 
@@ -200,9 +226,11 @@ def verb_for(ctx, cell):
     prop = ctx.level.get_interactable_at(*cell)
     if prop is not None:
         # A travel prop is a door you open, so it reads ENTER rather
-        # than EXAMINE like a thing you poke at. Unlike a portal it is
-        # keeping its chip: E is the ONLY way through one, so dropping
-        # the label would hide the door instead of tidying it away.
+        # than EXAMINE like a thing you poke at. It KEEPS its chip even
+        # though __check_cell_transition() now crosses one on entry as
+        # well: unlike a portal, a travel prop is a visible object the
+        # player can stand beside and face, so the label answers "what
+        # is this?" rather than advertising a key they must press.
         if prop.travels_on_interact():
             return (LABEL_ENTER, False)
         return (LABEL_EXAMINE, False)

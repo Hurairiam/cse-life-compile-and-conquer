@@ -32,6 +32,21 @@ from outside it, which is that phase's work, not this one's.
 NO DAY COST and no trigger cap. engine/menu_prop.py runs before the
 per-semester counter because a menu prop is a door, not a payout, and
 nothing here goes near GameClock.
+
+WHY THE SEMESTER LOCK IS IN HERE AND NOT ON A ZONE
+──────────────────────────────────────────────────
+It was authored as a gated zone painted around the teleport prop, and
+that is what a zone gate is for — except a gate blocks the CELL, and a
+zone big enough to cover the prop also covered the doorway beside it.
+The player walking out of their own room hit an invisible wall, got a
+locked notice they had not asked for, and had to detour around a
+rectangle they could not see (owner ruling, Phase 6).
+
+So the rule moved to where the rule actually applies: the menu itself.
+The prop is walkable, the doorway next to it is walkable, and pressing
+E on it before MIN_SEMESTER says so in one popup and opens nothing.
+Nothing is gated, so nothing bounces anybody — a restriction on a menu
+is not a restriction on a floor.
 """
 import pygame
 
@@ -42,11 +57,17 @@ from engine.screen_manager import ScreenState
 from ui.popup import SEVERITY_INFO, SEVERITY_WARNING
 from ui.teleport_screen import ROW_GREEN, TeleportScreen, format_destination
 
+# The semester the campus map unlocks in. One number, named once — the
+# copy that used to live in levels/player_room.json's zone gate is gone
+# with the zone, so this is the only place it is written down.
+MIN_SEMESTER = 5
+
 # Module-level rather than on ctx, the way engine/states/save_game.py
 # keeps its own row highlight: nothing else needs to read these, and
 # app_context.py is a shared file worth not touching for two fields.
 __screen = None
 __destinations = []
+__refused = False
 
 
 def __ui():
@@ -56,14 +77,32 @@ def __ui():
     return __screen
 
 
+def is_unlocked(ctx) -> bool:
+    """True once the player has reached the semester the map unlocks in."""
+    return ctx.semester().get_semester_number() >= MIN_SEMESTER
+
+
 def enter(ctx):
     """
     Re-derive the destinations and highlight somewhere worth going.
 
     Rebuilt on every open rather than once at startup, so a map added
     or rewired between two visits to the same prop is already listed.
+
+    Too early in the degree and the card is never built at all: the
+    refusal is opened here and control is handed straight back, so the
+    player presses E, reads one popup and is still standing on the map.
     """
-    global __destinations
+    global __destinations, __refused
+    __refused = not is_unlocked(ctx)
+    if __refused:
+        ctx.play_sfx("error")
+        ctx.message_popup.open(
+            "TELEPORT OPTION LOCKED",
+            ["You do not know the campus well enough yet.",
+             "Unlocks in semester %d." % MIN_SEMESTER], SEVERITY_INFO)
+        ctx.go(ctx.return_state or ScreenState.EXPLORATION)
+        return
     __destinations = walk_reachable()
     here = getattr(ctx, "level_id", "")
     ui = __ui()
@@ -89,6 +128,8 @@ def __first_elsewhere(here):
 
 def handle_events(ctx, events):
     """The table answers first; ENTER, the buttons and ESC are ours."""
+    if __refused:
+        return
     screen = pygame.display.get_surface()
     ui = __ui()
     for event in events:
@@ -204,10 +245,17 @@ def render(ctx, screen):
     frame because the router only renders the ACTIVE state — without
     this the card would sit on whatever was last flipped to the screen.
     Exploration's render is pure drawing, so calling it is safe.
+
+    A refused open draws the map and stops. enter() has already asked
+    to go back, and a transition is applied at the TOP of the next loop
+    — so this state renders exactly one more frame, and that frame must
+    not flash a card the player was just told they cannot have.
     """
     from engine.states import exploration
     if getattr(ctx, "level", None) is not None:
         exploration.render(ctx, screen)
+    if __refused:
+        return
 
     ui = __ui()
     here = getattr(ctx, "level_id", "")
