@@ -44,6 +44,32 @@ def ensure_level(ctx) -> bool:
     return True
 
 
+def __maybe_show_quest_intro(ctx):
+    """Tell the player once per semester who has a quest to offer."""
+    from content.npc_quest_offers import SEMESTER_QUEST_OFFERS
+    from content.npc_roster import NPC_ROSTER
+
+    current_semester = ctx.semester().get_semester_number()
+    if current_semester in ctx.seen_quest_intro_semesters:
+        return
+    ctx.seen_quest_intro_semesters.add(current_semester)
+
+    if current_semester in ctx.decided_quest_semesters:
+        return
+    offer = SEMESTER_QUEST_OFFERS.get(current_semester)
+    if not offer:
+        return
+    npc_info = NPC_ROSTER.get(offer["npc"])
+    if not npc_info:
+        return
+
+    ctx.quest_intro_popup.open(
+        "A NEW TERM BEGINS",
+        ["%s seems to have something on their mind." % npc_info["display_name"],
+         "You might find them around the %s." % npc_info["location"].replace("_", " ")],
+        SEVERITY_INFO)
+
+
 def enter(ctx):
     if not ensure_level(ctx):
         ctx.message_popup.open("LEVEL NOT FOUND",
@@ -52,6 +78,7 @@ def enter(ctx):
         return
     soundtrack.apply_for_level(ctx)
     ctx.play_ambient(ctx.level.get_ambient() or "day")
+    __maybe_show_quest_intro(ctx)
 
 
 def exit(ctx):
@@ -86,9 +113,9 @@ def __read_axis(keys):
 def __blocked(ctx):
     """True while a modal owns the screen — the player must not walk."""
     return (ctx.popup.is_open() or ctx.message_popup.is_open()
+            or ctx.quest_intro_popup.is_open()
             or (ctx.gate_notice is not None and ctx.gate_notice.is_open())
             or (ctx.pause_menu is not None and ctx.pause_menu.is_open()))
-
 
 # ── frame ──────────────────────────────────────────────────────
 
@@ -209,7 +236,8 @@ def __interact(ctx):
 
 def __talk(ctx, npc_data):
     from content.level_registry import (
-        get_npc_display_name, get_npc_portrait_path)
+        get_npc_display_name, get_npc_portrait_path,
+        get_npc_roster_id)
 
     current_semester = ctx.semester().get_semester_number()
 
@@ -244,6 +272,14 @@ def __talk(ctx, npc_data):
         return
 
     key = "%s:%s" % (ctx.level_id, npc_data.get_uid())
+    from content.npc_quest_offers import SEMESTER_QUEST_OFFERS
+    current_semester = ctx.semester().get_semester_number()
+    offer = SEMESTER_QUEST_OFFERS.get(current_semester)
+    roster_id = get_npc_roster_id(npc_data.get_type_id())
+    if offer and offer["npc"] == roster_id and current_semester not in ctx.decided_quest_semesters:
+        ctx.pending_quest_npc = current_semester
+    else:
+        ctx.pending_quest_npc = None
     ctx.talked_npc_uids.add(key)
 
     ctx.dialogue_return = ScreenState.EXPLORATION
