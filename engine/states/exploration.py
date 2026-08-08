@@ -2,13 +2,17 @@
 The playable campus. Owns the level, the walker, the camera and every
 decision the ui/ classes refuse to make.
 
-Precedence for both the [E] chip and the E key is identical, so the chip
-never promises something E will not do:
+Precedence for the E key is:
     gate (STAGE 6) -> NPC -> portal -> interactable prop
+and the [E] chip follows it exactly bar one deliberate omission: a
+step-on portal draws no chip, because it fires the moment the player
+walks onto it and never needs the key. The chip therefore still never
+promises something E will not do -- it simply stays quiet about a
+threshold that announces itself by working.
 """
 import pygame
 
-from engine import gate_service, menu_prop, soundtrack
+from engine import gate_service, menu_prop, return_points, soundtrack
 from engine.level_loader import LevelLoadError, load_level
 from engine.player_mover import PlayerMover
 from engine.screen_manager import ScreenState
@@ -139,7 +143,9 @@ def __check_cell_transition(ctx):
     portal = ctx.level.get_portal_at(*cell)
     if portal is not None:
         ctx.last_cell = cell
-        __travel(ctx, portal)
+        # `previous` is the cell the player held a frame ago, and it is
+        # what this area is remembered by — see engine/return_points.py.
+        __travel(ctx, portal, previous)
         return
 
     gate = gate_at(ctx, *cell)
@@ -166,7 +172,22 @@ def gate_at(ctx, x, y):
 
 
 def verb_for(ctx, cell):
-    """(label, is_locked) — same precedence as __interact."""
+    """
+    (label, is_locked) — __interact's precedence with the portal step
+    left silent.
+
+    A step-on portal is not advertised: __check_cell_transition() fires
+    it on entry, so the chip would only ever be read on the way past a
+    doorway that opens by itself. __interact still travels when E is
+    pressed on one, which is a spare route to the same place rather
+    than the only one.
+
+    The portal step stays in the chain and returns a BLANK label rather
+    than being deleted. Every authored portal prop is flagged
+    interactable, so dropping the step would not silence the chip — it
+    would fall through and label a doorway [E] EXAMINE, promising a
+    poke that __interact would answer by teleporting the player.
+    """
     gate = gate_at(ctx, *cell)
     if gate is not None and not gate_service.is_cleared(ctx, cell):
         outcome, _ = gate_service.classify(ctx, gate)
@@ -175,11 +196,13 @@ def verb_for(ctx, cell):
     if npc is not None and npc.get_interactable():
         return (LABEL_TALK, False)
     if ctx.level.get_portal_at(*cell) is not None:
-        return (LABEL_ENTER, False)
+        return ("", False)
     prop = ctx.level.get_interactable_at(*cell)
     if prop is not None:
-        # A travel prop is a door, so it reads ENTER like a portal
-        # rather than EXAMINE like a thing you poke at.
+        # A travel prop is a door you open, so it reads ENTER rather
+        # than EXAMINE like a thing you poke at. Unlike a portal it is
+        # keeping its chip: E is the ONLY way through one, so dropping
+        # the label would hide the door instead of tidying it away.
         if prop.travels_on_interact():
             return (LABEL_ENTER, False)
         return (LABEL_EXAMINE, False)
@@ -260,7 +283,14 @@ def __trigger_prop(ctx, prop):
     ctx.message_popup.open("FOUND SOMETHING", body, SEVERITY_INFO)
 
 
-def __travel(ctx, portal):
+def __travel(ctx, portal, origin=None):
+    """
+    Move the player through `portal`.
+
+    `origin` is the cell they came from, and only a step-on portal has
+    to supply it: everything else fires on E, so the walker is already
+    standing beside the doorway rather than on top of it.
+    """
     target = portal.get_target_level_id()
     if not target:
         ctx.message_popup.open("NOWHERE TO GO",
@@ -274,11 +304,18 @@ def __travel(ctx, portal):
                                ["Could not open '%s'." % target,
                                 str(error)[:48]], SEVERITY_WARNING)
         return
+    # Filed under the level being LEFT, so it has to happen before
+    # ctx.level_id moves, and after the two failure returns above so a
+    # doorway that goes nowhere does not rewrite the way back.
+    return_points.record(ctx, portal, origin or ctx.walker.get_cell())
     ctx.level = level
     ctx.level_id = level.get_level_id()
     spawn = portal.get_target_spawn() or level.get_spawn()
     if not level.is_walkable(*spawn):
         spawn = level.get_spawn()
+    # An area the player has been in before opens where they left it;
+    # a first visit still opens at the spawn worked out just above.
+    spawn = return_points.arrival(ctx, level, spawn)
     ctx.walker.place(spawn)
     ctx.last_cell = ctx.walker.get_cell()
     ctx.play_sfx("page_turn")

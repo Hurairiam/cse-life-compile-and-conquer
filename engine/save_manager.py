@@ -437,6 +437,7 @@ def build_state(display_name: str = "", character_id: str = "",
                 triggered_prop_uids: Optional[List[str]] = None,
                 talked_npc_uids: Optional[List[str]] = None,
                 dialogue_choices: Optional[Dict[str, int]] = None,
+                return_positions: Optional[Dict[str, List[int]]] = None,
                 global_career_clock_days: int = 0,
                 playtime_seconds: int = 0) -> Dict[str, Any]:
     """
@@ -479,6 +480,13 @@ def build_state(display_name: str = "", character_id: str = "",
             # "<level>:<npc uid>:<chain id>". Absent from any save
             # written before branches existed, which loads as {}.
             "dialogue_choices": dict(dialogue_choices or {}),
+            # Where the player was standing in each area when they last
+            # left it, "<level_id>": [landing_x, landing_y, stood_x,
+            # stood_y]. Additive in exactly the way dialogue_choices
+            # above is: a save written without it loads as {} and every
+            # area opens at its SET SPAWN cell, so SAVE_SCHEMA_VERSION
+            # stays where it is.
+            "return_positions": dict(return_positions or {}),
         },
         "clock": {
             "global_career_clock_days": int(global_career_clock_days),
