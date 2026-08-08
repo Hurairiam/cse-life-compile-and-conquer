@@ -1583,10 +1583,45 @@ class LevelEditorApp:
             th.draw_text_centered(surface, font, text, chip, th.TEXT_COFFEE)
 
     def __render_npc_badges(self, npc, rect: pygame.Rect) -> None:
-        """Green dot when the NPC can be talked to, amber when mute."""
+        """
+        Green dot when the NPC can be talked to, amber when mute, and
+        an "S<n>" chip on anyone who is not there from semester 1.
+
+        The chip is the editor's whole share of Phase 8. In game an
+        NPC below their semester is now GONE — not drawn, not talkable,
+        not solid (engine/npc_availability.py) — so an author looking
+        at this canvas would otherwise have no way to tell that the
+        Prof. Hoque they just placed is invisible for four terms.
+
+        The NPC itself is still always drawn here, by owner ruling.
+        You cannot place, move, right-click or write dialogue for
+        somebody you cannot see, and the editor has no current
+        semester to hide them against — it edits one LevelData, not a
+        playthrough. So the term is reported rather than simulated.
+
+        Semester 1 draws nothing: it is the default, most of the cast
+        has it, and a chip on everybody says nothing about anybody.
+
+        BOTTOM-LEFT, over the feet. The talk dot already owns the top
+        right and the lock the bottom right, and an NPC sprite hangs
+        off the TOP of its cell (npc_blit_offset), which puts the face
+        exactly where a chip at rect.y would cover it — the one part
+        of the art an author reads to see who they placed.
+        """
         colour = th.ROW_GREEN if npc.get_interactable() else th.BAR_AMBER
         pygame.draw.rect(self.__window, colour,
                          pygame.Rect(rect.right - 8, rect.y + 2, 6, 6))
+        # The roster figure widened by any gate the author set — the
+        # same number the game hides them by, read the same way.
+        debut = npc.get_effective_min_semester()
+        if debut > 1:
+            font = th.load_font(th.SIZE_LABEL)
+            text = f"S{debut}"
+            chip = pygame.Rect(rect.x + 2, rect.bottom - 15,
+                               font.size(text)[0] + 6, 13)
+            th.draw_panel(self.__window, chip, th.CARD_TAN, th.BORDER_ROW)
+            th.draw_text_centered(self.__window, font, text, chip,
+                                  th.TEXT_COFFEE)
         if npc.is_gated():
             self.__render_lock_badge(
                 pygame.Rect(rect.x, rect.bottom - 16, rect.w, 16))

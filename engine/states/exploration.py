@@ -18,7 +18,8 @@ through. E remains a second route to the same place on both.
 import pygame
 
 from engine import (
-    day_warning, gate_service, menu_prop, return_points, soundtrack)
+    day_warning, gate_service, menu_prop, npc_availability, return_points,
+    soundtrack)
 from engine.level_loader import LevelLoadError, load_level
 from engine.player_mover import PlayerMover
 from engine.screen_manager import ScreenState
@@ -35,7 +36,8 @@ def ensure_level(ctx) -> bool:
     if ctx.level is not None:
         return True
     try:
-        ctx.level = load_level(ctx.level_id or "campus_main")
+        ctx.level = load_level(ctx.level_id or "campus_main",
+                               semester=npc_availability.semester_of(ctx))
     except LevelLoadError as error:
         ctx.level = None
         ctx.level_error = str(error)[:64]
@@ -326,7 +328,8 @@ def __travel(ctx, portal, origin=None):
                                SEVERITY_WARNING)
         return
     try:
-        level = load_level(target)
+        level = load_level(target,
+                           semester=npc_availability.semester_of(ctx))
     except LevelLoadError as error:
         ctx.message_popup.open("LEVEL NOT FOUND",
                                ["Could not open '%s'." % target,

@@ -35,6 +35,16 @@ never disagree about what is locked. Like everything else here
 they are read-only — a gate is content, not state, and
 engine/gate_evaluator.py (F8) is what judges it against a player.
 ─────────────────────────────────────────────────────────────
+REVISION — Phase 8, NPC semester availability.
+
+`load_level()` gained ONE optional argument, `semester`. It hides the
+NPCs who have not appeared yet by dropping them from the document in
+the gap between validate() and Level(), so they are absent from the
+draw list, the {cell: npc} lookup and the collision grid at once. The
+rule itself is engine/npc_availability.py, which explains the whole
+decision; nothing else in this file changed, and 0 (the default) is
+the old behaviour exactly.
+─────────────────────────────────────────────────────────────
 """
 
 from __future__ import annotations
@@ -344,7 +354,7 @@ class Level:
 
 
 def load_level(level_ref: str, levels_dir: str = LEVELS_DIR,
-               strict: bool = True) -> Level:
+               strict: bool = True, semester: int = 0) -> Level:
     """
     Load a level by id ("campus_main") or by path ("levels/x.json").
 
@@ -352,6 +362,15 @@ def load_level(level_ref: str, levels_dir: str = LEVELS_DIR,
     refused — the editor cannot save one, so a blocker in a shipped
     level means the file was hand-edited or an asset registry entry
     was removed. Warnings never block loading.
+
+    `semester` hides the NPCs who are not around yet — see
+    engine/npc_availability.py, which owns the rule and explains why
+    it is applied to the document rather than to the Level. 0 (the
+    default) filters nobody, so the editor, the harnesses and every
+    caller that predates this argument still see the whole cast.
+
+    The filter runs AFTER validation on purpose: a level is judged
+    exactly as it was authored, whatever term the player is in.
 
     Raises LevelLoadError on a missing/unreadable file or blockers.
     """
@@ -370,6 +389,12 @@ def load_level(level_ref: str, levels_dir: str = LEVELS_DIR,
         raise LevelLoadError(
             f"'{path}' has {len(report.get_blockers())} blocking problem(s); "
             f"first: {first.get_message()}", report)
+    if semester:
+        # Local import: engine/npc_availability.py is pure python like
+        # this module, but keeping it here means nothing that only
+        # reads levels pays for it.
+        from engine.npc_availability import apply_to_document
+        apply_to_document(document, semester)
     return Level(document)
 
 
