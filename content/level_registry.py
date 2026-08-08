@@ -702,6 +702,9 @@ MENU_REGISTRY: Dict[str, Dict[str, Any]] = {
     "load_game":    {"name": "Load Game",           "state": "LOAD_GAME"},
     "main_menu":    {"name": "Main Menu",           "state": "MAIN_MENU"},
     "activity":     {"name": "Exam / Lecture",      "state": "ACTIVITY"},
+    # Appended, never inserted: this dict is a shared choke point and a
+    # pure append conflicts far less than a reorder.
+    "teleport":     {"name": "Teleport",            "state": "TELEPORT"},
 }
 
 MENU_ID_DEFAULT: str = "registration"

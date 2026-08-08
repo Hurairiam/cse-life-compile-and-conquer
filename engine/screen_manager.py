@@ -46,6 +46,9 @@ class ScreenState(Enum):
     # The slot picker the pause menu's SAVE GAME opens. Appended for the
     # same reason ACTIVITY was.
     SAVE_GAME = auto()
+    # The "Where to go?" destination list a teleport prop opens.
+    # Appended for the same reason ACTIVITY was.
+    TELEPORT = auto()
 
 
 class ScreenManager:
