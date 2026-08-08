@@ -19,6 +19,20 @@ the repo, and that is a deliberate answer.
 > 3. **Two content bugs fixed** — `campus_lobby` would not load, and Roya's dialogue was
 >    orphaned on a malformed prop (§13).
 
+> **Amended again 2026-08-08, after Phases 1 and 2 shipped.** The survey below described
+> the repo *before* them, so two sections would now mislead a later session and say so
+> inline:
+>
+> 1. **Phase 1 — player name entry** (`8f5bcc7`). `Character.set_display_name()` exists,
+>    a `NAME_ENTRY` screen runs before the opening monologue, and `restore()` reads the
+>    saved name back (§3).
+> 2. **Phase 2 — manual save slots** (`d52272d`). SAVE GAME opens a slot picker instead
+>    of writing the autosave; the quit-time autosave stays and is now silent (§1). The
+>    student id is `8324782`, not `player_01` (§3).
+>
+> Neither phase changed the save payload or `SAVE_SCHEMA_VERSION`. The
+> merge-conflict tables at the bottom are updated for both.
+
 ---
 
 ## Architecture in one paragraph
@@ -87,22 +101,48 @@ for the whole run. `ctx.level` is set to `None` so exploration reloads from `ctx
 than guessed at. There is **no migration path for older versions** — an older file is
 simply loaded as-is, so any new key must be tolerant of absence (`.get(..., default)`).
 
-**How the "save game" button reaches the autosave slot.** Exactly one path:
+**How the "save game" button reaches a slot — ⚠ REPLACED BY PHASE 2.** What the survey
+found was this, and it is no longer true:
+
+> Exactly one path, ending at the autosave. `ACTION_QUIT_TO_MENU` called the same
+> `__save(ctx)` before leaving. **There was no UI anywhere that wrote to slots 1–3** —
+> `SaveManager.save()` accepted them, `list_slots()` displayed them, `load_game` could
+> delete them, but nothing offered the player a "save to slot N" choice.
+
+The path today:
 
 ```
-ui/pause_menu.py            ACTION_SAVE_GAME (button index 4, label "SAVE GAME")
-engine/progression.py:70    resolve_pause() reads pause_menu.take_result()
-engine/progression.py:96      elif action == ACTION_SAVE_GAME: __save(ctx)
-engine/progression.py:103   __save(ctx):
-                              ok = ctx.saves.autosave(save_bridge.capture(ctx))
-engine/save_manager.py:391  autosave(state) -> self.save(AUTOSAVE_SLOT_ID, state)
+ui/pause_menu.py              ACTION_SAVE_GAME (button index 4, label "SAVE GAME")
+engine/progression.py:70      resolve_pause() reads pause_menu.take_result()
+engine/progression.py:96        elif action == ACTION_SAVE_GAME:
+                                    ctx.return_state = here
+                                    ctx.go(ScreenState.SAVE_GAME)
+engine/states/save_game.py    the picker. ENTER or SAVE on a row:
+                                empty slot -> ctx.saves.save(id, capture(ctx))
+                                occupied   -> ctx.popup "OVERWRITE SLOT n?",
+                                              then the same save() on CONFIRM
 ```
 
-`ACTION_QUIT_TO_MENU` calls the same `__save(ctx)` before leaving. **There is no UI
-anywhere that writes to slots 1–3** — `SaveManager.save()` accepts them, `list_slots()`
-displays them, `load_game` can delete them, but nothing offers the player a "save to slot
-N" choice. `ctx.pending_save_slot` exists but is used only to remember which slot a
-*delete* confirmation refers to.
+The picker lists **the three manual slots only** — `list_slots()` filtered by
+`is_autosave()`. The autosave is not a slot the player controls: `ACTION_QUIT_TO_MENU`
+still writes it on the way out (`progression.__autosave`), so a save placed there by hand
+would not survive the next quit. That quit-time autosave is **silent on success** now — it
+used to open a "GAME SAVED" popup on top of the title screen — but still opens
+`SAVE FAILED` when the write fails.
+
+The picker *is* `ui/load_game_screen.py`: `render()` gained `title` and `confirm_label`
+arguments that default to the load screen's own wording, so LOAD GAME is untouched and
+still lists all four rows. `format_slot_summary()` next to `format_slot_row()` builds the
+one short line the confirmation popup shows.
+
+`ctx.pending_save_slot` now carries the slot an *overwrite* confirmation refers to as well
+as the *delete* one it already did. The two screens never run at once, so they cannot
+collide; the picker's row highlight is a module-level `__selected` rather than
+`ctx.load_selected`, for the same reason in reverse.
+
+**Phase 2 changed no payload field and did not bump `SAVE_SCHEMA_VERSION`** — a save
+written before it loads exactly as it did, which was checked against a hand-written
+pre-branch save with no `dialogue_choices` key.
 
 ---
 
@@ -141,21 +181,37 @@ into its own namespace.
 ## 3. Player identity
 
 **Storage.** `core/character/base.py::Character` holds three private fields —
-`__character_id`, `__display_name`, `__current_location_id` — with **getters only, no
-setters**. `core/character/player.py::Player.__init__` hardcodes:
+`__character_id`, `__display_name`, `__current_location_id`. The id and the location are
+getters only; **the display name gained a setter in Phase 1** (`set_display_name()`, which
+trims and refuses a blank without changing state). `core/character/player.py::Player.__init__`
+hardcodes:
 
 ```python
-character_id="player_01", display_name="CSE Student", current_location_id="campus_main"
+character_id=STUDENT_ID, display_name="CSE Student", current_location_id="campus_main"
 ```
 
-**There is no way to change the player's name at runtime.** No setter, no name-entry
-screen, no prompt. `GameSession.__init__` constructs `Player()` with no arguments.
+**⚠ CHANGED BY PHASE 2:** `STUDENT_ID` is a module constant in `player.py`, currently
+`"8324782"` — the number `play_registration.py` has always drawn on the registration
+screen. It was the literal `"player_01"` when this survey was written. It is fixed rather
+than generated because `save_bridge.restore()` rebuilds the Player from the constant, so a
+generated id would have to be persisted or it would change on every load. `restore()` does
+**not** read `player.character_id` back out of the save, so an old file naming `player_01`
+still displays the current constant.
 
-**The save file already has a slot for it.** `build_state(display_name=...)` writes
-`player.display_name`, `save_bridge.capture()` fills it from `player.get_display_name()`
-(always `"CSE Student"`), and `SaveSlot.get_player_name()` reads it back. But
-`save_bridge.restore()` **never reads it back onto the Player** — the name round-trips into
-the file and is dropped on load.
+**⚠ CHANGED BY PHASE 1:** the survey said *"there is no way to change the player's name at
+runtime — no setter, no name-entry screen, no prompt"*. There is now: `ScreenState.NAME_ENTRY`
+(`engine/states/name_entry.py` + `ui/name_entry_screen.py`) runs between START GAME and
+the opening monologue, 16 characters, letters and spaces, and a blank submit keeps the
+default `"CSE Student"`. `GameSession.__init__` still constructs `Player()` with no
+arguments, and the name is written onto the Player after `new_game()` rebuilds the session.
+
+**The save file's slot for it is now read back.** `build_state(display_name=...)` writes
+`player.display_name`, `save_bridge.capture()` fills it from `player.get_display_name()`,
+and `SaveSlot.get_player_name()` reads it back for the slot rows. The survey found that
+`save_bridge.restore()` **never applied it to the Player**, so a loaded game reverted to
+the default; **Phase 1 fixed that** — it replays the saved name through
+`set_display_name()`, and a save written before name entry existed carries `""`, which the
+setter refuses, leaving the default intact.
 
 **Every place identity is displayed:**
 
@@ -1096,6 +1152,28 @@ set.)*
 `content/dialogues.py`, `content/lectures.py`, `content/npc_roster.py`, all of `ui/`
 except `map_screen.py` and `choice_box.py`, and every module under `engine/states/`
 except `dialogue.py` and `exploration.py`.
+
+### What Phases 1 and 2 moved out of that set
+
+Both phases still merge clean — `git merge-tree` against `origin/main` reports no conflict
+at `d52272d` — but these files now carry changes, so a later phase editing one is stacking
+on top of them rather than starting from main:
+
+| File | Phase | Change |
+|---|---|---|
+| `engine/screen_manager.py` | 1, 2 | `NAME_ENTRY`, then `SAVE_GAME` — **appended**, per hazard #3 |
+| `engine/state_router.py` | 1, 2 | both appended to `HUD_HIDDEN`, nothing else |
+| `engine/progression.py` | 2 | `ACTION_SAVE_GAME` routes to the picker; `__save` became `__autosave` |
+| `engine/save_bridge.py` | 1 | `restore()` replays the saved display name |
+| `engine/states/main_menu.py` | 1 | START GAME routes to `NAME_ENTRY` |
+| `core/character/base.py` | 1 | `set_display_name()` |
+| `core/character/player.py` | 2 | the `STUDENT_ID` constant |
+| `ui/load_game_screen.py` | 2 | `title` / `confirm_label` render arguments, `format_slot_summary()` |
+| **`engine/states/name_entry.py`**, **`ui/name_entry_screen.py`** *(new, Phase 1)* | 1 | — |
+| **`engine/states/save_game.py`** *(new, Phase 2)* | 2 | — |
+
+Both phases followed hazard #4's pattern: the new logic went into new modules that cannot
+conflict, and the shared files took the smallest possible call site.
 
 **Lowest-risk shape for the side-quest work overall:** new files in `content/`
 (quest data, lecture sheets), new files in `engine/` (the state machine, the offer service),
