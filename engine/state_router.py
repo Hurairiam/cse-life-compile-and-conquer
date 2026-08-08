@@ -25,6 +25,9 @@ HUD_HIDDEN = (
     ScreenState.MAIN_MENU, ScreenState.ENDGAME, ScreenState.MONOLOGUE,
     ScreenState.SETTINGS, ScreenState.LOAD_GAME, ScreenState.CERTIFICATE,
     ScreenState.SKILL_TREE, ScreenState.STATS, ScreenState.EXAM_RESULT,
+    # Name entry runs before the game proper: there is no semester to
+    # report yet, and the strip would sit over a ceremonial card.
+    ScreenState.NAME_ENTRY,
 )
 
 
