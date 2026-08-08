@@ -22,13 +22,17 @@ if TYPE_CHECKING:
     from core.skill_tree import SkillTree
 
 # The student ID printed on the registration panel, the stats card and
-# the graduation certificate. A real university roll number rather than
-# the old "player_01" placeholder: 25 (intake year) 10 (department)
-# 14001 (serial). Fixed, not generated -- save_bridge.restore() rebuilds
-# the Player from this constant, so a generated id would have to be
-# persisted or it would change every time a save was loaded.
+# the graduation certificate -- a roll number rather than the old
+# "player_01" placeholder. This is the id play_registration.py has shown
+# on the registration screen all along, so the harness and the game now
+# agree; that file hardcodes its own copy on purpose, because it
+# deliberately imports no Player (see its module docstring).
+#
+# Fixed, not generated: save_bridge.restore() rebuilds the Player from
+# this constant, so a generated id would have to be persisted or it
+# would change every time a save was loaded.
 # [Sprint 4 — student ID]
-STUDENT_ID: str = "251014001"
+STUDENT_ID: str = "8324782"
 
 
 class Player(Character):
