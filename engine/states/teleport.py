@@ -51,7 +51,7 @@ is not a restriction on a floor.
 import pygame
 
 from content.map_directory import display_name, walk_reachable
-from engine import return_points
+from engine import npc_availability, return_points
 from engine.level_loader import LevelLoadError, load_level
 from engine.screen_manager import ScreenState
 from ui.popup import SEVERITY_INFO, SEVERITY_WARNING
@@ -209,7 +209,8 @@ def __travel(ctx, level_id):
     is loaded by then — doing it twice would only restart the loop.
     """
     try:
-        level = load_level(level_id)
+        level = load_level(level_id,
+                           semester=npc_availability.semester_of(ctx))
     except LevelLoadError as error:
         ctx.play_sfx("error")
         ctx.message_popup.open("LEVEL NOT FOUND",
