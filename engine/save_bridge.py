@@ -85,6 +85,13 @@ def restore(ctx, state: dict) -> bool:
     ctx.reg_scroll = 0
     player = ctx.session.get_active_player()
 
+    # -- the name the player chose at the start of the run -------
+    # capture() has always written this; it was simply never read back,
+    # so a loaded game reverted to the default name. A save written
+    # before name entry existed carries "", and set_display_name()
+    # refuses a blank, so those still load with the default intact.
+    player.set_display_name(str(p.get("display_name", "") or ""))
+
     # -- semester number (advance_semester is the only mutator) --
     target = max(1, int(p.get("current_semester", 1) or 1))
     while player.get_current_semester() < target:

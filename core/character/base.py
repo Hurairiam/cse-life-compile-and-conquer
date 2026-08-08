@@ -21,7 +21,9 @@ class Character(ABC):
     Player and NPC inherit from this — nothing else should.
 
     OOP: Abstraction — shared identity contract without shared behaviour.
-         Encapsulation — identity fields are private, read-only externally.
+         Encapsulation — identity fields are private. The id and the
+         location are read-only externally; the display name is the one
+         field a player may set, and only through a validated setter.
     """
 
     def __init__(
@@ -41,6 +43,25 @@ class Character(ABC):
     def get_display_name(self) -> str:
         """Return the display name shown in-game."""
         return self.__display_name
+
+    def set_display_name(self, display_name: str) -> bool:
+        """
+        Rename this character, surrounding whitespace trimmed.
+
+        Returns False WITHOUT changing state if the name is blank or
+        nothing but spaces, so the existing name always survives a
+        rejected rename. Callers rely on that: the name-entry screen
+        submits whatever was typed and lets a blank fall back to the
+        default rather than branching on it, and save_bridge.restore()
+        replays this with the "" that a save written before name entry
+        existed carries.
+        [Sprint 4 — name entry]
+        """
+        cleaned = str(display_name).strip()
+        if not cleaned:
+            return False
+        self.__display_name = cleaned
+        return True
 
     def get_current_location_id(self) -> str:
         """Return the ID of the location this character is currently in."""

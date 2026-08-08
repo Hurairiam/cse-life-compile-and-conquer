@@ -40,6 +40,9 @@ class ScreenState(Enum):
     # existing member would renumber the ones after it.
     ACTIVITY = auto()
     CUTSCENE = auto()
+    # Name entry, between START GAME and the opening monologue.
+    # Appended for the same reason ACTIVITY was.
+    NAME_ENTRY = auto()
 
 
 class ScreenManager:
