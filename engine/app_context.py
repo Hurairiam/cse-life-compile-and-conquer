@@ -123,6 +123,10 @@ class AppContext:
         self.talked_npc_uids = set()
         self.triggered_prop_uids = set()
         self.pending_spawn = None
+        # {level_id: (landing_x, landing_y, stood_x, stood_y)} — where
+        # the player left each area. Owned by engine/return_points.py
+        # and, like dialogue_choices, it survives save/load.
+        self.return_positions = {}
 
         # -- STAGE 6: gates -----------------------------------------
         from ui.gate_notice import GateNotice

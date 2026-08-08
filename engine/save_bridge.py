@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from academic.course_catalog import build_course_catalog, get_course_by_code
 from academic.semester import Semester
+from engine import return_points
 from engine.game_clock import GameClock
 from engine.game_session import GameSession
 from engine.registration_manager import RegistrationManager
@@ -60,6 +61,7 @@ def capture(ctx) -> dict:
         triggered_prop_uids=sorted(ctx.triggered_prop_uids),
         talked_npc_uids=sorted(ctx.talked_npc_uids),
         dialogue_choices=dict(getattr(ctx, "dialogue_choices", {}) or {}),
+        return_positions=return_points.to_state(ctx),
         global_career_clock_days=ctx.session.get_global_career_clock_days(),
         playtime_seconds=int(ctx.playtime_seconds),
     )
@@ -158,6 +160,10 @@ def restore(ctx, state: dict) -> bool:
                 ctx.dialogue_choices[str(key)] = int(value)
             except (TypeError, ValueError):
                 continue
+    # Per-area return points. Absent from saves written before Phase 4,
+    # and from_state() drops any hand-edited entry that is not four ints
+    # rather than letting it reach walker.place().
+    ctx.return_positions = return_points.from_state(w.get("return_positions"))
     ctx.level = None                 # STAGE 5 reloads from ctx.level_id
 
     # -- reset transient screen state ---------------------------
