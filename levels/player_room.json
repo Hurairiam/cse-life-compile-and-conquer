@@ -610,23 +610,5 @@
       }
     }
   ],
-  "npcs": [],
-  "zones": [
-    {
-      "uid": "zone_0001",
-      "zone_id": "zone1",
-      "display_name": "Teleport",
-      "x": 7,
-      "y": 7,
-      "w": 2,
-      "h": 2,
-      "gate": {
-        "min_semester": 5,
-        "locked_title": "TELEPORT OPTION LOCKED!",
-        "locked_lines": [
-          "[Unlocks at semester 5]"
-        ]
-      }
-    }
-  ]
+  "npcs": []
 }

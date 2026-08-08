@@ -723,34 +723,38 @@ class MapScreen:
                      gate_states: Optional[Mapping[Tuple[int, int], bool]]
                      ) -> None:
         """
-        Outline every visible gated cell, and badge the ones worth
-        badging.
+        Outline and badge every visible gated PROP. Zones are drawn by
+        nothing at all.
 
-        The outline goes on every cell so the shape of a gated zone
-        reads at a glance; the lock badge goes only on a gated PROP (a
-        door -- the thing you actually interact with) and on a zone's
-        top-left cell, because sixteen lock chips on a 4x4 zone is
-        noise, not information.
+        A zone is an authoring rectangle, not scenery -- it has no art,
+        no edge and nothing in the world that corresponds to it, so
+        painting its outline over the map put a coloured grid on the
+        floor that the player could see but never explain (owner ruling,
+        Phase 6). tools/level_editor.py draws its own zone rectangles on
+        its own canvas, which is where that shape belongs and where it
+        is still visible.
+
+        A gated PROP keeps both marks. It is a real object -- a door, a
+        gate, a barrier the artist placed -- so saying "this one is
+        locked" reads as a property of a thing rather than as a stripe
+        on the ground. Any gated prop in the stack earns it, not just
+        the one drawn on top: a locked door with a sign hung over it is
+        still a locked door.
         """
         first_col, first_row, last_col, last_row = bounds
-        anchors = {zone.get_rect()[:2] for zone in level.get_zones()}
         for y in range(first_row, last_row + 1):
             for x in range(first_col, last_col + 1):
-                gate = level.get_gate_at(x, y)
-                if gate is None:
+                if not any(prop.is_gated()
+                           for prop in self.__props_on(level, x, y)):
+                    continue
+                if level.get_gate_at(x, y) is None:
                     continue
                 locked = True if gate_states is None \
                     else bool(gate_states.get((x, y), True))
                 colour = BAR_RED if locked else BAR_GREEN
                 rect = self.get_screen_rect_for_cell(x, y, camera)
                 pygame.draw.rect(screen, colour, rect, GATE_OUTLINE_W)
-                # Any gated prop in the stack earns the badge, not just
-                # the one drawn on top: a locked door with a sign hung
-                # over it is still a locked door.
-                gated_prop = any(prop.is_gated()
-                                 for prop in self.__props_on(level, x, y))
-                if gated_prop or (x, y) in anchors:
-                    self.__draw_lock_badge(screen, rect, colour)
+                self.__draw_lock_badge(screen, rect, colour)
 
     @staticmethod
     def __props_on(level: Any, x: int, y: int) -> List[Any]:

@@ -27,6 +27,9 @@ BAR_RED     = (199, 123, 107)   # days at firewall (15 or under) -- terracotta
 
 PLACEHOLDER = (196, 178, 150)   # small square shown if an icon PNG is missing
 
+WARN_FILL   = BAR_RED           # the low-days chip: same terracotta as the bar
+WARN_TEXT   = (255, 246, 232)   # near-white, so the words read on the fill
+
 # -------------------------------------------------------------
 # LAYOUT  (positions and sizes, all in pixels)
 # -------------------------------------------------------------
@@ -42,6 +45,10 @@ BAR_HEIGHT    = 16
 
 LOCATION_PAD   = 12  # gap between the location label and the right edge
 LOCATION_MIN_W = 40  # below this much free space the label is dropped
+
+WARN_HEIGHT   = 22   # the low-days chip
+WARN_PAD_X    = 8    # breathing room either side of its text
+WARN_BORDER_W = 2
 
 
 class HUD:
@@ -88,15 +95,25 @@ class HUD:
     # -- main drawing -----------------------------------------
     def render(self, screen: pygame.Surface, time_pool: int,
                wallet: float, semester: int, credits: int,
-               location: str = "") -> None:
+               location: str = "", low_days: int | None = None) -> None:
         """
         Draw the whole HUD strip.
         time_pool : days left (0-80)     wallet : money in BDT
         semester  : current semester     credits: credits earned (goal 140)
         location  : where the player is, drawn right-aligned ("" = hidden)
+        low_days  : days left once the semester is running out, or None
+                    to draw no warning chip at all
 
-        `location` is optional and defaults to "" so every existing
+        `location` and `low_days` are both optional so every existing
         caller keeps working unchanged.
+
+        `low_days` is None-or-a-number rather than a plain int because a
+        semester can genuinely run down to ZERO days, and that is the
+        moment the chip matters most -- 0 has to mean "no days left",
+        never "nothing to say". Whether the count is low enough to show
+        is not decided here: like every other number on this strip it is
+        handed in (engine/day_warning.py decides), because the HUD never
+        fetches its own data.
         """
         width: int = screen.get_width()
 
@@ -114,6 +131,14 @@ class HUD:
         x = self.__draw_stat(screen, "wallet",   f"{wallet:,.0f} BDT", x) + GAP
         x = self.__draw_stat(screen, "semester", f"Sem {semester}", x) + GAP
         x = self.__draw_stat(screen, "credits",  f"{credits}/140",  x)
+
+        # 2b) the end-of-semester warning, in the same left run so it
+        #     reads as part of the numbers rather than as decoration.
+        #     It only exists near the end of a term, so it takes room
+        #     from the location label (which already gives way) instead
+        #     of being given a permanent slot that is empty all game.
+        if low_days is not None:
+            x = self.__draw_low_days(screen, low_days, x + GAP)
 
         # 3) the location, packed against the RIGHT edge. The stats grow
         #    rightwards as the numbers get longer (140/140, 200,000 BDT),
@@ -166,6 +191,32 @@ class HUD:
         text_x = x + ICON_SIZE + ICON_TEXT_GAP
         self.__draw_text(screen, text, text_x)
         return text_x + self.__font.size(text)[0]
+
+    def __draw_low_days(self, screen: pygame.Surface, days: int,
+                        x: int) -> int:
+        """
+        Draw the "N DAYS LEFT" chip and return the x just past it.
+
+        A filled terracotta pill rather than a fifth icon-and-number
+        stat: the four stats are things that are always true, and this
+        is an alarm. Same red the days bar turns, so the two read as one
+        statement and not as two different warnings.
+
+        No icon -- assets/ui/ has none for this and a PLACEHOLDER square
+        inside an alarm chip would look like a bug, so the words carry
+        it. The strip is 44 px and the chip is 22, centred in it.
+        """
+        text = "%d DAY%s LEFT" % (days, "" if days == 1 else "S")
+        text_w = self.__font.size(text)[0]
+        chip = pygame.Rect(x, (STRIP_HEIGHT - WARN_HEIGHT) // 2,
+                           text_w + WARN_PAD_X * 2, WARN_HEIGHT)
+        pygame.draw.rect(screen, WARN_FILL, chip)
+        pygame.draw.rect(screen, BORDER_BROWN, chip, WARN_BORDER_W)
+        surface = self.__font.render(text, True, WARN_TEXT)
+        screen.blit(surface, (chip.x + WARN_PAD_X,
+                              chip.y + (WARN_HEIGHT
+                                        - self.__font.get_height()) // 2))
+        return chip.right
 
     def __draw_icon(self, screen: pygame.Surface, icon_key: str,
                     x: int) -> None:
@@ -220,6 +271,7 @@ class HUD:
 # STUB TEST -- lets me run this file on its own to see the HUD.
 # Abu Huraira removes this block when he plugs in the real game.
 #   Press any key  -> cycle days: 45 (green) -> 20 (amber) -> 8 (red)
+#                     8 and 0 also raise the "N DAYS LEFT" warning chip
 #   Press F11      -> toggle windowed / fullscreen
 # -------------------------------------------------------------
 if __name__ == "__main__":
@@ -235,8 +287,11 @@ if __name__ == "__main__":
     hud = HUD()
     clock = pygame.time.Clock()
 
-    fake_days = [45, 20, 8]   # green, amber, red
+    fake_days = [45, 20, 8, 0]   # green, amber, red, and the floor
     index = 0
+    WARN_AT = 15                 # engine/day_warning.py's own source is
+    #                              GameClock.get_min_border(); this stub
+    #                              has no clock, so it names the number.
 
     running = True
     while running:
@@ -253,11 +308,14 @@ if __name__ == "__main__":
                     index = (index + 1) % len(fake_days)   # switch colour state
 
         window.fill((203, 191, 166))       # neutral background
+        days = fake_days[index]
         hud.render(window,
-                   time_pool=fake_days[index],
+                   time_pool=days,
                    wallet=0.0,
                    semester=1,
-                   credits=0)
+                   credits=0,
+                   location="campus_main",
+                   low_days=days if days <= WARN_AT else None)
         pygame.display.flip()
         clock.tick(60)
 
