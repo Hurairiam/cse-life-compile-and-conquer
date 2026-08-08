@@ -15,7 +15,7 @@ from engine.screen_manager import ScreenState
 from ui.pause_menu import (
     ACTION_QUIT_TO_MENU, ACTION_RESUME, ACTION_SAVE_GAME, ACTION_SETTINGS,
     ACTION_SKILL_TREE, ACTION_STATS)
-from ui.popup import SEVERITY_DANGER, SEVERITY_INFO
+from ui.popup import SEVERITY_DANGER
 
 POINTS_PER_COURSE: int = 2
 CAREER_CAP_DAYS: int = 960          # GameSession.__GLOBAL_YEAR_CAP_DAYS
@@ -94,24 +94,31 @@ def resolve_pause(ctx) -> None:
         ctx.return_state = here
         ctx.go(ScreenState.SETTINGS)
     elif action == ACTION_SAVE_GAME:
-        __save(ctx)
+        # The player picks the slot now. This used to write the autosave
+        # here and say so in a popup, which gave the player one file they
+        # never chose and could not keep.
+        ctx.return_state = here
+        ctx.go(ScreenState.SAVE_GAME)
     elif action == ACTION_QUIT_TO_MENU:
-        __save(ctx)
+        __autosave(ctx)
         ctx.go(ScreenState.MAIN_MENU)
 
 
-def __save(ctx) -> None:
+def __autosave(ctx) -> None:
+    """
+    Write the autosave slot on the way out of a run.
+
+    Silent when it works: the player asked to quit, not to be told
+    about a file, and the notice would land on top of the title screen
+    they are already looking at. A failure still speaks up -- that is
+    the one case where quitting has lost something.
+    [Sprint 4 — manual save slots]
+    """
     from engine import save_bridge
-    ok = ctx.saves.autosave(save_bridge.capture(ctx))
-    if ok:
-        ctx.play_sfx("confirm")
-        ctx.message_popup.open("GAME SAVED",
-                               ["Written to the AUTOSAVE slot.",
-                                "Load it from the title screen."],
-                               SEVERITY_INFO)
-    else:
-        ctx.play_sfx("error")
-        ctx.message_popup.open(
-            "SAVE FAILED",
-            [ctx.saves.get_last_error()[:48] or "Could not write."],
-            SEVERITY_DANGER)
+    if ctx.saves.autosave(save_bridge.capture(ctx)):
+        return
+    ctx.play_sfx("error")
+    ctx.message_popup.open(
+        "SAVE FAILED",
+        [ctx.saves.get_last_error()[:48] or "Could not write."],
+        SEVERITY_DANGER)

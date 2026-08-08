@@ -5,6 +5,11 @@ ui/load_game_screen.py
 The save-slot browser: a four-row table of SLOT 1-3 plus AUTOSAVE,
 with LOAD, DELETE and BACK underneath.
 
+It draws the pause menu's SAVE GAME picker as well, from the same
+rows and the same rects -- that screen simply passes its own title
+and button word and three rows instead of four (§6.1: the class is
+told what to draw, never which feature is asking).
+
 This file has NO game logic. render() only DRAWS what it is handed:
 four rows of already-formatted strings and which one is selected. It
 does not read the disk, does not load a game, and does not delete
@@ -57,6 +62,16 @@ TITLE_TEXT = "LOAD GAME"
 EMPTY_TEXT = "EMPTY SLOT"
 EMPTY_FIELD = "—"
 COLUMN_TITLES: tuple = ("SLOT", "DETAILS", "SAVED")
+
+# The same table serves the pause menu's SAVE GAME picker: identical
+# rows, identical geometry, only the title and the green button's word
+# differ. render() takes both as arguments rather than the screen
+# holding a mode flag, so the class still owns no state about WHY it is
+# being drawn (§6.1).
+# [Sprint 4 — manual save slots]
+CONFIRM_TEXT = "LOAD"
+SAVE_TITLE_TEXT = "SAVE GAME"
+SAVE_CONFIRM_TEXT = "SAVE"
 
 # -------------------------------------------------------------
 # LAYOUT  (positions and sizes, all in pixels)
@@ -145,6 +160,23 @@ def format_slot_row(slot) -> List[str]:
     return [label, details, format_saved_at(slot.get_saved_at())]
 
 
+def format_slot_summary(slot) -> str:
+    """
+    One short line naming what is in a slot, for a confirmation popup.
+
+    format_slot_row()'s DETAILS cell is far too wide for the 600 px
+    popup box (ui/popup.py fixes that width, and a popup line is
+    centred rather than clipped), so this is the same facts cut to the
+    three that identify a save: who, how far in, and when.
+    [Sprint 4 — manual save slots]
+    """
+    if slot.is_empty():
+        return EMPTY_TEXT
+    name = str(slot.get_player_name() or "-")[:MAX_NAME_CHARS]
+    return (f"{name} · Sem {slot.get_semester()} · "
+            f"{format_saved_at(slot.get_saved_at())}")
+
+
 class LoadGameScreen:
     """
     Draws the save-slot table.
@@ -222,7 +254,8 @@ class LoadGameScreen:
     # -- main drawing -----------------------------------------
     def render(self, screen: pygame.Surface, rows: Sequence[Sequence[str]],
                selected_index: int, can_load: bool = True,
-               can_delete: bool = True) -> None:
+               can_delete: bool = True, title: str = TITLE_TEXT,
+               confirm_label: str = CONFIRM_TEXT) -> None:
         """
         Draw the slot table from the state handed in.
 
@@ -231,19 +264,24 @@ class LoadGameScreen:
         selected_index : which row is highlighted, or -1 for none
         can_load       : draws LOAD muted when there is nothing to load
         can_delete     : draws DELETE muted when there is nothing to erase
+        title          : the screen heading; SAVE_TITLE_TEXT for the
+                         save picker
+        confirm_label  : the green button's word; SAVE_CONFIRM_TEXT for
+                         the save picker. Both default to the load
+                         screen's wording, so its call site is unchanged.
         """
         screen.fill(PANEL_TAN)
         self.__draw_card(screen)
 
-        screen.blit(self.__font_title.render(TITLE_TEXT, True, TITLE_SLATE),
+        screen.blit(self.__font_title.render(title, True, TITLE_SLATE),
                     (TABLE_X, TITLE_Y))
 
         self.__draw_header(screen)
         for index, cells in enumerate(rows):
             self.__draw_row(screen, index, cells, index == selected_index)
 
-        self.__draw_button(screen, self.__load_rect, "LOAD", BTN_CONFIRM,
-                           can_load)
+        self.__draw_button(screen, self.__load_rect, confirm_label,
+                           BTN_CONFIRM, can_load)
         self.__draw_button(screen, self.__delete_rect, "DELETE", BTN_CANCEL,
                            can_delete)
         self.__draw_button(screen, self.__back_rect, "BACK", HEADER_TAN, True)

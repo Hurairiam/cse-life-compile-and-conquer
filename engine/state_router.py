@@ -28,6 +28,9 @@ HUD_HIDDEN = (
     # Name entry runs before the game proper: there is no semester to
     # report yet, and the strip would sit over a ceremonial card.
     ScreenState.NAME_ENTRY,
+    # The save picker is the load table under another title, and
+    # LOAD_GAME hides the HUD for the same reason: the card is full-bleed.
+    ScreenState.SAVE_GAME,
 )
 
 

@@ -43,6 +43,9 @@ class ScreenState(Enum):
     # Name entry, between START GAME and the opening monologue.
     # Appended for the same reason ACTIVITY was.
     NAME_ENTRY = auto()
+    # The slot picker the pause menu's SAVE GAME opens. Appended for the
+    # same reason ACTIVITY was.
+    SAVE_GAME = auto()
 
 
 class ScreenManager:
