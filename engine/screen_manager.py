@@ -49,6 +49,11 @@ class ScreenState(Enum):
     # The "Where to go?" destination list a teleport prop opens.
     # Appended for the same reason ACTIVITY was.
     TELEPORT = auto()
+    # The "end the semester now?" question an end_semester prop opens,
+    # so a player who finished the exams with days to spare can close
+    # the term when they are done roaming. Appended for the same reason
+    # ACTIVITY was.
+    END_SEMESTER = auto()
 
 
 class ScreenManager:

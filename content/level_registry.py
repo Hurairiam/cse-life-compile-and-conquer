@@ -705,6 +705,12 @@ MENU_REGISTRY: Dict[str, Dict[str, Any]] = {
     # Appended, never inserted: this dict is a shared choke point and a
     # pure append conflicts far less than a reorder.
     "teleport":     {"name": "Teleport",            "state": "TELEPORT"},
+    # Ends the current semester once its exams are done. A prop wearing
+    # this is the door out of the post-exam free-roam stretch, so which
+    # object it hangs on is an authoring choice rather than a hardcoded
+    # one -- the editor's menu dropdown reads this dict, so adding it
+    # needed no editor change at all.
+    "end_semester": {"name": "End Semester",        "state": "END_SEMESTER"},
 }
 
 MENU_ID_DEFAULT: str = "registration"
