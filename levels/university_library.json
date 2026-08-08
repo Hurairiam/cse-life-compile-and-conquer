@@ -1540,10 +1540,10 @@
   ],
   "npcs": [
     {
-      "uid": "npc_0001",
+      "uid": "npc_0003",
       "type_id": "kabir",
       "x": 12,
-      "y": 6,
+      "y": 2,
       "facing": "down",
       "interactable": true,
       "dialog": {
@@ -1650,10 +1650,10 @@
       }
     },
     {
-      "uid": "npc_0002",
+      "uid": "npc_0004",
       "type_id": "rafi",
-      "x": 8,
-      "y": 6,
+      "x": 9,
+      "y": 9,
       "facing": "down",
       "interactable": true,
       "dialog": {

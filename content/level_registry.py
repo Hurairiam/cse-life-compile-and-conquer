@@ -620,12 +620,21 @@ MIN_SEMESTER_DEFAULT: int = 1
 
 def _bind_roster_fields() -> None:
     """
-    Stamp `roster_id` and `min_semester` onto every NPC_REGISTRY entry.
+    Stamp `roster_id`, `min_semester` and `name` onto every NPC_REGISTRY
+    entry.
 
     Run once at import. Building the mapping programmatically rather
     than hand-writing two more keys per entry is what keeps the two
     files honest: a roster change cannot silently disagree with the
     editor.
+
+    `name` is bound for the same reason and was found drifting: the
+    roster called them "Prof. Rahman" and "Ms. Roya", the hand-written
+    entries below said "Rahman" and "Roya", and it is the entry below
+    that gets drawn on the dialogue card. The roster is where a
+    character's name is decided, so it wins. A hand-written name is
+    still honoured wherever the roster has nothing to say — a placeable
+    NPC with no narrative entry keeps the one written here.
     """
     try:
         from content.npc_roster import NPC_ROSTER
@@ -640,6 +649,8 @@ def _bind_roster_fields() -> None:
             entry["min_semester"] = int(
                 roster_entry.get("semester_available_from",
                                  MIN_SEMESTER_DEFAULT))
+            entry["name"] = str(
+                roster_entry.get("display_name") or entry.get("name", type_id))
         else:
             entry["min_semester"] = _MIN_SEMESTER_FALLBACK.get(
                 type_id, MIN_SEMESTER_DEFAULT)
