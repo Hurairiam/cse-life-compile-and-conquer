@@ -6,9 +6,16 @@ engine/dialogue_flow.py.
 
 ctx.dialogue_return  -> ScreenState to go back to (default EXPLORATION)
 ctx.choice_options   -> list[str]; non-empty docks the ChoiceBox above
-                        the card. Set by dialogue_flow.open_choice()
-                        when a chain that declares a branch runs out of
-                        lines, cleared by dialogue_flow.resolve_choice().
+                        the card. TWO things set it, and they are asked
+                        in this order:
+                          1. an authored per-chain branch, via
+                             dialogue_flow.open_choice(), while the
+                             chain's last line is still on screen
+                          2. the semester quest offer, via
+                             dialogue_flow.open_offer(), once the chain
+                             has run out
+                        ctx.quest_offer_open says which one owns the
+                        widget, because the answer routes differently.
 
 WHILE A BRANCH IS OPEN THE CHOICE BOX OWNS EVERY EVENT. It has to:
 SPACE and RETURN both confirm a reply AND advance a line, and a click
@@ -47,23 +54,32 @@ def __advance(ctx):
     """SPACE/click: finish the line first, then move to the next one."""
     if ctx.dialogue_manager.skip_reveal():
         return
-    # A branch is asked while its last line is STILL ON SCREEN, not
-    # after. advance() past the end deactivates DialogueManager, and an
-    # inactive manager renders nothing — the reply list would then float
-    # over an empty screen with no sight of what it is replying to.
-    # ui/choice_box.py docks deliberately above the dialog card so the
-    # two read as one panel, which only works if the card is still there.
+    # An AUTHORED branch is asked while its last line is STILL ON
+    # SCREEN, not after. advance() past the end deactivates
+    # DialogueManager, and an inactive manager renders nothing — the
+    # reply list would then float over an empty screen with no sight of
+    # what it is replying to. ui/choice_box.py docks deliberately above
+    # the dialog card so the two read as one panel, which only works if
+    # the card is still there.
     if __at_last_line(ctx) and dialogue_flow.open_choice(ctx):
         return
     ctx.play_sfx("page_turn")
     if ctx.dialogue_manager.advance():
+        return
+    # The QUEST OFFER is asked here instead, after the chain has really
+    # run out, because it brings its own lines and reactivates the box.
+    # Second in the order on purpose: an authored branch belongs to the
+    # chain being told, and the offer is what happens once it is over.
+    if dialogue_flow.open_offer(ctx):
         return
     __leave(ctx)
 
 
 def __answer(ctx, index):
     """Commit the picked reply, and leave if it ended the conversation."""
-    if not dialogue_flow.resolve_choice(ctx, index):
+    resolve = (dialogue_flow.resolve_offer if dialogue_flow.is_offer_open(ctx)
+               else dialogue_flow.resolve_choice)
+    if not resolve(ctx, index):
         __leave(ctx)
 
 

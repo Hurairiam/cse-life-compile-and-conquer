@@ -77,8 +77,8 @@ class StateRouter:
         """Open modals, highest priority first. None entries skipped."""
         ctx = self.__ctx
         out = []
-        for m in (ctx.gate_notice, ctx.message_popup, ctx.popup,
-                  ctx.pause_menu):
+        for m in (ctx.gate_notice, ctx.message_popup, ctx.quest_intro_popup,
+                  ctx.popup, ctx.pause_menu):
             if m is not None and m.is_open():
                 out.append(m)
         return out
@@ -130,3 +130,5 @@ class StateRouter:
             ctx.popup.render(screen)
         if ctx.message_popup is not None and ctx.message_popup.is_open():
             ctx.message_popup.render(screen)
+        if ctx.quest_intro_popup is not None and ctx.quest_intro_popup.is_open():
+            ctx.quest_intro_popup.render(screen)
