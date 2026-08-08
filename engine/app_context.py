@@ -53,6 +53,12 @@ class AppContext:
                      "answers": {}, "message": None}
 
         # -- STAGE 2: audio + settings ------------------------------
+        # Loading a preference is only half the job — it must also be
+        # pushed at whatever consumes it, here, before main() draws its
+        # first frame. apply_all() covers audio and text speed;
+        # apply_display() re-opens the window, and is a separate call
+        # because the settings screen's BACK reverts through apply_all()
+        # and must not flash the display (see settings_store).
         prefs = settings_store.load()
         self.music_volume = prefs["music_volume"]
         self.sfx_volume = prefs["sfx_volume"]
@@ -61,6 +67,7 @@ class AppContext:
         self.audio = AudioManager(music_volume=self.music_volume,
                                   sfx_volume=self.sfx_volume)
         settings_store.apply_all(self)
+        settings_store.apply_display(self)
 
         # -- STAGE 3: title / save / load ---------------------------
         from engine.save_manager import SaveManager
