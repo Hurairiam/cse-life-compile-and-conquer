@@ -1647,10 +1647,10 @@
   ],
   "npcs": [
     {
-      "uid": "npc_0001",
+      "uid": "npc_0003",
       "type_id": "hoque",
-      "x": 12,
-      "y": 5,
+      "x": 11,
+      "y": 3,
       "facing": "down",
       "interactable": true,
       "dialog": {
@@ -1740,10 +1740,10 @@
       }
     },
     {
-      "uid": "npc_0002",
+      "uid": "npc_0004",
       "type_id": "rahman",
       "x": 8,
-      "y": 5,
+      "y": 4,
       "facing": "down",
       "interactable": true,
       "dialog": {
