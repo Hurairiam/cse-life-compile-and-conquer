@@ -21,6 +21,15 @@ if TYPE_CHECKING:
     from academic.academic_history import AcademicHistory
     from core.skill_tree import SkillTree
 
+# The student ID printed on the registration panel, the stats card and
+# the graduation certificate. A real university roll number rather than
+# the old "player_01" placeholder: 25 (intake year) 10 (department)
+# 14001 (serial). Fixed, not generated -- save_bridge.restore() rebuilds
+# the Player from this constant, so a generated id would have to be
+# persisted or it would change every time a save was loaded.
+# [Sprint 4 — student ID]
+STUDENT_ID: str = "251014001"
+
 
 class Player(Character):
     """
@@ -34,7 +43,7 @@ class Player(Character):
 
     def __init__(self) -> None:
         super().__init__(
-            character_id="player_01",
+            character_id=STUDENT_ID,
             display_name="CSE Student",
             current_location_id="campus_main"
         )
