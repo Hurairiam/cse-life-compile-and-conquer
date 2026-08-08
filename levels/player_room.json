@@ -595,33 +595,18 @@
     },
     {
       "uid": "prop_0029",
-      "type_id": "yellowarrow",
+      "type_id": "rug",
       "x": 7,
       "y": 8,
       "passthrough": true,
       "speed_modifier": 1.0,
-      "interactable": false,
+      "interactable": true,
       "interaction": {
-        "kind": "none",
+        "kind": "menu",
         "amount": 0.0,
         "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "rotation": 270
-    },
-    {
-      "uid": "prop_0030",
-      "type_id": "rug",
-      "x": 7,
-      "y": 9,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
+        "triggers_per_semester": 1,
+        "menu_id": "teleport"
       }
     }
   ],
@@ -629,12 +614,19 @@
   "zones": [
     {
       "uid": "zone_0001",
-      "zone_id": "lobby",
-      "display_name": "Campus Lobby",
+      "zone_id": "zone1",
+      "display_name": "Teleport",
       "x": 7,
-      "y": 9,
+      "y": 7,
       "w": 2,
-      "h": 1
+      "h": 2,
+      "gate": {
+        "min_semester": 5,
+        "locked_title": "TELEPORT OPTION LOCKED!",
+        "locked_lines": [
+          "[Unlocks at semester 5]"
+        ]
+      }
     }
   ]
 }
