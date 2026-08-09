@@ -722,6 +722,12 @@ MENU_REGISTRY: Dict[str, Dict[str, Any]] = {
     # one -- the editor's menu dropdown reads this dict, so adding it
     # needed no editor change at all.
     "end_semester": {"name": "End Semester",        "state": "END_SEMESTER"},
+    # Hands every day left in the term to the main quest at one go,
+    # through the same GameClock pipeline every other cost uses -- so the
+    # end-of-semester warning and the HUD counter fire on the way down
+    # without either being repeated. Appended, never inserted, for the
+    # reason above.
+    "pass_days":    {"name": "Pass Remaining Days",  "state": "PASS_DAYS"},
 }
 
 MENU_ID_DEFAULT: str = "registration"
