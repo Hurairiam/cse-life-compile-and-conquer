@@ -18,8 +18,8 @@ through. E remains a second route to the same place on both.
 import pygame
 
 from engine import (
-    day_warning, gate_service, menu_prop, npc_availability, return_points,
-    soundtrack)
+    day_warning, gate_service, menu_prop, note_prop, npc_availability,
+    return_points, soundtrack)
 from engine.level_loader import LevelLoadError, load_level
 from engine.player_mover import PlayerMover
 from engine.screen_manager import ScreenState
@@ -269,12 +269,16 @@ def __talk(ctx, npc_data):
 
 
 def __trigger_prop(ctx, prop):
-    # Menu and travel props are doors, not payouts, so both are checked
-    # before the per-semester trigger cap — a doorway usable three times
-    # a term would be nonsense. Any restriction on them lives on the
-    # prop's GATE, which __interact already evaluated before getting
-    # here, so reaching this line means the player is allowed through.
+    # Menu, note and travel props are doors and signs, not payouts, so
+    # all three are checked before the per-semester trigger cap — a
+    # doorway usable three times a term would be nonsense, and so would
+    # a notice that stops being readable in March. Any restriction on
+    # them lives on the prop's GATE, which __interact already evaluated
+    # before getting here, so reaching this line means the player is
+    # allowed through.
     if menu_prop.trigger(ctx, prop):
+        return
+    if note_prop.trigger(ctx, prop):
         return
     if prop.travels_on_interact():
         __travel(ctx, prop)

@@ -297,6 +297,19 @@ def __subtitle(ctx):
     — the number of rows on this card is the number of topics the player
     took on, and putting it beside a total would say out loud how many
     they did not.
+
+    Below the end-of-term threshold it says so (Phase 17). START is
+    already drawn muted there, and a muted button with no explanation
+    beside it reads as a bug; the popup that names the threshold is
+    still one keypress away, this is just the standing notice. The rule
+    is asked for, never restated — `is_locked_out()` is the only place
+    it is decided.
     """
     days = side_quest_list.days_left(ctx)
+    if side_quest_list.is_locked_out(ctx):
+        # Plain ASCII, the rule tests/test_lecture_reader.py states for
+        # every string this feature draws: the pixel font has no glyph
+        # for a stray dash or dot and renders a blank box instead.
+        return "%d DAY%s LEFT - NO NEW LECTURES" % (
+            days, "" if days == 1 else "S")
     return "%d DAY%s LEFT THIS TERM" % (days, "" if days == 1 else "S")

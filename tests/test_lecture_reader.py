@@ -165,17 +165,24 @@ class patched_definition:
 
 def test_flow_the_day_gate_is_rechecked_on_open():
     """
-    Step 1: re-check remaining >= day_cost, and abort with NO side
-    effects if not.
+    Step 1: re-check the day rules, and abort with NO side effects if
+    they refuse.
 
     Forced by draining the term after the quest was accepted, which is
     the shape a stale confirmation has.
+
+    UPDATED BY PHASE 17. At one day left BOTH day rules now refuse, and
+    the wider one answers first: below the end-of-semester threshold no
+    new lecture may be started whatever it costs. What this test is
+    about — the re-check happens before a single day moves — is
+    unchanged, and the cost rule itself is still covered directly in
+    tests/test_side_quest_list.py::test_day_*.
     """
     ctx = unlocked(1, days=80)
     ctx.semester().deduct_time(79)                    # 1 day left, cost 2
     before = ctx.quest_states.get_all_states()
     refused = lecture_reader.start(ctx, quest_of(1))
-    assert refused is not None and refused[0] == "NOT ENOUGH DAYS"
+    assert refused is not None and refused[0] == "TOO LATE IN THE TERM"
     assert not lecture_reader.is_open(), "opened a reader it refused"
     assert ctx.semester().get_time_pool_days() == 1, "spent a day anyway"
     assert ctx.quest_states.get_all_states() == before
@@ -376,16 +383,25 @@ def test_r1_the_full_cost_is_payable_again():
 
 
 def test_r1_the_day_gate_is_rechecked_on_the_retry():
-    """"Re-check the day gate on each attempt." A term that can afford
-    one sitting but not two refuses the second."""
-    ctx = unlocked(1, days=3)                          # room for one only
+    """
+    "Re-check the day gate on each attempt." A term that can afford one
+    sitting but not two refuses the second.
+
+    UPDATED BY PHASE 17. The term is set to threshold + 2 rather than
+    cost + 1, because the sitting that puts the term ON the threshold is
+    now the last one it will allow — which is exactly the shape this
+    test wanted, one attempt granted and the next refused, with the
+    end-of-term lockout doing the refusing instead of the cost.
+    """
+    limit = side_quest_list.threshold(unlocked(1))
+    ctx = unlocked(1, days=limit + 2)                  # room for one only
     quest_id = quest_of(1)
     lecture_reader.start(ctx, quest_id)
     lecture_reader.abandon()
-    assert ctx.semester().get_time_pool_days() == 1
+    assert ctx.semester().get_time_pool_days() == limit
     refused = lecture_reader.start(ctx, quest_id)
-    assert refused is not None and refused[0] == "NOT ENOUGH DAYS"
-    assert "1 day" in " ".join(refused[1])
+    assert refused is not None and refused[0] == "TOO LATE IN THE TERM"
+    assert "%d days" % limit in " ".join(refused[1])
     assert ctx.quest_states.get_state(quest_id) == STATE_UNLOCKED
 
 
@@ -557,13 +573,21 @@ def test_block_a_quest_that_is_not_on_the_pcs_list():
         assert refused is not None, "%s opened a reader" % state
 
 
-def test_block_not_enough_days_names_both_numbers():
-    """The refusal is Phase 14's, reused rather than rewritten."""
+def test_block_the_day_refusal_is_reused_and_names_both_numbers():
+    """
+    The refusal is Phase 14's, reused rather than rewritten — the point
+    of the test, and it is the identity below that proves it.
+
+    UPDATED BY PHASE 17: at one day left the refusal that comes back is
+    the end-of-term lockout, which names both of ITS numbers for the
+    same reason the cost one names both of its own.
+    """
     ctx = unlocked(1, days=1)
+    limit = side_quest_list.threshold(ctx)
     refused = lecture_reader.blocker(ctx, quest_of(1))
     assert refused == side_quest_list.refusal(ctx, quest_of(1))
-    assert "2 days" in " ".join(refused[1])
     assert "1 day" in " ".join(refused[1])
+    assert "%d days" % limit in " ".join(refused[1])
 
 
 def test_block_a_refusal_changes_nothing_at_all():
@@ -691,20 +715,38 @@ def test_edge_a_quest_with_no_sheets_at_all_blocks():
         assert ctx.semester().get_time_pool_days() == 80
 
 
-def test_edge_the_charge_can_take_the_term_to_zero():
+def test_edge_the_last_start_of_the_term_is_one_day_above_the_threshold():
     """
-    EDGE 1, first half: the deduction resolves in full even when it
-    empties the pool. Nothing in this game rolls a semester or ends a
-    run on a deduction, so zero days is where it stops.
+    EDGE 1, first half — REWRITTEN BY PHASE 17.
+
+    It used to open a sitting with the term at exactly `day_cost` and
+    assert the pool landing on zero. A lecture can no longer take the
+    term anywhere near zero: `threshold + 1` is the last day one may be
+    opened at all, so the floor a lecture can leave the term on is
+    `threshold + 1 - day_cost` and never lower.
+
+    What the test still proves is the half that matters: the deduction
+    resolves in full at the boundary, and the day count does not
+    interrupt a reader once it is open — the sitting reads through and
+    completes with the term below the threshold the whole way.
     """
-    ctx = unlocked(1, days=DAY_COST)
+    ctx = unlocked(1)
+    limit = side_quest_list.threshold(ctx)
+    ctx = unlocked(1, days=limit + 1)                 # the last legal day
     assert lecture_reader.start(ctx, quest_of(1)) is None
-    assert ctx.semester().get_time_pool_days() == 0
-    assert ctx.player().get_time_pool_days() == 0
+    assert ctx.semester().get_time_pool_days() == limit + 1 - DAY_COST
+    assert ctx.player().get_time_pool_days() == limit + 1 - DAY_COST
+    assert side_quest_list.is_locked_out(ctx), \
+        "the charge should have taken the term past the threshold"
     assert read_through(ctx) == SHEETS_PER_QUEST, \
-        "an empty term interrupted the reader"
+        "a locked-out term interrupted a reader that was already open"
     assert ctx.quest_states.get_state(quest_of(1)) == STATE_COMPLETED
     lecture_reader.end()
+
+    # ...and one day earlier is already too late, with nothing spent.
+    ctx = unlocked(1, days=limit)
+    assert lecture_reader.start(ctx, quest_of(1)) is not None
+    assert ctx.semester().get_time_pool_days() == limit
 
 
 def read_through(ctx) -> int:
@@ -1131,7 +1173,12 @@ def test_handover_no_warning_means_no_wait():
 
 def test_handover_a_stale_confirmation_charges_nothing():
     """The term drained under an open question refuses at the charge as
-    well as at the card, and spends nothing either way."""
+    well as at the card, and spends nothing either way.
+
+    UPDATED BY PHASE 17: the term drained to zero is now below the
+    end-of-term threshold, so the lockout is what refuses. Which of the
+    two day rules says no is not what this test is about — that nothing
+    is charged and the player is left on the card is."""
     from engine.states import side_quests
     ctx = at_the_pc(2, days=80)
     side_quests.handle_events(ctx, [pygame.event.Event(
@@ -1142,7 +1189,7 @@ def test_handover_a_stale_confirmation_charges_nothing():
     side_quests.update(ctx, 0.016)
     assert not lecture_reader.is_open(), "opened a reader nobody paid for"
     assert ctx.semester().get_time_pool_days() == 0
-    assert ctx.message_popup.get_title() == "NOT ENOUGH DAYS"
+    assert ctx.message_popup.get_title() == "TOO LATE IN THE TERM"
     assert landed_on(ctx) is ScreenState.SIDE_QUESTS
 
 

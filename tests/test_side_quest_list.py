@@ -597,9 +597,18 @@ def test_screen_opens_on_a_startable_row():
     answer(ctx, RESULT_CANCEL)
 
 
-def test_screen_blocks_a_quest_that_costs_more_than_the_term_has_left():
-    """One day left, a two-day lecture: refused with a reason, no
-    confirmation opened, and nothing anywhere has moved."""
+def test_screen_blocks_a_start_when_the_term_has_run_out():
+    """
+    One day left: refused with a reason, no confirmation opened, and
+    nothing anywhere has moved.
+
+    UPDATED BY PHASE 17. This used to assert the cost refusal, and at
+    one day left both day rules apply — the wider one, the end-of-term
+    lockout, now answers first. With every quest costing 2 days against
+    a threshold of 15 the cost message is no longer reachable from this
+    screen at all; it is still covered directly, against a context with
+    no clock, by test_day_blocks_a_quest_that_costs_more_than_the_term.
+    """
     from engine.states import side_quests
     # One row, Unlocked, so the cursor cannot land on anything else and
     # the refusal under test is unambiguously the day one.
@@ -613,9 +622,10 @@ def test_screen_blocks_a_quest_that_costs_more_than_the_term_has_left():
 
     assert not ctx.popup.is_open(), "no confirmation may open on a block"
     assert ctx.message_popup.is_open(), "the block must say why"
-    assert ctx.message_popup.get_title() == "NOT ENOUGH DAYS"
+    assert ctx.message_popup.get_title() == "TOO LATE IN THE TERM"
     body = " ".join(ctx.message_popup.get_lines())
-    assert "2 days" in body and "1 day" in body
+    assert "1 day" in body
+    assert "%d days" % side_quest_list.threshold(ctx) in body
     assert ctx.quest_states.get_all_states() == before
     assert ctx.semester().get_time_pool_days() == before_days
     assert side_quest_list.get_last_confirmed() is None
@@ -722,6 +732,11 @@ def test_screen_a_stale_confirmation_is_refused_rather_than_honoured():
     router runs one state and the popup eats every event — but an answer
     that lands on a quest the rules no longer allow must refuse rather
     than be honoured. Forced here by hand.
+
+    UPDATED BY PHASE 17: a term drained to zero is below the end-of-term
+    threshold, so the lockout is what refuses. WHICH day rule says no is
+    not what this test is about — that a stale answer is refused rather
+    than honoured is.
     """
     from engine.states import side_quests
     ctx = context()
@@ -732,7 +747,7 @@ def test_screen_a_stale_confirmation_is_refused_rather_than_honoured():
     ctx.semester().deduct_time(ctx.semester().get_time_pool_days())
     answer(ctx, RESULT_CONFIRM)
     assert side_quest_list.get_last_confirmed() is None
-    assert ctx.message_popup.get_title() == "NOT ENOUGH DAYS"
+    assert ctx.message_popup.get_title() == "TOO LATE IN THE TERM"
     assert not went_back(ctx)
 
 
