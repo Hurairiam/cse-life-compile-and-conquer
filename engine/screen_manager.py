@@ -54,6 +54,11 @@ class ScreenState(Enum):
     # the term when they are done roaming. Appended for the same reason
     # ACTIVITY was.
     END_SEMESTER = auto()
+    # The "pass the rest of the term?" question a pass_days prop opens,
+    # so a player who is done with a semester can hand its remaining
+    # days to the main quest in one go. Appended for the same reason
+    # ACTIVITY was.
+    PASS_DAYS = auto()
 
 
 class ScreenManager:
