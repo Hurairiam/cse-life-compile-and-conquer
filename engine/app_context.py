@@ -97,19 +97,19 @@ class AppContext:
         # (dialogue_flow.open_offer). They share the widget, never the
         # screen, and the answer routes differently for each.
         self.quest_offer_open = False
-        # The semester side-quest offer. One named NPC per term asks
-        # once; content/npc_quest_offers.py holds the table.
-        self.unlocked_side_quests = set()
-        self.decided_quest_semesters = set()
-        # The twelve side quests as a five-state machine, and the one
-        # that survives save/load -- engine/save_bridge.py rebuilds it
-        # from the save's "quests" block. The two sets above are the
-        # Phase 9 offer's own bookkeeping, and Phase 13 is where the
-        # offer moves onto this machine; until then they run alongside
-        # it and nothing here reads them.
+        # The twelve side quests as a five-state machine, and the ONE
+        # store that answers for them -- engine/save_bridge.py rebuilds
+        # it from the save's "quests" block. Phase 9's own bookkeeping
+        # (unlocked_side_quests / decided_quest_semesters) was retired
+        # here in Phase 13 when the offer moved onto this machine: two
+        # stores for one quest is two answers to disagree with.
         from engine.quest_state import QuestStateMachine
         self.quest_states = QuestStateMachine()
-        self.pending_quest_npc = None
+        # The side quest the conversation in progress owes an answer
+        # for, or None. Owned by engine/dialogue_flow.py for the length
+        # of one talk and never saved -- an unanswered offer is not a
+        # decision, so it does not survive walking away.
+        self.pending_quest_id = None
         self.seen_quest_intro_semesters = set()
         self.quest_intro_popup = MessagePopup(screen_w, screen_h, box_y=40)
         self.monologue_title = ""

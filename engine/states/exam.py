@@ -16,13 +16,14 @@ ctx.exam is the run bookkeeping:
 WHEN THE LAST COURSE IS DONE, engine/final_exam.py takes over: it
 congratulates the player once and then either hands the campus back
 (days left) or closes the term (no days left). close_semester() below
-is unchanged and is still the only thing that rolls a semester over —
-the new module only decides when it is called.
+is still the only thing that rolls a semester over — that module only
+decides when it is called, and engine/quest_offer.py only asks it to
+close the term's side quest on the way past.
 """
 import pygame
 
 from academic.quest import MainQuest
-from engine import final_exam
+from engine import final_exam, quest_offer
 from engine.exam_session import ExamSession, QUESTION_TIME_LIMIT_SECONDS
 from engine.screen_manager import ScreenState
 
@@ -119,6 +120,16 @@ def __next_course(ctx):
 
 def close_semester(ctx):
     """Every course attempted: close the term and route onward."""
+    # This term's side quest, if its NPC never got round to putting it,
+    # is Missed and gone for good. engine/quest_offer.py owns the call
+    # so this file stays out of the quest system, and it reads the
+    # ending semester off ctx — advance_semester() has not run yet.
+    #
+    # FIRST, above the freeze check, by owner ruling: a run that ends on
+    # ENDGAME still has to close its books, or the final term's quest
+    # would sit Unoffered forever and Phase 16's ending gate would be
+    # reading a term that never finished.
+    quest_offer.expire_semester(ctx)
     ctx.game_clock.check_semester_end_state()
     ctx.exam.update({"course_index": 0, "tier_index": 0,
                      "answers": {}, "message": None})

@@ -187,6 +187,12 @@ def restore(ctx, state: dict) -> bool:
     ctx.choice_options = []
     ctx.choice_prompt = ""
     ctx.choice_result = None
+    # A side quest offer that was on screen when the game was saved is
+    # not an answer, and the machine above has just been rebuilt from
+    # the file — so the offer is dropped and the quest is put again the
+    # next time the player talks to that NPC (Phase 13).
+    ctx.quest_offer_open = False
+    ctx.pending_quest_id = None
     ctx.playtime_seconds = float(state.get("playtime_seconds", 0) or 0)
     ctx.exam = {"course_index": 0, "tier_index": 0,
                 "answers": {}, "message": None}

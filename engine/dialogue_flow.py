@@ -34,6 +34,9 @@ later.
     ctx.choice_prompt     the ALL-CAPS strip above the replies
     ctx.choice_result     the index the player picked, once
     ctx.dialogue_choices  {"<level>:<uid>:<chain>": index} — answered
+    ctx.quest_offer_open  True while the open reply list is the side
+                          quest offer rather than an authored branch
+    ctx.pending_quest_id  the side quest this talk owes an answer for
 
 An answer key is level + npc uid + chain id, so the same NPC placed
 in two maps, or asked the same question in two different beats, are
@@ -47,6 +50,7 @@ from typing import Any, Optional
 
 from content.level_registry import (
     get_npc_display_name, get_npc_portrait_path)
+from engine import quest_offer
 from engine.screen_manager import ScreenState
 
 # Popup severity is imported lazily inside the failure path so this
@@ -234,8 +238,8 @@ def end_talk(ctx: Any) -> None:
     ctx.dialogue_chain = None
     # An offer left armed but unanswered is not a decision — walking
     # away and coming back must ask it again, so only resolve_offer()
-    # ever writes to decided_quest_semesters.
-    ctx.pending_quest_npc = None
+    # ever reaches the quest state machine.
+    ctx.pending_quest_id = None
 
 
 # ── the semester side-quest offer ──────────────────────────────
@@ -251,19 +255,21 @@ def end_talk(ctx: Any) -> None:
 # the shipped content puts both on the same conversation: semester 3's
 # offer is Rafi's, and Rafi's only authored branch is on his
 # semester-1 chain.
+#
+# WHAT LIVES HERE AND WHAT DOES NOT. Everything below is the dialogue
+# box, the reply list and the order things appear in. Whether an offer
+# is owed at all, and what an answer does to the quest, are
+# engine/quest_offer.py's — this module knows nothing about the five
+# quest states and that module knows nothing about pygame.
 
-OFFER_PROMPT: str = "YOUR DECISION"
-OFFER_REPLIES: tuple = ("Accept", "Decline")
-OFFER_ACCEPT: int = 0
+OFFER_PROMPT: str = quest_offer.PROMPT
+OFFER_REPLIES: tuple = quest_offer.REPLIES
+OFFER_ACCEPT: int = quest_offer.ACCEPT_INDEX
 
 
 def pending_offer(ctx: Any) -> Optional[dict]:
-    """The offer this conversation still owes the player, or None."""
-    semester = getattr(ctx, "pending_quest_npc", None)
-    if semester is None:
-        return None
-    from content.npc_quest_offers import SEMESTER_QUEST_OFFERS
-    return SEMESTER_QUEST_OFFERS.get(semester)
+    """The authored lines this conversation still owes the player."""
+    return quest_offer.lines_for(getattr(ctx, "pending_quest_id", None))
 
 
 def arm_offer(ctx: Any, npc_data: Any) -> bool:
@@ -271,24 +277,18 @@ def arm_offer(ctx: Any, npc_data: Any) -> bool:
     Note that this NPC owes the player a quest offer this term.
 
     Armed at the START of every talk and cleared at the end, so the
-    state cannot outlive the conversation it belongs to. A semester
-    already answered is never re-armed — walking back to Purnno after
-    declining does not put the question a second time.
-    """
-    from content.level_registry import get_npc_roster_id
-    from content.npc_quest_offers import SEMESTER_QUEST_OFFERS
+    state cannot outlive the conversation it belongs to, and NOTHING is
+    written to the quest machine here — a talk broken off before the
+    reply list appears leaves the quest Unoffered and is asked again
+    next time.
 
-    ctx.pending_quest_npc = None
-    semester = ctx.semester().get_semester_number()
-    offer = SEMESTER_QUEST_OFFERS.get(semester)
-    if offer is None:
-        return False
-    if offer.get("npc") != get_npc_roster_id(npc_data.get_type_id()):
-        return False
-    if semester in getattr(ctx, "decided_quest_semesters", set()):
-        return False
-    ctx.pending_quest_npc = semester
-    return True
+    A quest already accepted, declined or missed is never re-armed:
+    quest_offer.offered_quest_id() answers None from every state but
+    Unoffered, so walking back to Purnno after declining plays his
+    ordinary dialogue with no reminder and no second question.
+    """
+    ctx.pending_quest_id = quest_offer.offered_quest_id(ctx, npc_data)
+    return ctx.pending_quest_id is not None
 
 
 def open_offer(ctx: Any) -> bool:
@@ -324,33 +324,43 @@ def resolve_offer(ctx: Any, index: int) -> bool:
     """
     Act on Accept / Decline. True = the conversation goes on.
 
-    Accepting unlocks the quest id; either way the semester is marked
-    decided, so the offer is not put again this term. The reply lines
+    Accept moves the quest to Unlocked and Decline to Declined, both
+    through engine/quest_offer.py and both permanent — the offer is
+    never put again under any circumstance. The matching reply lines
     then play out on their own and the talk ends when they run out.
+
+    ACCEPT STARTS NOTHING. The quest is unlocked and that is the whole
+    of it: no lecture, no day charge, no lecture screen, no lecture
+    about not having taken it. Phases 14-17 own everything past here.
+
+    A REFUSED WRITE ENDS THE TALK QUIETLY. quest_offer.resolve() checks
+    the quest is still this term's and still Unoffered before it moves
+    anything, so an offer that has somehow gone stale between the
+    question and the answer closes the conversation with the quest
+    exactly where it was, rather than putting an accept line on screen
+    that nothing behind it agrees with.
 
     ctx.dialogue_chain is dropped first: the chain is over and its
     lines are gone from the box, so leaving it set would let an
     authored branch on it re-open behind the reply lines.
     """
     offer = pending_offer(ctx)
-    semester = getattr(ctx, "pending_quest_npc", None)
+    quest_id = getattr(ctx, "pending_quest_id", None)
     ctx.choice_options = []
     ctx.choice_prompt = ""
     ctx.choice_result = None
     ctx.quest_offer_open = False
     ctx.dialogue_chain = None
+    ctx.pending_quest_id = None
     if ctx.choice_box is not None:
         ctx.choice_box.reset()
     if offer is None:
         return False
 
-    if int(index) == OFFER_ACCEPT:
-        ctx.unlocked_side_quests.add(offer["quest_id"])
-        lines = offer["accept_lines"]
-    else:
-        lines = offer["decline_lines"]
-    ctx.decided_quest_semesters.add(semester)
-    ctx.pending_quest_npc = None
+    accepted = int(index) == OFFER_ACCEPT
+    if not quest_offer.resolve(ctx, quest_id, accepted):
+        return False
+    lines = offer["accept_lines"] if accepted else offer["decline_lines"]
     ctx.play_sfx("page_turn")
     ctx.dialogue_manager.load_dialogue(list(lines))
     return True
