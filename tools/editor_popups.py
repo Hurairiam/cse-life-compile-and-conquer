@@ -61,6 +61,10 @@ from content.level_registry import (
     MONEY_MAX,
     MONEY_MIN,
     MONEY_STEP,
+    NOTE_LINE_MAX,
+    NOTE_LINES_MAX,
+    NOTE_TITLE_DEFAULT,
+    NOTE_TITLE_MAX,
     ON_COMPLETE_MODES,
     SKILL_IDS,
     SPEED_MODIFIER_BASE,
@@ -549,6 +553,16 @@ class PropSettingsPopup(Modal):
     LAYER_ACTIONS = (("back", "|<"), ("backward", "<"),
                      ("forward", ">"), ("front", ">|"))
 
+    # Where the note's body fields start inside the interaction box, and
+    # how far apart they sit. Row -1 is the title. Named and shared
+    # because __init__ places the fields and __render_note_fields labels
+    # them, and the two drifting apart puts every caption against the
+    # wrong box. The last row ends at 274 + 2*46 + 30 = 396, inside the
+    # interaction box's own 420.
+    NOTE_ROW_Y = 274
+    NOTE_ROW_PITCH = 46
+    NOTE_LABEL_GAP = 14
+
     def __init__(self, prop: PropData) -> None:
         definition = get_prop_def(prop.get_type_id()) or {}
         name = definition.get("name", prop.get_type_id())
@@ -596,8 +610,12 @@ class PropSettingsPopup(Modal):
         self.__layer_action: str = ""
 
         inner_x = body.x + 12
+        # 450, not 330: "note" made six chips of five, and at 330 the
+        # row auto-shrank its font far enough that TRAVEL and NOTE were
+        # hard to tell apart at a glance. The body is 608 wide, so the
+        # extra 120 costs nothing.
         self.__kind: ChipRow = ChipRow(
-            pygame.Rect(inner_x, body.y + 184, 330, 26),
+            pygame.Rect(inner_x, body.y + 184, 450, 26),
             list(INTERACTION_KINDS), prop.get_interaction_kind())
         self.__amount: Stepper = Stepper(
             pygame.Rect(inner_x, body.y + 232, 210, 30), prop.get_amount(),
@@ -621,6 +639,28 @@ class PropSettingsPopup(Modal):
             {menu_id: get_menu_display_name(menu_id)
              for menu_id in menu_ids})
         self.__retune_amount()
+
+        # NOTE widgets. One title and NOTE_LINES_MAX body fields, laid
+        # out at a 48px pitch below the kind chips — the same band the
+        # menu picker and the travel fields use, because only one kind's
+        # controls are ever on screen at once.
+        #
+        # Separate fields per line rather than one box the runtime
+        # wraps: ui/popup.py neither wraps nor truncates, it draws the
+        # lines it is handed at a fixed pitch, so where the break falls
+        # is the author's decision and this is where they make it. The
+        # gate popup's locked-message editor is laid out the same way
+        # for the same reason.
+        stored = prop.get_note_lines()
+        self.__note_title: TextInput = TextInput(
+            pygame.Rect(inner_x, body.y + self.__note_row_y(-1), 450, 30),
+            prop.get_note_title(), NOTE_TITLE_MAX)
+        self.__note_lines: List[TextInput] = [
+            TextInput(pygame.Rect(inner_x, body.y + self.__note_row_y(index),
+                                  450, 30),
+                      stored[index] if index < len(stored) else "",
+                      NOTE_LINE_MAX)
+            for index in range(NOTE_LINES_MAX)]
 
         # Travel widgets sit BELOW the interaction-kind chips (which
         # live at +184) so the same rects serve a step-on portal and a
@@ -648,6 +688,10 @@ class PropSettingsPopup(Modal):
             GRID_MAX - 1, 1)
 
     # ── helpers ───────────────────────────────────────────────
+
+    def __note_row_y(self, index: int) -> int:
+        """Top of one note field, relative to the body. -1 is the title."""
+        return self.NOTE_ROW_Y + index * self.NOTE_ROW_PITCH
 
     def __retune_amount(self) -> None:
         """Point the amount stepper at the active reward's range."""
@@ -739,6 +783,16 @@ class PropSettingsPopup(Modal):
                 if kind == "menu":
                     if self.__menu.handle_event(event):
                         return
+                elif kind == "note":
+                    # Above the reward branch, not inside it: a note has
+                    # no amount and no trigger cap, so falling through
+                    # to those would hand its clicks to controls that
+                    # are not even drawn.
+                    if self.__note_title.handle_event(event):
+                        return
+                    for field in self.__note_lines:
+                        if field.handle_event(event):
+                            return
                 elif kind != "none":
                     if self.__amount.handle_event(event):
                         return
@@ -749,8 +803,11 @@ class PropSettingsPopup(Modal):
         super().handle_event(event)
 
     def update(self, dt: float) -> None:
-        """Blink the portal target caret."""
+        """Blink the carets of every text field on the card."""
         self.__target.update(dt)
+        self.__note_title.update(dt)
+        for field in self.__note_lines:
+            field.update(dt)
 
     def on_button(self, value: str) -> None:
         """OK folds every widget back onto the detached prop."""
@@ -785,6 +842,16 @@ class PropSettingsPopup(Modal):
                 # A menu opens every time it is used, so it carries no
                 # amount and no per-semester budget to spend.
                 prop.set_menu_id(self.__menu.get_value())
+            elif kind == "note":
+                # A sign is read every time for the same reason, and
+                # carries its own words instead of a destination. Set
+                # AFTER set_interaction_kind(), which seeds a default
+                # title into an empty one — so an author who cleared the
+                # field on purpose gets their blank back, and title_of()
+                # falls back to the default at draw time instead.
+                prop.set_note_title(self.__note_title.get_text())
+                prop.set_note_lines([field.get_text()
+                                     for field in self.__note_lines])
             elif kind == "skill":
                 prop.set_skill_id(self.__skill.get_value())
             if kind in ("money", "skill"):
@@ -938,6 +1005,9 @@ class PropSettingsPopup(Modal):
         if kind == "menu":
             self.__render_menu_fields(surface, label)
             return
+        if kind == "note":
+            self.__render_note_fields(surface, label)
+            return
 
         th.draw_text(surface, label, "AMOUNT", (x, body.y + 216),
                      th.CREDIT_HL)
@@ -979,6 +1049,44 @@ class PropSettingsPopup(Modal):
         th.draw_text(surface, label,
                      "OPENS EVERY TIME — NO REWARD, NO TRIGGER LIMIT",
                      (x, body.y + 296), th.STAT_BROWN)
+
+    def __render_note_fields(self, surface: pygame.Surface,
+                             label: pygame.font.Font) -> None:
+        """
+        The words this prop shows when the player presses E.
+
+        One title and three body lines, drawn in the popup's own shape
+        so what the author types here is exactly what the card holds:
+        ui/popup.py centres at most three lines at a fixed pitch and
+        neither wraps nor truncates them, and the field lengths are what
+        fits its 600px card at its own font size.
+
+        No amount and no trigger cap are drawn, for the reason the menu
+        panel gives: a sign is read, not collected, so there is nothing
+        per-semester to budget.
+        """
+        body = self.get_body_rect()
+        x = body.x + 12
+        filled = sum(1 for field in self.__note_lines if field.get_text())
+
+        def caption(text: str, row: int) -> None:
+            """Label one field, off the same row arithmetic that placed it."""
+            th.draw_text(surface, label, text,
+                         (x, body.y + self.__note_row_y(row)
+                          - self.NOTE_LABEL_GAP), th.CREDIT_HL)
+
+        caption("POPUP TITLE", -1)
+        self.__note_title.render(surface, NOTE_TITLE_DEFAULT)
+        for index, field in enumerate(self.__note_lines):
+            caption(f"LINE {index + 1}", index)
+            field.render(surface, "(leave blank to skip)")
+
+        th.draw_text(surface, label,
+                     "READ EVERY TIME — NO REWARD, NO TRIGGER LIMIT"
+                     if filled else
+                     "NOTHING WRITTEN — THIS PROP WILL SHOW NOTHING",
+                     (x, body.y + self.__note_row_y(NOTE_LINES_MAX - 1) + 36),
+                     th.STAT_BROWN if filled else th.BAR_RED)
 
 
 # ─────────────────────────────────────────────────────────────

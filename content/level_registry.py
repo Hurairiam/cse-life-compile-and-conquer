@@ -676,8 +676,33 @@ CHOICE_OPTIONS_MAX: int = 4
 # PROP INTERACTION BOUNDS  (Spec §5.3)
 # ─────────────────────────────────────────────────────────────
 
-INTERACTION_KINDS: tuple = ("none", "money", "skill", "menu", "travel")
+# "note" is APPENDED, never inserted, the same rule MENU_REGISTRY below
+# states: this tuple is a shared choke point, an author's chip row reads
+# it in order, and a pure append conflicts far less than a reorder.
+INTERACTION_KINDS: tuple = ("none", "money", "skill", "menu", "travel",
+                            "note")
 INTERACTION_KIND_DEFAULT: str = "none"
+
+# ─────────────────────────────────────────────────────────────
+# NOTE PROPS
+# ─────────────────────────────────────────────────────────────
+# A "note" prop shows text the author typed and does nothing else — a
+# sign, a poster, a scribbled page on a desk. It grants nothing, so
+# there is no amount and no per-semester budget to spend, and it is
+# READ EVERY TIME for the same reason a "menu" prop opens every time:
+# a notice you may only read once a term is not a notice.
+#
+# The shape is ui/popup.py's, because that is what draws it: one title
+# and at most three centred body lines, neither wrapped nor truncated
+# by the popup. The two length caps are what fits the 600px card at
+# its own font sizes, measured rather than guessed — 50 body characters
+# and 34 title characters is the ceiling, and these sit inside it.
+# ─────────────────────────────────────────────────────────────
+
+NOTE_LINES_MAX: int = 3     # must stay equal to ui/popup.py::MAX_BODY_LINES
+NOTE_TITLE_MAX: int = 28
+NOTE_LINE_MAX: int = 44
+NOTE_TITLE_DEFAULT: str = "A NOTE"
 
 # ─────────────────────────────────────────────────────────────
 # MENU REGISTRY

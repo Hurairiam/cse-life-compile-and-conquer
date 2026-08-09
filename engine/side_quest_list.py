@@ -38,18 +38,37 @@ positive lists — rather than filtering the twelve and skipping some.
 There is nothing in this module that can enumerate a hidden quest, so
 nothing downstream can accidentally count one.
 
-THE DAY RULE
-────────────
-A quest costs `day_cost` days (2 for all twelve today). With fewer days
-than that left in the term, the quest is not startable: the
-confirmation is never opened, nothing is deducted, and there is no
-override. That is checked in one place, `is_startable()`, and the
-reason it refuses is spelled out by `refusal()`.
+THE DAY RULE — TWO OF THEM NOW
+──────────────────────────────
+1. A quest costs `day_cost` days (2 for all twelve today). With fewer
+   days than that left in the term, the quest is not startable.
+2. **Phase 17.** Once the term has run down to the end-of-semester
+   threshold, NO new lecture may be started at all, whatever it costs
+   and however many days are notionally left.
 
-This is NOT the 15-day side-activity firewall. That threshold is
-`GameClock.is_eligible_for_side_activities()` and it belongs to Phase
-17, which owns every other day rule around side quests. Nothing here
-consults it, so there is exactly one place for Phase 17 to land.
+Both are checked in one place, `is_startable()`, and the reason each
+one refuses is spelled out by `refusal()`. The confirmation is never
+opened, nothing is deducted, and there is no override for either.
+
+Phase 14 wrote "nothing here consults the firewall, so there is exactly
+one place for Phase 17 to land". This is that landing: `is_locked_out()`
+below. It reads `engine/day_warning.py` — Phase 6's single front door
+onto `GameClock.get_min_border()` — so there is still exactly one 15 in
+the codebase and not one number in this file.
+
+WHAT THE LOCKOUT DOES NOT DO (Decision D1 and the NOTES reading, owner
+ruling, Phase 17)
+─────────────────────────────────────────────────────────────────────
+  * It does not touch the NPC offer. D1 answer (a): the offer is still
+    presented and can still be accepted below the threshold, so
+    `engine/quest_offer.py` and `engine/dialogue_flow.py` are not
+    opened by this phase at all.
+  * It does not change one quest state. A quest already Unlocked stays
+    Unlocked, stays listed on the PC, and is startable again the moment
+    the next term refills the pool. Blocking here writes nothing —
+    `refusal()` is a pure function and always was.
+  * It does not hide anything. The rows are exactly the rows Phase 14
+    listed; only START is refused.
 
 WHAT THIS MODULE DOES NOT DO
 ────────────────────────────
@@ -88,6 +107,11 @@ LOG_PREFIX: str = "[side quest] confirmed: "
 # here for it to disagree with.
 __last_confirmed: Optional[str] = None
 
+# What threshold() answers when the context has no clock to ask. Below
+# every possible day count, so the lockout simply never applies rather
+# than applying wrongly — see threshold().
+NO_THRESHOLD: int = -1
+
 
 # ── reading the world ──────────────────────────────────────────
 
@@ -122,6 +146,55 @@ def days_left(ctx: Any) -> int:
         return int(semester.get_time_pool_days())
     except (AttributeError, TypeError, ValueError):
         return 0
+
+
+# ── the end-of-term lockout (Phase 17) ─────────────────────────
+
+def threshold(ctx: Any) -> int:
+    """
+    Days at or below which no new lecture may be started, or
+    NO_THRESHOLD when this context has no clock to ask.
+
+    DELEGATED, NOT REDEFINED. `engine/day_warning.py::threshold()` is
+    Phase 6's single front door onto `GameClock.get_min_border()` — the
+    "15-Day Borderline Firewall" the clock has owned since Sprint 2 —
+    and its own docstring names this phase as the caller. Writing a 15
+    in here would be two numbers claiming to be one rule.
+
+    IMPORTED LAZILY, for the reason `engine/dialogue_flow.py` imports
+    `ui.popup` lazily: day_warning reaches into `ui/popup.py` for its
+    severity constant, and the whole point of this module is that it can
+    be read with no pygame and no display. The import lands in
+    sys.modules on the first call and costs a dict lookup after that.
+
+    NO_THRESHOLD is the quiet answer, matching `machine_of()` and
+    `days_left()`: the editor, the standalone harnesses and the stub
+    contexts these rules are tested with have no `game_clock`, and the
+    honest reading of "there is no clock" is that there is no
+    end-of-term rule to enforce — not that everything is locked.
+    """
+    from engine import day_warning
+    try:
+        return int(day_warning.threshold(ctx))
+    except (AttributeError, TypeError, ValueError):
+        return NO_THRESHOLD
+
+
+def is_locked_out(ctx: Any) -> bool:
+    """
+    True once the term has run down far enough to refuse new lectures.
+
+    The verdict itself is `day_warning.is_low()` rather than a compare
+    written out here, so the popup Phase 6 fires and the block this
+    phase applies can never disagree about where the line is: the
+    player is told the term is running out by exactly the rule that
+    then stops them taking anything new on.
+    """
+    from engine import day_warning
+    try:
+        return bool(day_warning.is_low(ctx))
+    except (AttributeError, TypeError, ValueError):
+        return False
 
 
 def listed_ids(ctx: Any) -> List[str]:
@@ -184,10 +257,10 @@ def is_startable(ctx: Any, quest_id: Any) -> bool:
     """
     True when this quest may be confirmed right now.
 
-    Three ways to be False, and `refusal()` names each of them: the
-    quest is not on this list at all, it is already Completed, or the
-    term has fewer days left than it costs. There is no fourth, and no
-    override.
+    Four ways to be False, and `refusal()` names each of them: the
+    quest is not on this list at all, it is already Completed, the term
+    has run down past the end-of-semester threshold, or it has fewer
+    days left than the quest costs. There is no fifth, and no override.
     """
     return refusal(ctx, quest_id) is None
 
@@ -197,9 +270,10 @@ def refusal(ctx: Any, quest_id: Any) -> Optional[Tuple[str, List[str]]]:
     Why this quest cannot be started — (title, body lines) — or None.
 
     Shaped for `ui/popup.py`, which draws at most three centred body
-    lines, so every message below is two. A refusal always says the
-    number it is refusing on, because "not enough days" without the two
-    figures is a wall rather than an answer.
+    lines, and no message below is longer than that. A refusal always
+    says the number it is refusing on, because "not enough days" without
+    the two figures is a wall rather than an answer — and the lockout
+    quotes both the days left and the threshold for the same reason.
     """
     machine = machine_of(ctx)
     if machine is None or quest_id not in listed_ids(ctx):
@@ -218,8 +292,24 @@ def refusal(ctx: Any, quest_id: Any) -> Optional[Tuple[str, List[str]]]:
         return ("NOTHING SELECTED",
                 ["There is no lecture here to open."])
 
-    cost = get_day_cost(quest_id)
     left = days_left(ctx)
+    # THE END-OF-TERM LOCKOUT (Phase 17), ABOVE THE COST CHECK.
+    # It is the wider rule of the two: below the threshold nothing new
+    # may be started whatever it costs, so a topic the player could
+    # otherwise afford is refused here and refused for the right reason.
+    # Checked BELOW the state checks so a Completed topic still reads
+    # "ALREADY READ" — the term running out is not why that one is shut.
+    #
+    # Phrased as one sentence across the last two lines, the way
+    # engine/day_warning.py's own popup is: three lines is the popup's
+    # hard maximum and this uses all of them.
+    if is_locked_out(ctx):
+        return ("TOO LATE IN THE TERM",
+                ["Only %s left before the exams." % __days(left),
+                 "No new lecture may be started",
+                 "with %s or fewer." % __days(threshold(ctx))])
+
+    cost = get_day_cost(quest_id)
     if left < cost:
         return ("NOT ENOUGH DAYS",
                 ["This lecture needs %s." % __days(cost),
@@ -288,6 +378,9 @@ def __days(count: int) -> str:
 # and nothing is written.
 # -------------------------------------------------------------
 if __name__ == "__main__":
+    from engine.game_clock import GameClock
+    from engine.game_session import GameSession
+
     class _Semester:
         def __init__(self, days):
             self.__days = days
@@ -299,6 +392,9 @@ if __name__ == "__main__":
         def __init__(self, machine, days):
             self.quest_states = machine
             self.__semester = _Semester(days)
+            # The REAL clock, so the threshold this demo prints is the
+            # one the game enforces rather than a number typed twice.
+            self.game_clock = GameClock(GameSession())
 
         def semester(self):
             return self.__semester
@@ -314,10 +410,14 @@ if __name__ == "__main__":
     state_machine.mark_completed(state_machine.get_quest_for_semester(1))
     state_machine.expire_unoffered_for_semester(5)
 
-    for pool in (40, 1):
+    # 40 is an ordinary mid-term; 16 is the last day new study is
+    # allowed; 15 and 1 are both locked out by the same rule.
+    for pool in (40, 16, 15, 1):
         context = _Ctx(state_machine, pool)
-        print("\n%d day%s left in the term"
-              % (pool, "" if pool == 1 else "s"))
+        print("\n%d day%s left in the term%s"
+              % (pool, "" if pool == 1 else "s",
+                 "   -- LOCKED OUT (threshold %d)" % threshold(context)
+                 if is_locked_out(context) else ""))
         print("%-26s %-6s %-7s %s"
               % ("TOPIC", "DAYS", "SHEETS", "START?"))
         for row in entries(context):

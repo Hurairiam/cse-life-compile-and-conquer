@@ -71,6 +71,10 @@ from content.level_registry import (
     MENU_REGISTRY,
     MONEY_MAX,
     MONEY_MIN,
+    NOTE_LINE_MAX,
+    NOTE_LINES_MAX,
+    NOTE_TITLE_DEFAULT,
+    NOTE_TITLE_MAX,
     ON_COMPLETE_DEFAULT,
     ON_COMPLETE_MODES,
     PASS_BEHIND_DEFAULT,
@@ -721,6 +725,8 @@ class PropData:
         self.__amount: float = 0.0
         self.__skill_id: Optional[str] = None
         self.__menu_id: str = ""
+        self.__note_title: str = ""
+        self.__note_lines: List[str] = []
         self.__rotation: int = ROTATION_DEFAULT
         self.__triggers_per_semester: int = TRIGGERS_DEFAULT
         self.__target_level_id: str = ""
@@ -911,7 +917,7 @@ class PropData:
         self.__interactable = bool(value)
 
     def get_interaction_kind(self) -> str:
-        """"none", "money", "skill" or "menu"."""
+        """"none", "money", "skill", "menu", "travel" or "note"."""
         return self.__kind
 
     def set_interaction_kind(self, kind: str) -> bool:
@@ -921,6 +927,9 @@ class PropData:
 
         "menu" grants nothing — it opens a screen — so it clears the
         amount exactly as "none" does and seeds a menu id instead.
+        "note" grants nothing either — it shows authored text — and is
+        seeded the same way, with a default title rather than a blank
+        one so a prop switched to it is never nameless on screen.
         """
         if kind not in INTERACTION_KINDS:
             return False
@@ -947,6 +956,15 @@ class PropData:
             # kept in the same fields a portal uses.
             self.__amount = 0.0
             self.__skill_id = None
+        elif kind == "note":
+            # A sign grants nothing; it is read. The text is kept in the
+            # note fields, and the title is seeded so a prop flipped to
+            # this kind opens a popup with a heading on it rather than
+            # an empty bar.
+            self.__amount = 0.0
+            self.__skill_id = None
+            if not self.__note_title:
+                self.__note_title = NOTE_TITLE_DEFAULT
         else:
             self.__amount = 0.0
             self.__skill_id = None
@@ -985,6 +1003,72 @@ class PropData:
         """True when interacting with this prop should open a screen."""
         return (self.__interactable and self.__kind == "menu"
                 and bool(self.__menu_id))
+
+    # ── note (a sign the author writes) ────────────────────────
+
+    def get_note_title(self) -> str:
+        """
+        The heading a "note" prop's popup wears ("" = unset).
+
+        Kept even after the kind is switched away, exactly as the menu
+        id is: an author who flips a poster to money and back does not
+        lose what they had written on it.
+        """
+        return self.__note_title
+
+    def set_note_title(self, title: Optional[str]) -> bool:
+        """
+        Retitle the note, or None/"" to clear it.
+
+        Clamped rather than refused. A title is free text — there is no
+        "nearest legal value" to substitute and nothing downstream to
+        confuse — so an over-long one is cut to what the card can draw
+        instead of being rejected mid-keystroke in the editor.
+        """
+        text = "" if title is None else str(title).strip()[:NOTE_TITLE_MAX]
+        changed = text != self.__note_title
+        self.__note_title = text
+        return changed
+
+    def get_note_lines(self) -> List[str]:
+        """
+        The body lines a "note" prop shows, at most NOTE_LINES_MAX.
+
+        A copy, so a caller drawing them cannot edit the prop.
+        """
+        return list(self.__note_lines)
+
+    def set_note_lines(self, lines: Optional[Sequence[Any]]) -> bool:
+        """
+        Replace the note's body. None or an empty list clears it.
+
+        Blank lines are dropped rather than kept: ui/popup.py centres
+        each line at a fixed pitch, so an empty one is a visible gap in
+        the middle of the message, and the author who left the second
+        field empty meant "two lines", not "a hole".
+        """
+        cleaned: List[str] = []
+        for line in (lines or []):
+            text = str(line).strip()[:NOTE_LINE_MAX]
+            if text:
+                cleaned.append(text)
+            if len(cleaned) >= NOTE_LINES_MAX:
+                break
+        changed = cleaned != self.__note_lines
+        self.__note_lines = cleaned
+        return changed
+
+    def shows_note(self) -> bool:
+        """
+        True when interacting with this prop should show its note.
+
+        Requires actual text, the same way opens_menu() requires an
+        actual menu id: a note prop with nothing written on it must fall
+        through to the ordinary "nothing here" line rather than opening
+        an empty card, and validate() warns about it at save time.
+        """
+        return (self.__interactable and self.__kind == "note"
+                and bool(self.__note_lines))
 
     def get_amount(self) -> float:
         """BDT for money rewards, EXP points for skill rewards."""
@@ -1108,6 +1192,15 @@ class PropData:
         # level authored earlier still round-trips byte-identical.
         if self.__menu_id:
             data["interaction"]["menu_id"] = self.__menu_id
+        # Same rule again for the note: written only when something was
+        # actually typed, so every level authored before notes existed
+        # round-trips byte for byte. The title rides on the lines rather
+        # than on its own condition — a heading with no message under it
+        # is not a note, and writing it alone would leave a key behind
+        # that nothing reads.
+        if self.__note_lines:
+            data["interaction"]["note_title"] = self.__note_title
+            data["interaction"]["note_lines"] = list(self.__note_lines)
         # Omitted while unturned, so a level with no rotated props
         # serialises exactly as it did before rotation existed.
         if self.__rotation:
@@ -1157,6 +1250,13 @@ class PropData:
         # id and does not overwrite it with the default.
         if interaction.get("menu_id"):
             prop.set_menu_id(str(interaction["menu_id"]))
+        # Read before the kind for the same reason the menu id is:
+        # switching to "note" seeds a default title, and a stored one
+        # must not be overwritten by it.
+        if interaction.get("note_title"):
+            prop.set_note_title(str(interaction["note_title"]))
+        if interaction.get("note_lines"):
+            prop.set_note_lines(interaction["note_lines"])
         prop.set_interaction_kind(str(interaction.get(
             "kind", INTERACTION_KIND_DEFAULT)))
         if interaction.get("amount") is not None:
@@ -2599,6 +2699,17 @@ class LevelData:
                         SEVERITY_WARNING, "UNKNOWN_MENU",
                         f"prop '{prop.get_uid()}' opens unknown menu "
                         f"'{menu_id}'", (x, y)))
+            # A warning, never a blocker: an author part-way through
+            # writing a sign must still be able to save the level, and
+            # the runtime already falls through to the ordinary
+            # "nothing here" line rather than opening an empty card.
+            if prop.get_interactable() and \
+                    prop.get_interaction_kind() == "note" and \
+                    not prop.get_note_lines():
+                issues.append(ValidationIssue(
+                    SEVERITY_WARNING, "NOTE_NO_TEXT",
+                    f"prop '{prop.get_uid()}' shows a note but nothing "
+                    f"is written on it", (x, y)))
             if prop.get_interactable():
                 payout = prop.get_amount() * prop.get_triggers_per_semester()
                 if prop.get_interaction_kind() == "money":
