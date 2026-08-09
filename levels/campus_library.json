@@ -3,13 +3,13 @@
   "meta": {
     "level_name": "campus_library",
     "level_id": "campus_library",
-    "grid_width": 22,
-    "grid_height": 22,
+    "grid_width": 18,
+    "grid_height": 18,
     "ambient": "day",
     "music": "exploration",
     "spawn": {
-      "x": 20,
-      "y": 12
+      "x": 16,
+      "y": 8
     }
   },
   "layers": {
@@ -32,11 +32,7 @@
         114,
         117,
         1,
-        113,
-        118,
-        114,
-        114,
-        116
+        113
       ],
       [
         115,
@@ -56,491 +52,327 @@
         113,
         1,
         116,
-        115,
-        113,
-        111,
-        113,
-        1
+        115
       ],
       [
         112,
         1,
         117,
-        114,
-        114,
-        113,
-        116,
-        116,
-        114,
-        114,
-        115,
-        114,
-        1,
-        113,
-        116,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
         117,
-        115,
-        114,
-        111,
-        111,
         115,
         114
       ],
       [
         116,
         118,
-        114,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        111,
+        1,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        113,
         117,
-        115,
-        111,
-        117
+        118
       ],
       [
         1,
         117,
-        116,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
+        115,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        112,
+        1,
+        114
+      ],
+      [
+        113,
         114,
-        117,
+        113,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
         116,
+        1,
+        115
+      ],
+      [
+        115,
+        118,
+        1,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        118,
+        111,
+        114
+      ],
+      [
+        115,
+        117,
+        1,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      [
+        118,
+        116,
+        113,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      [
+        1,
+        117,
+        111,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      [
+        117,
+        114,
+        111,
+        4,
+        4,
+        4,
+        4,
+        0,
+        0,
+        0,
+        0,
+        4,
+        4,
+        4,
+        4,
+        112,
         112,
         1
       ],
       [
-        113,
-        114,
-        113,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        115,
-        113,
-        111,
-        116,
-        4
-      ],
-      [
-        115,
-        118,
-        1,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        114,
-        117,
-        112,
-        117,
-        4
-      ],
-      [
-        115,
-        117,
-        1,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        117,
-        118,
-        112,
-        116,
-        4
-      ],
-      [
-        118,
-        116,
-        113,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        117,
-        115,
-        111,
-        113,
-        4
-      ],
-      [
-        1,
-        117,
-        111,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        115,
-        118,
-        118,
-        118,
-        4
-      ],
-      [
-        117,
-        114,
-        111,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        117,
-        114,
-        112,
-        115,
-        4
-      ],
-      [
         114,
         113,
         117,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
         4,
-        1,
-        117,
-        115,
-        4
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        116,
+        114,
+        112
       ],
       [
         112,
         112,
         113,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
         4,
-        112,
-        111,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        117,
         118,
-        4
+        117
       ],
       [
         117,
         118,
         114,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        4,
-        1,
+        113,
         114,
-        117,
-        4
+        116,
+        113,
+        113,
+        113,
+        114,
+        112,
+        112,
+        114,
+        113,
+        116,
+        118,
+        112,
+        113
       ],
       [
         116,
         118,
         117,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
+        114,
+        113,
+        113,
+        1,
+        117,
+        116,
+        116,
+        113,
+        118,
+        117,
+        118,
+        1,
+        112,
+        111,
+        111
+      ],
+      [
+        118,
+        1,
+        111,
+        117,
+        118,
+        112,
+        117,
+        112,
+        115,
+        118,
+        113,
+        1,
+        111,
+        118,
+        117,
+        111,
+        113,
+        116
+      ],
+      [
+        1,
+        112,
+        112,
+        116,
+        111,
+        1,
+        117,
+        116,
+        116,
+        111,
+        1,
+        115,
+        112,
+        112,
         111,
         112,
         115,
-        1,
-        4
-      ],
-      [
-        118,
-        1,
-        111,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        113,
-        114,
-        117,
-        1,
-        4
-      ],
-      [
-        114,
-        118,
-        113,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        111,
-        115,
-        116,
-        112,
-        4
+        1
       ],
       [
         111,
         114,
         114,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        116,
-        111,
-        117,
-        116,
-        4
-      ],
-      [
-        111,
-        116,
-        118,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        101,
-        116,
-        118,
-        118,
-        117,
-        4
-      ],
-      [
-        113,
-        117,
-        114,
-        116,
-        1,
-        112,
-        114,
         1,
         114,
-        112,
-        112,
-        112,
-        113,
-        116,
-        114,
-        113,
-        113,
-        117,
-        1,
-        114,
-        1,
-        4
-      ],
-      [
-        116,
-        1,
         118,
         112,
+        117,
+        1,
+        117,
         115,
         112,
-        116,
-        1,
-        113,
-        1,
-        112,
-        117,
-        116,
-        117,
-        117,
-        118,
-        112,
         111,
-        117,
-        117,
-        118,
-        4
-      ],
-      [
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4,
-        4
+        114,
+        116,
+        115,
+        115,
+        118
       ]
     ],
     "overlay": [
@@ -562,41 +394,9 @@
         -1,
         -1,
         -1,
-        -1,
-        -1,
-        -1,
-        -1,
         -1
       ],
       [
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        -1,
-        -1,
-        -1,
-        -1,
         -1,
         -1,
         -1,
@@ -634,41 +434,9 @@
         -1,
         -1,
         -1,
-        -1,
-        -1,
-        -1,
-        -1,
         -1
       ],
       [
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        -1,
-        -1,
-        -1,
-        -1,
         -1,
         -1,
         -1,
@@ -706,41 +474,9 @@
         -1,
         -1,
         -1,
-        -1,
-        -1,
-        -1,
-        -1,
         -1
       ],
       [
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        -1,
-        -1,
-        -1,
-        -1,
         -1,
         -1,
         -1,
@@ -778,41 +514,9 @@
         -1,
         -1,
         -1,
-        -1,
-        -1,
-        -1,
-        -1,
         -1
       ],
       [
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        -1,
-        -1,
-        -1,
-        -1,
         -1,
         -1,
         -1,
@@ -850,41 +554,9 @@
         -1,
         -1,
         -1,
-        -1,
-        -1,
-        -1,
-        -1,
         -1
       ],
       [
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        -1,
-        -1,
-        -1,
-        -1,
         -1,
         -1,
         -1,
@@ -922,41 +594,9 @@
         -1,
         -1,
         -1,
-        -1,
-        -1,
-        -1,
-        -1,
         -1
       ],
       [
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1
-      ],
-      [
-        -1,
-        -1,
-        -1,
-        -1,
         -1,
         -1,
         -1,
@@ -994,6 +634,22 @@
         -1,
         -1,
         -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
         -1,
         -1,
         -1,
@@ -1018,6 +674,22 @@
         -1,
         -1,
         -1,
+        -1
+      ],
+      [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
         -1,
         -1,
         -1,
@@ -1042,17 +714,9 @@
         -1,
         -1,
         -1,
-        -1,
-        -1,
-        -1,
-        -1,
         -1
       ],
       [
-        -1,
-        -1,
-        -1,
-        -1,
         -1,
         -1,
         -1,
@@ -1077,27 +741,40 @@
   "props": [
     {
       "uid": "prop_0001",
-      "type_id": "portal",
-      "x": 17,
-      "y": 12,
-      "passthrough": true,
+      "type_id": "white_concrete_powder",
+      "x": 13,
+      "y": 10,
+      "passthrough": false,
       "speed_modifier": 1.0,
-      "interactable": true,
+      "interactable": false,
       "interaction": {
         "kind": "none",
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "target_level_id": "university_library",
-      "target_spawn": null
+      }
+    },
+    {
+      "uid": "prop_0002",
+      "type_id": "white_concrete_powder",
+      "x": 12,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
     },
     {
       "uid": "prop_0003",
-      "type_id": "yellowarrow",
-      "x": 18,
-      "y": 12,
-      "passthrough": true,
+      "type_id": "white_concrete_powder",
+      "x": 11,
+      "y": 10,
+      "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -1109,9 +786,2543 @@
     },
     {
       "uid": "prop_0004",
-      "type_id": "portal",
-      "x": 20,
+      "type_id": "white_concrete_powder",
+      "x": 10,
       "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0007",
+      "type_id": "white_concrete_powder",
+      "x": 7,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0008",
+      "type_id": "white_concrete_powder",
+      "x": 6,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0009",
+      "type_id": "white_concrete_powder",
+      "x": 5,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0010",
+      "type_id": "white_concrete_powder",
+      "x": 4,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0011",
+      "type_id": "white_concrete_powder",
+      "x": 4,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0012",
+      "type_id": "white_concrete_powder",
+      "x": 4,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0013",
+      "type_id": "white_concrete_powder",
+      "x": 4,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0014",
+      "type_id": "white_concrete_powder",
+      "x": 4,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0015",
+      "type_id": "white_concrete_powder",
+      "x": 4,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0016",
+      "type_id": "white_concrete_powder",
+      "x": 4,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0017",
+      "type_id": "white_concrete_powder",
+      "x": 4,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0018",
+      "type_id": "white_concrete_powder",
+      "x": 5,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0019",
+      "type_id": "white_concrete_powder",
+      "x": 7,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0020",
+      "type_id": "white_concrete_powder",
+      "x": 6,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0021",
+      "type_id": "white_concrete_powder",
+      "x": 8,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0022",
+      "type_id": "white_concrete_powder",
+      "x": 9,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0023",
+      "type_id": "white_concrete_powder",
+      "x": 10,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0024",
+      "type_id": "white_concrete_powder",
+      "x": 11,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0025",
+      "type_id": "white_concrete_powder",
+      "x": 12,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0026",
+      "type_id": "white_concrete_powder",
+      "x": 13,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0027",
+      "type_id": "white_concrete_powder",
+      "x": 13,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0028",
+      "type_id": "white_concrete_powder",
+      "x": 13,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0029",
+      "type_id": "white_concrete_powder",
+      "x": 13,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0030",
+      "type_id": "white_concrete_powder",
+      "x": 13,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0031",
+      "type_id": "white_concrete_powder",
+      "x": 13,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0032",
+      "type_id": "white_concrete_powder",
+      "x": 13,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0033",
+      "type_id": "white_concrete_powder",
+      "x": 12,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0034",
+      "type_id": "white_concrete_powder",
+      "x": 12,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0035",
+      "type_id": "white_concrete_powder",
+      "x": 12,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0036",
+      "type_id": "white_concrete_powder",
+      "x": 12,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0037",
+      "type_id": "white_concrete_powder",
+      "x": 12,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0038",
+      "type_id": "white_concrete_powder",
+      "x": 12,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0039",
+      "type_id": "white_concrete_powder",
+      "x": 10,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0040",
+      "type_id": "white_concrete_powder",
+      "x": 11,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0041",
+      "type_id": "white_concrete_powder",
+      "x": 11,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0042",
+      "type_id": "white_concrete_powder",
+      "x": 10,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0043",
+      "type_id": "white_concrete_powder",
+      "x": 11,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0044",
+      "type_id": "white_concrete_powder",
+      "x": 10,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0045",
+      "type_id": "white_concrete_powder",
+      "x": 10,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0046",
+      "type_id": "white_concrete_powder",
+      "x": 11,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0047",
+      "type_id": "white_concrete_powder",
+      "x": 11,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0048",
+      "type_id": "white_concrete_powder",
+      "x": 10,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0049",
+      "type_id": "white_concrete_powder",
+      "x": 10,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0050",
+      "type_id": "white_concrete_powder",
+      "x": 11,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0051",
+      "type_id": "white_concrete_powder",
+      "x": 9,
+      "y": 9,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0052",
+      "type_id": "white_concrete_powder",
+      "x": 9,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0053",
+      "type_id": "white_concrete_powder",
+      "x": 9,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0054",
+      "type_id": "white_concrete_powder",
+      "x": 9,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0055",
+      "type_id": "white_concrete_powder",
+      "x": 9,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0056",
+      "type_id": "white_concrete_powder",
+      "x": 9,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0057",
+      "type_id": "white_concrete_powder",
+      "x": 8,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0058",
+      "type_id": "white_concrete_powder",
+      "x": 8,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0059",
+      "type_id": "white_concrete_powder",
+      "x": 8,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0060",
+      "type_id": "white_concrete_powder",
+      "x": 8,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0061",
+      "type_id": "white_concrete_powder",
+      "x": 8,
+      "y": 9,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0062",
+      "type_id": "white_concrete_powder",
+      "x": 8,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0063",
+      "type_id": "white_concrete_powder",
+      "x": 7,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0064",
+      "type_id": "white_concrete_powder",
+      "x": 6,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0065",
+      "type_id": "white_concrete_powder",
+      "x": 5,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0066",
+      "type_id": "white_concrete_powder",
+      "x": 5,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0067",
+      "type_id": "white_concrete_powder",
+      "x": 6,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0068",
+      "type_id": "white_concrete_powder",
+      "x": 7,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0069",
+      "type_id": "white_concrete_powder",
+      "x": 7,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0070",
+      "type_id": "white_concrete_powder",
+      "x": 6,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0071",
+      "type_id": "white_concrete_powder",
+      "x": 5,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0072",
+      "type_id": "white_concrete_powder",
+      "x": 5,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0073",
+      "type_id": "white_concrete_powder",
+      "x": 6,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0074",
+      "type_id": "white_concrete_powder",
+      "x": 7,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0075",
+      "type_id": "white_concrete_powder",
+      "x": 7,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0076",
+      "type_id": "white_concrete_powder",
+      "x": 6,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0077",
+      "type_id": "white_concrete_powder",
+      "x": 5,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0078",
+      "type_id": "white_concrete_powder",
+      "x": 5,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0079",
+      "type_id": "white_concrete_powder",
+      "x": 6,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0080",
+      "type_id": "white_concrete_powder",
+      "x": 7,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0081",
+      "type_id": "white_concrete",
+      "x": 4,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0082",
+      "type_id": "white_concrete",
+      "x": 4,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0083",
+      "type_id": "white_concrete",
+      "x": 4,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0084",
+      "type_id": "white_concrete",
+      "x": 5,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0085",
+      "type_id": "white_concrete",
+      "x": 5,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0086",
+      "type_id": "white_concrete",
+      "x": 5,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0087",
+      "type_id": "white_concrete",
+      "x": 6,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0088",
+      "type_id": "white_concrete",
+      "x": 6,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0089",
+      "type_id": "white_concrete",
+      "x": 6,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0090",
+      "type_id": "white_concrete",
+      "x": 7,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0091",
+      "type_id": "white_concrete",
+      "x": 7,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0092",
+      "type_id": "white_concrete",
+      "x": 7,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0093",
+      "type_id": "white_concrete",
+      "x": 8,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0094",
+      "type_id": "white_concrete",
+      "x": 8,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0095",
+      "type_id": "white_concrete",
+      "x": 8,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0096",
+      "type_id": "white_concrete",
+      "x": 9,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0097",
+      "type_id": "white_concrete",
+      "x": 9,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0098",
+      "type_id": "white_concrete",
+      "x": 9,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0099",
+      "type_id": "white_concrete",
+      "x": 10,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0100",
+      "type_id": "white_concrete",
+      "x": 10,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0101",
+      "type_id": "white_concrete",
+      "x": 10,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0102",
+      "type_id": "white_concrete",
+      "x": 11,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0103",
+      "type_id": "white_concrete",
+      "x": 11,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0104",
+      "type_id": "white_concrete",
+      "x": 11,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0105",
+      "type_id": "white_concrete",
+      "x": 12,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0106",
+      "type_id": "white_concrete",
+      "x": 12,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0107",
+      "type_id": "white_concrete",
+      "x": 12,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0108",
+      "type_id": "white_concrete",
+      "x": 13,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0109",
+      "type_id": "white_concrete",
+      "x": 13,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0110",
+      "type_id": "white_concrete",
+      "x": 13,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0111",
+      "type_id": "brick_gray_edge_right_bottom",
+      "x": 13,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0112",
+      "type_id": "brick_gray_edge_left_bottom",
+      "x": 4,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0113",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 13,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0114",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 13,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0115",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 13,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0116",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 13,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0117",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 4,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 180
+    },
+    {
+      "uid": "prop_0118",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 4,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 180
+    },
+    {
+      "uid": "prop_0119",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 4,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 180
+    },
+    {
+      "uid": "prop_0120",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 4,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 180
+    },
+    {
+      "uid": "prop_0121",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 4,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0122",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 5,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0123",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 6,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0124",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 7,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0127",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 10,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0128",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 11,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0129",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 12,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0130",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 5,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0131",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 6,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0132",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 8,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0133",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 7,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0134",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 9,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0135",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 10,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0136",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 11,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0137",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 12,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0140",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 13,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0138",
+      "type_id": "brick_gray_edge_right_bottom",
+      "x": 13,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0145",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 4,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 180
+    },
+    {
+      "uid": "prop_0139",
+      "type_id": "brick_gray_edge_left_bottom",
+      "x": 4,
+      "y": 5,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    },
+    {
+      "uid": "prop_0141",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 13,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0142",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 13,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0143",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 4,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 180
+    },
+    {
+      "uid": "prop_0144",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 4,
+      "y": 4,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 180
+    },
+    {
+      "uid": "prop_0146",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 4,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    },
+    {
+      "uid": "prop_0147",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 5,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    },
+    {
+      "uid": "prop_0148",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 6,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    },
+    {
+      "uid": "prop_0149",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 7,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    },
+    {
+      "uid": "prop_0150",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 8,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    },
+    {
+      "uid": "prop_0151",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 9,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    },
+    {
+      "uid": "prop_0152",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 10,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    },
+    {
+      "uid": "prop_0153",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 12,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    },
+    {
+      "uid": "prop_0154",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 11,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    },
+    {
+      "uid": "prop_0155",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 13,
+      "y": 3,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    },
+    {
+      "uid": "prop_0156",
+      "type_id": "Door 1",
+      "x": 8,
+      "y": 10,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    },
+    {
+      "uid": "prop_0157",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 7,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0158",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 7,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0159",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 8,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0160",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 9,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0161",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 10,
+      "y": 9,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 180
+    },
+    {
+      "uid": "prop_0162",
+      "type_id": "brick_gray_edge_right_middle",
+      "x": 10,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 180
+    },
+    {
+      "uid": "prop_0163",
+      "type_id": "flower6",
+      "x": 12,
+      "y": 11,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0164",
+      "type_id": "flower4",
+      "x": 13,
+      "y": 11,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0165",
+      "type_id": "flower6",
+      "x": 14,
+      "y": 11,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0166",
+      "type_id": "flower4",
+      "x": 14,
+      "y": 10,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0167",
+      "type_id": "flower6",
+      "x": 14,
+      "y": 9,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0168",
+      "type_id": "flower6",
+      "x": 5,
+      "y": 11,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0169",
+      "type_id": "flower6",
+      "x": 3,
+      "y": 11,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0170",
+      "type_id": "flower6",
+      "x": 3,
+      "y": 9,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0171",
+      "type_id": "flower4",
+      "x": 4,
+      "y": 11,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0172",
+      "type_id": "flower4",
+      "x": 3,
+      "y": 10,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0173",
+      "type_id": "portal",
+      "x": 17,
+      "y": 7,
       "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": true,
@@ -1125,9 +3336,260 @@
       "target_spawn": null
     },
     {
-      "uid": "prop_0005",
-      "type_id": "yellowarrow",
-      "x": 19,
+      "uid": "prop_0174",
+      "type_id": "portal",
+      "x": 17,
+      "y": 8,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0175",
+      "type_id": "portal",
+      "x": 17,
+      "y": 9,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0176",
+      "type_id": "signboard",
+      "x": 13,
+      "y": 10,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0177",
+      "type_id": "weed",
+      "x": 1,
+      "y": 17,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0178",
+      "type_id": "weed",
+      "x": 13,
+      "y": 14,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0179",
+      "type_id": "weed",
+      "x": 1,
+      "y": 13,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0180",
+      "type_id": "weed",
+      "x": 17,
+      "y": 17,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0181",
+      "type_id": "weed",
+      "x": 2,
+      "y": 6,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0182",
+      "type_id": "weed",
+      "x": 1,
+      "y": 1,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0183",
+      "type_id": "weed",
+      "x": 10,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0184",
+      "type_id": "weed",
+      "x": 16,
+      "y": 0,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0185",
+      "type_id": "weed",
+      "x": 17,
+      "y": 5,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0186",
+      "type_id": "rock2",
+      "x": 16,
+      "y": 2,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0187",
+      "type_id": "rock2",
+      "x": 4,
+      "y": 0,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0188",
+      "type_id": "rock2",
+      "x": 0,
+      "y": 4,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0189",
+      "type_id": "rock2",
+      "x": 1,
       "y": 10,
       "passthrough": true,
       "speed_modifier": 1.0,
@@ -1138,25 +3600,190 @@
         "skill_id": null,
         "triggers_per_semester": 1
       },
-      "rotation": 180
-    }
-  ],
-  "npcs": [],
-  "zones": [
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
     {
-      "uid": "zone_0001",
-      "zone_id": "zone_cafeterianlecturehall",
-      "display_name": "Cafeteria & Lecture Hall",
-      "x": 21,
+      "uid": "prop_0190",
+      "type_id": "rock2",
+      "x": 5,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0191",
+      "type_id": "rock2",
+      "x": 12,
+      "y": 17,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0192",
+      "type_id": "rock2",
+      "x": 9,
+      "y": 13,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0193",
+      "type_id": "rock1",
+      "x": 3,
+      "y": 16,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0194",
+      "type_id": "rock1",
+      "x": 17,
+      "y": 13,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0195",
+      "type_id": "rock1",
+      "x": 13,
       "y": 0,
-      "w": 1,
-      "h": 22,
-      "gate": {
-        "locked_title": "YOU CAN'T ENTER NOW!",
-        "locked_lines": [
-          "Come back at a later time"
-        ]
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0196",
+      "type_id": "rock1",
+      "x": 0,
+      "y": 7,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0197",
+      "type_id": "portal",
+      "x": 8,
+      "y": 10,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "university_library",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0198",
+      "type_id": "portal",
+      "x": 9,
+      "y": 10,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "university_library",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0199",
+      "type_id": "window32",
+      "x": 5,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0200",
+      "type_id": "window32",
+      "x": 11,
+      "y": 8,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
       }
     }
-  ]
+  ],
+  "npcs": []
 }

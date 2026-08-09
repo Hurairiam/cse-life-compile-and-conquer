@@ -9,7 +9,7 @@
     "music": "exploration",
     "spawn": {
       "x": 16,
-      "y": 2
+      "y": 1
     }
   },
   "layers": {
@@ -29,12 +29,12 @@
         116,
         112,
         115,
-        116,
-        4,
-        4,
-        4,
         111,
-        118
+        4,
+        4,
+        4,
+        113,
+        116
       ],
       [
         117,
@@ -77,29 +77,29 @@
         4,
         4,
         4,
-        111,
+        1,
         1
       ],
       [
         117,
-        116,
+        118,
         117,
-        114,
+        112,
         112,
         116,
         118,
         117,
-        113,
-        116,
+        111,
+        1,
         117,
         117,
         1,
+        118,
         113,
-        113,
         4,
         4,
         4,
-        112,
+        117,
         112
       ],
       [
@@ -121,7 +121,7 @@
         4,
         4,
         4,
-        112,
+        117,
         113
       ],
       [
@@ -143,7 +143,7 @@
         4,
         4,
         4,
-        113,
+        111,
         111
       ],
       [
@@ -165,23 +165,23 @@
         4,
         4,
         4,
-        118,
+        111,
         113
       ],
       [
-        112,
+        114,
         118,
-        115,
+        118,
+        112,
+        1,
         112,
         112,
         112,
-        116,
-        115,
         116,
         111,
+        1,
         113,
-        113,
-        116,
+        111,
         114,
         1,
         111,
@@ -959,754 +959,6 @@
       "behind_transparency": 35
     },
     {
-      "uid": "prop_0026",
-      "type_id": "flower2",
-      "x": 14,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0027",
-      "type_id": "flower2",
-      "x": 12,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0028",
-      "type_id": "flower2",
-      "x": 10,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0029",
-      "type_id": "flower2",
-      "x": 14,
-      "y": 1,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0030",
-      "type_id": "flower2",
-      "x": 8,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0031",
-      "type_id": "flower2",
-      "x": 6,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0032",
-      "type_id": "flower2",
-      "x": 4,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0033",
-      "type_id": "flower2",
-      "x": 2,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0034",
-      "type_id": "flower2",
-      "x": 0,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0035",
-      "type_id": "flower2",
-      "x": 18,
-      "y": 1,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0036",
-      "type_id": "flower2",
-      "x": 18,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0037",
-      "type_id": "flower2",
-      "x": 18,
-      "y": 5,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0038",
-      "type_id": "flower2",
-      "x": 18,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0039",
-      "type_id": "flower2",
-      "x": 16,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0040",
-      "type_id": "flower2",
-      "x": 14,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0041",
-      "type_id": "flower2",
-      "x": 12,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0042",
-      "type_id": "flower2",
-      "x": 10,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0043",
-      "type_id": "flower2",
-      "x": 8,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0044",
-      "type_id": "flower2",
-      "x": 6,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0045",
-      "type_id": "flower2",
-      "x": 4,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0046",
-      "type_id": "flower2",
-      "x": 2,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0047",
-      "type_id": "flower2",
-      "x": 0,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0048",
-      "type_id": "flower1",
-      "x": 14,
-      "y": 0,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0049",
-      "type_id": "flower1",
-      "x": 18,
-      "y": 0,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0050",
-      "type_id": "flower1",
-      "x": 18,
-      "y": 2,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0051",
-      "type_id": "flower1",
-      "x": 14,
-      "y": 2,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0052",
-      "type_id": "flower1",
-      "x": 18,
-      "y": 4,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0053",
-      "type_id": "flower1",
-      "x": 18,
-      "y": 6,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0054",
-      "type_id": "flower1",
-      "x": 17,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0055",
-      "type_id": "flower1",
-      "x": 15,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0056",
-      "type_id": "flower1",
-      "x": 13,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0057",
-      "type_id": "flower1",
-      "x": 11,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0058",
-      "type_id": "flower1",
-      "x": 9,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0059",
-      "type_id": "flower1",
-      "x": 7,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0060",
-      "type_id": "flower1",
-      "x": 5,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0061",
-      "type_id": "flower1",
-      "x": 3,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0062",
-      "type_id": "flower1",
-      "x": 1,
-      "y": 7,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0063",
-      "type_id": "flower1",
-      "x": 1,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0064",
-      "type_id": "flower1",
-      "x": 3,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0065",
-      "type_id": "flower1",
-      "x": 5,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0066",
-      "type_id": "flower1",
-      "x": 7,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0067",
-      "type_id": "flower1",
-      "x": 9,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0068",
-      "type_id": "flower1",
-      "x": 11,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
-      "uid": "prop_0069",
-      "type_id": "flower1",
-      "x": 13,
-      "y": 3,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
-    },
-    {
       "uid": "prop_0070",
       "type_id": "rock2",
       "x": 11,
@@ -1816,21 +1068,6 @@
       }
     },
     {
-      "uid": "prop_0082",
-      "type_id": "yellowarrow",
-      "x": 1,
-      "y": 5,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      }
-    },
-    {
       "uid": "prop_0083",
       "type_id": "portal",
       "x": 0,
@@ -1845,6 +1082,259 @@
         "triggers_per_semester": 1
       },
       "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0084",
+      "type_id": "flower2",
+      "x": 13,
+      "y": 3,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0085",
+      "type_id": "flower2",
+      "x": 4,
+      "y": 2,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0086",
+      "type_id": "flower2",
+      "x": 0,
+      "y": 3,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0087",
+      "type_id": "flower1",
+      "x": 13,
+      "y": 7,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0088",
+      "type_id": "flower1",
+      "x": 6,
+      "y": 8,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0089",
+      "type_id": "flower2",
+      "x": 7,
+      "y": 3,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0090",
+      "type_id": "flower2",
+      "x": 19,
+      "y": 4,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0091",
+      "type_id": "rock2",
+      "x": 18,
+      "y": 6,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0092",
+      "type_id": "rock2",
+      "x": 19,
+      "y": 1,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0093",
+      "type_id": "rock1",
+      "x": 18,
+      "y": 0,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "pass_behind": true,
+      "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0094",
+      "type_id": "portal",
+      "x": 0,
+      "y": 6,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0095",
+      "type_id": "portal",
+      "x": 0,
+      "y": 4,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0096",
+      "type_id": "portal",
+      "x": 15,
+      "y": 0,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "player_room",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0097",
+      "type_id": "portal",
+      "x": 16,
+      "y": 0,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "player_room",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0098",
+      "type_id": "portal",
+      "x": 17,
+      "y": 0,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "player_room",
       "target_spawn": null
     }
   ],
