@@ -8,8 +8,8 @@
     "ambient": "day",
     "music": "",
     "spawn": {
-      "x": 9,
-      "y": 14
+      "x": 7,
+      "y": 13
     }
   },
   "layers": {
@@ -1265,25 +1265,264 @@
       "behind_transparency": 35
     },
     {
-      "uid": "prop_0063",
-      "type_id": "yellowarrow",
+      "uid": "prop_0064",
+      "type_id": "portal",
       "x": 6,
-      "y": 14,
+      "y": 15,
       "passthrough": true,
       "speed_modifier": 1.0,
-      "interactable": false,
+      "interactable": true,
       "interaction": {
         "kind": "none",
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
       },
-      "rotation": 270
+      "target_level_id": "campus_main",
+      "target_spawn": null
     },
     {
-      "uid": "prop_0064",
+      "uid": "prop_0065",
       "type_id": "portal",
-      "x": 6,
+      "x": 7,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0066",
+      "type_id": "portal",
+      "x": 8,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0067",
+      "type_id": "portal",
+      "x": 9,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0068",
+      "type_id": "portal",
+      "x": 10,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0069",
+      "type_id": "portal",
+      "x": 11,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0070",
+      "type_id": "portal",
+      "x": 12,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0071",
+      "type_id": "portal",
+      "x": 13,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0072",
+      "type_id": "portal",
+      "x": 14,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0073",
+      "type_id": "portal",
+      "x": 15,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0074",
+      "type_id": "portal",
+      "x": 5,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0075",
+      "type_id": "portal",
+      "x": 4,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0076",
+      "type_id": "portal",
+      "x": 2,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0077",
+      "type_id": "portal",
+      "x": 3,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0078",
+      "type_id": "portal",
+      "x": 1,
+      "y": 15,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "target_level_id": "campus_main",
+      "target_spawn": null
+    },
+    {
+      "uid": "prop_0079",
+      "type_id": "portal",
+      "x": 0,
       "y": 15,
       "passthrough": true,
       "speed_modifier": 1.0,
