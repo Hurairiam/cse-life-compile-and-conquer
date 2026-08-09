@@ -63,6 +63,11 @@ class ScreenState(Enum):
     # the player took on, and the ones already read through. Appended
     # for the same reason ACTIVITY was.
     SIDE_QUESTS = auto()
+    # The lecture reader one of those topics opens, once its days have
+    # been paid for. Not in MENU_REGISTRY on purpose: no prop routes
+    # here, only engine/states/side_quests.py after the charge lands.
+    # Appended for the same reason ACTIVITY was.
+    SIDE_QUEST_LECTURE = auto()
 
 
 class ScreenManager:

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from academic.course_catalog import build_course_catalog, get_course_by_code
 from academic.semester import Semester
-from engine import quest_state, return_points
+from engine import lecture_reader, quest_state, return_points
 from engine.game_clock import GameClock
 from engine.game_session import GameSession
 from engine.registration_manager import RegistrationManager
@@ -82,7 +82,6 @@ def restore(ctx, state: dict) -> bool:
     # -- fresh systems ------------------------------------------
     ctx.full_catalog = build_course_catalog()
     ctx.session = GameSession()
-    ctx.game_clock = GameClock(ctx.session)
     ctx.registration_manager = RegistrationManager()
     from engine.catalog_builder import SemesterCatalogBuilder
     ctx.catalog_builder = SemesterCatalogBuilder(ctx.registration_manager)
@@ -102,6 +101,21 @@ def restore(ctx, state: dict) -> bool:
         player.advance_semester()
     semester = Semester(target)
     ctx.session.set_active_semester(semester)
+
+    # BUG FIX (Phase 15): the clock is built HERE, not above with the
+    # session. GameClock.__init__ caches session.get_active_semester()
+    # in its own __current_semester and only ever replaces it in
+    # advance_semester() -- so a clock constructed before the line above
+    # held the Semester GameSession.__init__ made, while ctx.semester(),
+    # the HUD, the 15-day firewall and engine/day_warning.py all read
+    # the one that just replaced it. Every charge through
+    # process_time_consumable() then came off an orphaned object and the
+    # displayed day count never moved. restore() runs on every load AND
+    # on new_game(), so this was true of every run: it is the same class
+    # of bug game_clock.py's own BUG FIX note records, one object
+    # further out. Caught by Phase 15's day charge, which is the first
+    # feature whose whole point is the number going down.
+    ctx.game_clock = GameClock(ctx.session)
 
     # -- wallet: adjust from whatever the fresh Player starts at -
     wanted = float(p.get("wallet_balance", 0.0) or 0.0)
@@ -193,6 +207,11 @@ def restore(ctx, state: dict) -> bool:
     # next time the player talks to that NPC (Phase 13).
     ctx.quest_offer_open = False
     ctx.pending_quest_id = None
+    # A lecture sitting is not something a loaded game can be in the
+    # middle of (Phase 15, Decision R2). Per-sheet progress is never
+    # written to the payload, so there is nothing here to restore --
+    # only a stale sitting from earlier in this process to drop.
+    lecture_reader.end()
     ctx.playtime_seconds = float(state.get("playtime_seconds", 0) or 0)
     ctx.exam = {"course_index": 0, "tier_index": 0,
                 "answers": {}, "message": None}

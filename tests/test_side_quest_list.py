@@ -632,9 +632,18 @@ def test_screen_blocks_a_topic_already_read():
     assert ctx.message_popup.get_title() == "ALREADY READ"
 
 
-def test_screen_confirming_logs_the_quest_and_closes():
-    """CONFIRM logs the id, changes nothing else, and hands the player
-    back to the map — the whole of this phase's last line."""
+def test_screen_confirming_logs_the_quest_and_opens_the_reader():
+    """
+    CONFIRM logs the id, charges the day cost once, and hands over to
+    the lecture reader.
+
+    ⚠ UPDATED BY PHASE 15. Phase 14 asserted the opposite half of this
+    — "no day spent" and "back to the map" — because the reader did not
+    exist yet and its own log named this call site as the seam. The id
+    is still logged and the quest still does not move; what changed is
+    that the days now leave and the destination is the reader.
+    """
+    from engine import lecture_reader
     from engine.states import side_quests
     ctx = context()
     before = ctx.quest_states.get_all_states()
@@ -648,9 +657,15 @@ def test_screen_confirming_logs_the_quest_and_closes():
     answer(ctx, RESULT_CONFIRM)
 
     assert side_quest_list.get_last_confirmed() == quest_of(2)
-    assert ctx.quest_states.get_all_states() == before, "no state moved"
-    assert ctx.semester().get_time_pool_days() == before_days, "no day spent"
-    assert went_back(ctx)
+    assert ctx.quest_states.get_all_states() == before, \
+        "confirming must not move a quest — reading every sheet does"
+    assert ctx.semester().get_time_pool_days() == before_days - DAY_COST, \
+        "the day cost is charged once, on open"
+    ctx.screen_mgr.apply_pending_transition()
+    assert ctx.screen_mgr.get_current_state() \
+        is ScreenState.SIDE_QUEST_LECTURE
+    assert lecture_reader.is_open()
+    lecture_reader.end()
     side_quest_list.reset()
 
 
