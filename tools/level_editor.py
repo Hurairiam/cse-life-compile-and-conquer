@@ -25,7 +25,13 @@ Hotkeys (Spec §8): 1-5 tabs · LMB paint · RMB entity settings ·
 X+LMB erase · MMB/arrows pan · +/- zoom · Ctrl+S/O/N ·
 Ctrl+Z/Y undo/redo · G grid · B badges · R randomise variants ·
 T rotate brush · [ / ] layer back / forward (Shift for back / front) ·
-F11 fullscreen · ESC close popup / clear selection.
+F11 fullscreen · ESC close popup / clear selection / cancel a move.
+
+The MOVE tool sits beside ERASE in the PROPS and NPCS palettes. Pick
+it up and drag a PLACED prop or NPC to a new cell: the entity keeps
+its uid, every per-instance attribute and its place in the draw
+order, because it is the same object with a new position rather than
+a fresh one built from registry defaults.
 
 Tiles, props and NPCs are read from content/level_registry.py, which
 tops itself up from whatever is sitting in assets/ — so new art shows
@@ -155,6 +161,21 @@ UNDO_LIMIT = 60          # Spec §3.3 asks for >= 50
 TOOL_NONE = ""
 TOOL_ERASER = "eraser"
 ERASER_KEY = "__eraser__"
+
+# The MOVE tool relocates something ALREADY PLACED. It is a palette
+# item rather than a modifier key so it selects and deselects exactly
+# like every other tool and is visible in the panel; the eraser slot
+# next to it set that precedent.
+#
+# It exists because the only way to relocate an entity used to be
+# erase-then-place, and that is not a move: remove_prop_at() drops the
+# configured object and add_prop() builds a NEW one from the
+# four-argument constructor, so every per-instance attribute reverted
+# to its registry default, the uid changed (breaking the
+# "<level>:<uid>" keys saves store trigger history under) and the prop
+# reappeared on top of the stack it had been layered into.
+TOOL_MOVE = "move"
+MOVE_KEY = "__move__"
 
 # The RANDOMISE strip sits above the palette on the TILES tab only, so
 # the other tabs keep every pixel of grid they had before.
@@ -295,6 +316,16 @@ class LevelEditorApp:
         # second press would grab a DIFFERENT prop and the stack would
         # shuffle instead of one piece sinking through it.
         self.__layer_uid: str = ""
+
+        # The MOVE tool's drag in flight. Held as a uid rather than as
+        # the object, so an undo mid-drag re-resolves against whatever
+        # document the drop lands in instead of writing into a
+        # LevelData the editor has already thrown away. Nothing here
+        # touches the level until the button comes back up.
+        self.__move_kind: str = ""
+        self.__move_uid: str = ""
+        self.__move_from: Optional[Tuple[int, int]] = None
+        self.__move_offset: Tuple[int, int] = (0, 0)
 
         # Variant randomising. `__stroke_cells` remembers what the
         # current drag has already painted: without it, dragging back
@@ -513,6 +544,12 @@ class LevelEditorApp:
         items: List[PaletteItem] = []
         if self.__tab in (TAB_TILES, TAB_PROPS, TAB_NPCS):
             items.append(PaletteItem(ERASER_KEY, "erase", TOOL_ERASER))
+        # Not on TILES: a tile is a cell of the grid, not a placed
+        # entity, so there is nothing there to pick up. One selection
+        # is shared across every tab anyway, so the tool stays live
+        # after switching away from the tab it was picked from.
+        if self.__tab in (TAB_PROPS, TAB_NPCS):
+            items.append(PaletteItem(MOVE_KEY, "move", TOOL_MOVE))
         if self.__tab == TAB_TILES:
             for index in get_tile_indices():
                 items.append(PaletteItem(str(index),
@@ -536,6 +573,8 @@ class LevelEditorApp:
         frame here — the `idle` sheet is what stands in the map.
         """
         kind = item.get_kind()
+        if kind == TOOL_MOVE:
+            return self.__move_glyph(size)
         if kind == "tile":
             return self.__assets.get_tile(int(item.get_key()), size)
         if kind == "prop":
@@ -546,6 +585,38 @@ class LevelEditorApp:
         if kind == "npc":
             return self.__assets.get_npc_editor(item.get_key(), size)
         return None
+
+    @staticmethod
+    def __move_glyph(size: int) -> pygame.Surface:
+        """
+        The MOVE slot's four-way arrow, drawn rather than loaded.
+
+        [ICON PLACEHOLDER: assets/ui/icon_move.png -- four-way move
+         arrow.] Drawn here instead of falling through to the generic
+         placeholder square, which would leave the two tool slots
+         looking identical: the eraser already draws its own glyph, and
+         "the tool with no art" is not a thing an artist can fix.
+        """
+        surface = pygame.Surface((size, size), pygame.SRCALPHA)
+        mid = size // 2
+        arm = max(6, size // 2 - 8)
+        head = max(3, size // 10)
+        pygame.draw.line(surface, th.CREDIT_HL, (mid - arm, mid),
+                         (mid + arm, mid), 3)
+        pygame.draw.line(surface, th.CREDIT_HL, (mid, mid - arm),
+                         (mid, mid + arm), 3)
+        for tip, back in (((mid - arm, mid), (1, 0)), ((mid + arm, mid),
+                                                       (-1, 0)),
+                          ((mid, mid - arm), (0, 1)), ((mid, mid + arm),
+                                                       (0, -1))):
+            dx, dy = back
+            pygame.draw.polygon(surface, th.CREDIT_HL, [
+                tip,
+                (tip[0] + dx * head * 2 - dy * head,
+                 tip[1] + dy * head * 2 - dx * head),
+                (tip[0] + dx * head * 2 + dy * head,
+                 tip[1] + dy * head * 2 + dx * head)])
+        return surface
 
     # ─────────────────────────────────────────────────────────
     # SETTINGS SECTION  (Spec §4.4)
@@ -658,10 +729,11 @@ class LevelEditorApp:
         self.__sync_settings()
 
     def __clear_selection(self) -> None:
-        """Drop the active tool."""
+        """Drop the active tool, and any move it had in flight."""
         self.__selection_kind = TOOL_NONE
         self.__selection_key = ""
         self.__spawn_arm = False
+        self.__cancel_move()
 
     def __select(self, item: PaletteItem) -> None:
         """
@@ -682,6 +754,8 @@ class LevelEditorApp:
             return "SET SPAWN"
         if self.__selection_kind == TOOL_ERASER:
             return "ERASER"
+        if self.__selection_kind == TOOL_MOVE:
+            return "MOVE"
         if self.__selection_kind == "tile":
             entry = get_tile_def(int(self.__selection_key))
             return f"TILE: {entry['name']}" if entry else "TILE: ?"
@@ -741,6 +815,144 @@ class LevelEditorApp:
         """True while the eraser tool or the X-key shortcut is active."""
         return (self.__selection_kind == TOOL_ERASER
                 or pygame.key.get_pressed()[pygame.K_x])
+
+    # ── moving a placed entity ────────────────────────────────
+
+    def __move_target(self, cell: Tuple[int, int]):
+        """
+        `(kind, entity)` the MOVE tool would pick up on a cell, or None.
+
+        NPC first, then the topmost prop -- the same top-down order the
+        eraser and the right-click settings popup already use, so what
+        you can grab is exactly what you can see and edit.
+
+        Coverage, not anchor: get_prop_covering() answers for a prop's
+        whole footprint, so a 1x3 tree can be grabbed by its canopy as
+        well as its trunk. The eraser deliberately uses the anchor
+        instead, because peeling a stack one layer at a time needs a
+        precise cell; a drag needs whatever is under your hand.
+        """
+        npc = self.__level.get_npc_at(*cell)
+        if npc is not None:
+            return ("npc", npc)
+        prop = self.__level.get_prop_covering(*cell)
+        if prop is not None:
+            return ("prop", prop)
+        return None
+
+    def __move_entity(self):
+        """The entity being dragged, re-resolved from the document."""
+        if not self.__move_uid:
+            return None
+        if self.__move_kind == "npc":
+            return self.__find_npc(self.__move_uid)
+        return self.__level.get_prop_by_uid(self.__move_uid)
+
+    def __move_anchor(self, cell: Tuple[int, int]) -> Tuple[int, int]:
+        """
+        Where the dragged entity's own cell lands with the cursor here.
+
+        The grab offset is kept so a prop dropped by its canopy does
+        not jump a couple of cells up the screen on release -- what the
+        ghost shows under the cursor is what lands.
+        """
+        dx, dy = self.__move_offset
+        return (cell[0] + dx, cell[1] + dy)
+
+    @staticmethod
+    def __entity_name(kind: str, entity) -> str:
+        """Registry display name for a placed prop or NPC."""
+        registry = NPC_REGISTRY if kind == "npc" else PROP_REGISTRY
+        type_id = entity.get_type_id()
+        return registry.get(type_id, {}).get("name", type_id)
+
+    def __begin_move(self, cell: Tuple[int, int]) -> None:
+        """
+        Pick up whatever is on a cell. The document is NOT touched --
+        nothing is recorded or changed until the drop.
+        """
+        found = self.__move_target(cell)
+        if found is None:
+            self.__set_status("Nothing here to move")
+            return
+        kind, entity = found
+        ex, ey = entity.get_position()
+        self.__move_kind = kind
+        self.__move_uid = entity.get_uid()
+        self.__move_from = (ex, ey)
+        self.__move_offset = (ex - cell[0], ey - cell[1])
+        self.__set_status(f"Moving {self.__entity_name(kind, entity)}")
+
+    def __move_is_legal(self, cell: Optional[Tuple[int, int]]) -> bool:
+        """
+        Whether the drag could be dropped with the cursor on `cell`.
+
+        Read by the drop AND by the preview, so the outline turning red
+        cannot promise something the release then refuses.
+        """
+        if cell is None or self.__move_from is None:
+            return False
+        x, y = self.__move_anchor(cell)
+        if not self.__level.is_inside(x, y):
+            return False
+        # Props stack freely; a cell holds at most one NPC (Spec §4.3),
+        # and add_npc() resolves that by DELETING the sitting tenant.
+        # Silently destroying an authored NPC -- dialogue chains and
+        # all -- is the exact loss this tool exists to stop, so the
+        # drop is refused instead.
+        return not (self.__move_kind == "npc"
+                    and (x, y) != self.__move_from
+                    and self.__level.get_npc_at(x, y) is not None)
+
+    def __finish_move(self) -> None:
+        """
+        Drop the drag: one undo step, or nothing at all.
+
+        set_position() moves the OBJECT. Its uid, every per-instance
+        attribute and its index in the prop list -- which is the draw
+        order -- are all untouched, because none of them is rebuilt.
+        That is the whole fix: erase-and-re-place threw all three away.
+        """
+        entity = self.__move_entity()
+        kind, uid = self.__move_kind, self.__move_uid
+        origin, hover = self.__move_from, self.__hover_cell
+        legal = self.__move_is_legal(hover)
+        target = self.__move_anchor(hover) if hover is not None else None
+        self.__cancel_move()
+
+        if entity is None or origin is None or target is None:
+            return
+        if target == origin:
+            # A click, not a drag. No snapshot, so Ctrl+Z still undoes
+            # whatever the author actually did before this.
+            return
+        if not legal:
+            self.__set_status(
+                "An NPC is already on that cell"
+                if kind == "npc" and self.__level.is_inside(*target)
+                else "Outside the grid — nothing moved")
+            return
+
+        self.__record()
+        if not entity.set_position(*target):
+            self.__undo.discard()
+            return
+        name = self.__entity_name(kind, entity)
+        if kind == "prop":
+            self.__layer_uid = uid
+            position, total = self.__level.get_prop_depth(uid)
+            self.__set_status(f"{name} moved to ({target[0]},{target[1]}) "
+                              f"— layer {position} of {total}")
+        else:
+            self.__set_status(
+                f"{name} moved to ({target[0]},{target[1]})")
+
+    def __cancel_move(self) -> None:
+        """Let go of the drag without touching the document."""
+        self.__move_kind = ""
+        self.__move_uid = ""
+        self.__move_from = None
+        self.__move_offset = (0, 0)
 
     # ── layering ──────────────────────────────────────────────
 
@@ -958,6 +1170,12 @@ class LevelEditorApp:
             self.__painting = True
             self.__erase(cell)
             return
+        # After the eraser, so held X still overrides the way it
+        # overrides every other tool. `__painting` stays False: a move
+        # is one gesture with one result, not a stroke over cells.
+        if self.__selection_kind == TOOL_MOVE:
+            self.__begin_move(cell)
+            return
         if self.__spawn_arm or self.__selection_kind != TOOL_NONE:
             self.__record()
             self.__painting = self.__selection_kind == "tile"
@@ -1070,6 +1288,8 @@ class LevelEditorApp:
             if event.button in (1, 2):
                 if event.button == 1 and self.__zone_anchor is not None:
                     self.__finish_zone_drag()
+                if event.button == 1 and self.__move_uid:
+                    self.__finish_move()
                 self.__painting = False
                 self.__panning = False
         elif event.type == pygame.MOUSEMOTION:
@@ -1091,7 +1311,14 @@ class LevelEditorApp:
         elif ctrl and event.key == pygame.K_y:
             self.__redo_step()
         elif event.key == pygame.K_ESCAPE:
-            self.__clear_selection()
+            # A drag in flight is what ESC is most likely aimed at, and
+            # dropping the MOVE tool with it would mean re-selecting
+            # the tool before the same move could be tried again.
+            if self.__move_uid:
+                self.__cancel_move()
+                self.__set_status("Move cancelled")
+            else:
+                self.__clear_selection()
         elif event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4,
                            pygame.K_5):
             self.__set_tab(event.key - pygame.K_1)
@@ -1665,6 +1892,9 @@ class LevelEditorApp:
         if self.__hover_cell is None:
             return
         rect = self.__cell_screen_rect(*self.__hover_cell)
+        if self.__selection_kind == TOOL_MOVE:
+            self.__render_move_hover(cell_px)
+            return
         if self.__selection_kind not in (TOOL_NONE, TOOL_ERASER):
             ghost = self.__ghost_sprite(cell_px)
             if ghost is None:
@@ -1684,6 +1914,80 @@ class LevelEditorApp:
                 if self.__selection_kind == "prop" else rect.topleft)
         outline = th.BAR_OVER if self.__is_erasing() else th.ROW_BLUE
         pygame.draw.rect(self.__window, outline, rect, 2)
+
+    def __render_move_hover(self, cell_px: int) -> None:
+        """
+        What the MOVE tool is pointing at, or where the drag will land.
+
+        Idle, it outlines the whole FOOTPRINT of the entity under the
+        cursor in green, because coverage is what the grab uses and a
+        single-cell outline would lie about which prop a click on a
+        tree's canopy would pick up.
+
+        Dragging, it ghosts the entity over the destination and outlines
+        it green or red. The original stays drawn where it is until the
+        button comes up, so the move reads as a from-and-to rather than
+        as the prop teleporting under the hand.
+        """
+        if self.__hover_cell is None:
+            return
+        if not self.__move_uid:
+            found = self.__move_target(self.__hover_cell)
+            if found is None:
+                pygame.draw.rect(self.__window, th.STAT_BROWN,
+                                 self.__cell_screen_rect(*self.__hover_cell),
+                                 2)
+                return
+            kind, entity = found
+            self.__outline_entity(kind, entity, entity.get_position(),
+                                  cell_px, th.ROW_GREEN)
+            return
+
+        entity = self.__move_entity()
+        if entity is None:
+            return
+        legal = self.__move_is_legal(self.__hover_cell)
+        target = self.__move_anchor(self.__hover_cell)
+        rect = self.__cell_screen_rect(*target)
+        sprite = None
+        if self.__move_kind == "prop" and not entity.is_portal():
+            sprite = self.__turn(
+                self.__assets.get_prop(entity.get_type_id(), cell_px),
+                entity.get_rotation())
+        elif self.__move_kind == "npc":
+            sprite = self.__assets.get_npc_editor(entity.get_type_id(),
+                                                  npc_sprite_px(cell_px))
+        if sprite is not None:
+            ghost = sprite.copy()
+            ghost.set_alpha(128)
+            if self.__move_kind == "npc":
+                dx, dy = npc_blit_offset(cell_px)
+                self.__window.blit(ghost, (rect.x + dx, rect.y + dy))
+            else:
+                # Bottom-left anchored, exactly like the real draw.
+                self.__window.blit(
+                    ghost, (rect.x, rect.bottom - ghost.get_height()))
+        self.__outline_entity(self.__move_kind, entity, target, cell_px,
+                              th.ROW_GREEN if legal else th.BAR_OVER)
+
+    def __outline_entity(self, kind: str, entity, cell: Tuple[int, int],
+                         cell_px: int, colour: tuple) -> None:
+        """
+        Outline the cells `entity` would occupy anchored at `cell`.
+
+        An NPC is one cell (Spec §4.3); a prop is whatever its art
+        measures, running UPWARD from the anchor the way
+        get_footprint_rect() reports it. Only the SIZE is taken from
+        that rect -- the position is the hypothetical one being drawn,
+        not the one the prop is still sitting on.
+        """
+        width = height = 1
+        if kind == "prop":
+            _, _, width, height = entity.get_footprint_rect()
+        top_left = self.__cell_screen_rect(cell[0], cell[1] - height + 1)
+        pygame.draw.rect(self.__window, colour,
+                         pygame.Rect(top_left.x, top_left.y,
+                                     width * cell_px, height * cell_px), 2)
 
     def __ghost_sprite(self, cell_px: int) -> Optional[pygame.Surface]:
         """The preview sprite for whatever tool is selected."""
@@ -1919,6 +2223,11 @@ class LevelEditorApp:
             th.draw_text(self.__window, font, "ERASES TOP-DOWN:",
                          (x, footer_y), th.CREDIT_HL)
             th.draw_text(self.__window, font, "NPC > PROP > OVERLAY > GROUND",
+                         (x, footer_y + 14), th.STAT_BROWN)
+        elif self.__selection_kind == TOOL_MOVE:
+            th.draw_text(self.__window, font, "DRAG A PLACED PROP OR NPC",
+                         (x, footer_y), th.CREDIT_HL)
+            th.draw_text(self.__window, font, "KEEPS UID, SETTINGS, LAYER",
                          (x, footer_y + 14), th.STAT_BROWN)
         elif self.__selection_kind == "tile":
             index = int(self.__selection_key)
