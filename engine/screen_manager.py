@@ -59,6 +59,10 @@ class ScreenState(Enum):
     # days to the main quest in one go. Appended for the same reason
     # ACTIVITY was.
     PASS_DAYS = auto()
+    # The side quest list the PC in the player's room opens: the topics
+    # the player took on, and the ones already read through. Appended
+    # for the same reason ACTIVITY was.
+    SIDE_QUESTS = auto()
 
 
 class ScreenManager:

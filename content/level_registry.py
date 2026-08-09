@@ -728,6 +728,10 @@ MENU_REGISTRY: Dict[str, Dict[str, Any]] = {
     # without either being repeated. Appended, never inserted, for the
     # reason above.
     "pass_days":    {"name": "Pass Remaining Days",  "state": "PASS_DAYS"},
+    # The side quest list. Hung on the PC in the player's room, but a
+    # menu id rather than a hardcoded prop so any terminal an author
+    # likes can open it. Appended, never inserted, for the reason above.
+    "side_quests":  {"name": "Side Quests",          "state": "SIDE_QUESTS"},
 }
 
 MENU_ID_DEFAULT: str = "registration"

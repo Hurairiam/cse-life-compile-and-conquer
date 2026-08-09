@@ -514,7 +514,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1,
-        "menu_id": "skill_tree"
+        "menu_id": "side_quests"
       }
     },
     {
@@ -530,7 +530,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1,
-        "menu_id": "skill_tree"
+        "menu_id": "side_quests"
       }
     },
     {
