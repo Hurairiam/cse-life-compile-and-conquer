@@ -438,6 +438,7 @@ def build_state(display_name: str = "", character_id: str = "",
                 talked_npc_uids: Optional[List[str]] = None,
                 dialogue_choices: Optional[Dict[str, int]] = None,
                 return_positions: Optional[Dict[str, List[int]]] = None,
+                quest_states: Optional[Dict[str, str]] = None,
                 global_career_clock_days: int = 0,
                 playtime_seconds: int = 0) -> Dict[str, Any]:
     """
@@ -487,6 +488,18 @@ def build_state(display_name: str = "", character_id: str = "",
             # area opens at its SET SPAWN cell, so SAVE_SCHEMA_VERSION
             # stays where it is.
             "return_positions": dict(return_positions or {}),
+        },
+        "quests": {
+            # The twelve side quests, "<quest id>": "<state>", one of
+            # unoffered / declined / missed / unlocked / completed.
+            # Additive in exactly the way dialogue_choices and
+            # return_positions above are: a save written before the
+            # quest system loads with the whole block absent, which
+            # engine/quest_state.py::from_state() reads as twelve
+            # Unoffered quests, so SAVE_SCHEMA_VERSION stays where it
+            # is. Bumping would only make older builds refuse a file
+            # they can read perfectly well.
+            "states": dict(quest_states or {}),
         },
         "clock": {
             "global_career_clock_days": int(global_career_clock_days),

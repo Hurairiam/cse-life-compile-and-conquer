@@ -101,6 +101,14 @@ class AppContext:
         # once; content/npc_quest_offers.py holds the table.
         self.unlocked_side_quests = set()
         self.decided_quest_semesters = set()
+        # The twelve side quests as a five-state machine, and the one
+        # that survives save/load -- engine/save_bridge.py rebuilds it
+        # from the save's "quests" block. The two sets above are the
+        # Phase 9 offer's own bookkeeping, and Phase 13 is where the
+        # offer moves onto this machine; until then they run alongside
+        # it and nothing here reads them.
+        from engine.quest_state import QuestStateMachine
+        self.quest_states = QuestStateMachine()
         self.pending_quest_npc = None
         self.seen_quest_intro_semesters = set()
         self.quest_intro_popup = MessagePopup(screen_w, screen_h, box_y=40)

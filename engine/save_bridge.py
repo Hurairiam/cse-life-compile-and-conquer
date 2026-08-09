@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from academic.course_catalog import build_course_catalog, get_course_by_code
 from academic.semester import Semester
-from engine import return_points
+from engine import quest_state, return_points
 from engine.game_clock import GameClock
 from engine.game_session import GameSession
 from engine.registration_manager import RegistrationManager
@@ -62,6 +62,7 @@ def capture(ctx) -> dict:
         talked_npc_uids=sorted(ctx.talked_npc_uids),
         dialogue_choices=dict(getattr(ctx, "dialogue_choices", {}) or {}),
         return_positions=return_points.to_state(ctx),
+        quest_states=quest_state.to_state(ctx),
         global_career_clock_days=ctx.session.get_global_career_clock_days(),
         playtime_seconds=int(ctx.playtime_seconds),
     )
@@ -75,6 +76,7 @@ def restore(ctx, state: dict) -> bool:
     s = state.get("semester") or {}
     a = state.get("academic") or {}
     w = state.get("world") or {}
+    q = state.get("quests") or {}
     c = state.get("clock") or {}
 
     # -- fresh systems ------------------------------------------
@@ -165,6 +167,16 @@ def restore(ctx, state: dict) -> bool:
     # rather than letting it reach walker.place().
     ctx.return_positions = return_points.from_state(w.get("return_positions"))
     ctx.level = None                 # STAGE 5 reloads from ctx.level_id
+
+    # -- the twelve side quests (Phase 12) ----------------------
+    # A save written before the quest system has no "quests" block at
+    # all, so q is {} and from_state(None) hands back twelve Unoffered
+    # quests -- a loaded old save is simply one that has not been
+    # offered anything yet. Every malformed entry is dropped rather
+    # than raising: refusing to load a playthrough over a hand-edited
+    # quest name would be a worse bug than starting that one quest
+    # over.
+    ctx.quest_states = quest_state.from_state(q.get("states"))
 
     # -- reset transient screen state ---------------------------
     # The conversation refs point into the level document that is about
