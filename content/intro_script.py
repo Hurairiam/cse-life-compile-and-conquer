@@ -2,7 +2,7 @@
 content/intro_script.py
 CSE Life: Compile & Conquer
 ─────────────────────────────────────────────────────────────
-Created by: Ayesha Saheba Mostofa (dev4-aysha-narrative)
+Created by: Ayesha Saheba Mostafa (dev4-aysha-narrative)
 Phase 18 — the three opening cutscenes.
 
 Ms. Roya's briefing, room tour and lecture hall tour, played once
@@ -34,7 +34,7 @@ INTRO_BEATS: dict[str, dict] = {
             "Welcome to Compile & Conquer. I'm Ms. Roya.",
             "You're about to start your journey as a Computer Science and Engineering student. It'll be twelve semesters of coding, problem solving, and the occasional all-nighter.",
             "You'll need 140 credits to graduate, and each semester gives you a budget of 80 days for studying, exams, side work, and everything in between.",
-            "It won't always be an easy path, but if you stick with it, there's a degree waiting for you at the end.",
+            "It won't always be an easy path, but if you stick with it, you'll have something to be proud of at the end.",
             "And I'll be your advisor for the road ahead.",
             "Before any of that begins, though, what should I call you?",
         ],
