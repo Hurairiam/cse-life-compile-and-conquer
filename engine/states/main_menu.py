@@ -28,9 +28,11 @@ def __activate(ctx, index):
     ui.notify_activated()
     if index == START_GAME:
         save_bridge.new_game(ctx)
-        from engine.states import monologue
-        monologue.start_opening(ctx, ScreenState.REGISTRATION)
-        ctx.go(ScreenState.MONOLOGUE)
+        # Name first, then the opening beat -- NAME_ENTRY arms the
+        # monologue itself. The reset above has to come first: it
+        # rebuilds the GameSession, so a name set before it would be
+        # thrown away with the old Player.
+        ctx.go(ScreenState.NAME_ENTRY)
     elif index == LOAD_GAME:
         ctx.return_state = ScreenState.MAIN_MENU
         ctx.go(ScreenState.LOAD_GAME)

@@ -40,6 +40,34 @@ class ScreenState(Enum):
     # existing member would renumber the ones after it.
     ACTIVITY = auto()
     CUTSCENE = auto()
+    # Name entry, between START GAME and the opening monologue.
+    # Appended for the same reason ACTIVITY was.
+    NAME_ENTRY = auto()
+    # The slot picker the pause menu's SAVE GAME opens. Appended for the
+    # same reason ACTIVITY was.
+    SAVE_GAME = auto()
+    # The "Where to go?" destination list a teleport prop opens.
+    # Appended for the same reason ACTIVITY was.
+    TELEPORT = auto()
+    # The "end the semester now?" question an end_semester prop opens,
+    # so a player who finished the exams with days to spare can close
+    # the term when they are done roaming. Appended for the same reason
+    # ACTIVITY was.
+    END_SEMESTER = auto()
+    # The "pass the rest of the term?" question a pass_days prop opens,
+    # so a player who is done with a semester can hand its remaining
+    # days to the main quest in one go. Appended for the same reason
+    # ACTIVITY was.
+    PASS_DAYS = auto()
+    # The side quest list the PC in the player's room opens: the topics
+    # the player took on, and the ones already read through. Appended
+    # for the same reason ACTIVITY was.
+    SIDE_QUESTS = auto()
+    # The lecture reader one of those topics opens, once its days have
+    # been paid for. Not in MENU_REGISTRY on purpose: no prop routes
+    # here, only engine/states/side_quests.py after the charge lands.
+    # Appended for the same reason ACTIVITY was.
+    SIDE_QUEST_LECTURE = auto()
 
 
 class ScreenManager:

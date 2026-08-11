@@ -12,10 +12,18 @@ completion, awards credits and backlogs a failure.
 ctx.exam is the run bookkeeping:
     course_index  which registered course is being sat
     message       set only when a course had to be skipped
+
+WHEN THE LAST COURSE IS DONE, engine/final_exam.py takes over: it
+congratulates the player once and then either hands the campus back
+(days left) or closes the term (no days left). close_semester() below
+is still the only thing that rolls a semester over — that module only
+decides when it is called, and engine/quest_offer.py only asks it to
+close the term's side quest on the way past.
 """
 import pygame
 
 from academic.quest import MainQuest
+from engine import final_exam, quest_offer
 from engine.exam_session import ExamSession, QUESTION_TIME_LIMIT_SECONDS
 from engine.screen_manager import ScreenState
 
@@ -112,6 +120,16 @@ def __next_course(ctx):
 
 def close_semester(ctx):
     """Every course attempted: close the term and route onward."""
+    # This term's side quest, if its NPC never got round to putting it,
+    # is Missed and gone for good. engine/quest_offer.py owns the call
+    # so this file stays out of the quest system, and it reads the
+    # ending semester off ctx — advance_semester() has not run yet.
+    #
+    # FIRST, above the freeze check, by owner ruling: a run that ends on
+    # ENDGAME still has to close its books, or the final term's quest
+    # would sit Unoffered forever and Phase 16's ending gate would be
+    # reading a term that never finished.
+    quest_offer.expire_semester(ctx)
     ctx.game_clock.check_semester_end_state()
     ctx.exam.update({"course_index": 0, "tier_index": 0,
                      "answers": {}, "message": None})
@@ -135,6 +153,12 @@ def update(ctx, dt):
     ctx.exam_screen.update(dt)
 
     if __current_course(ctx) is None:
+        # Every course attempted. The congratulations popup and the
+        # "roam or roll over" decision live in engine/final_exam.py —
+        # a new module cannot conflict, and this file is shared. It
+        # fires once per semester, so a later visit to this screen
+        # falls straight through to the SPACE prompt in render().
+        final_exam.check(ctx)
         return                                  # waiting on SPACE, see render
 
     __ensure_session(ctx)
@@ -201,8 +225,13 @@ def render(ctx, screen):
     if course is None or session is None:
         screen.fill(BG)
         font = ctx.fonts["body"]
+        # "TO END THE SEMESTER" rather than the old "TO CONTINUE":
+        # SPACE used to be the only way out of this screen, so what it
+        # continued to was obvious. Now the player is handed back to
+        # the campus when the exams end and only returns here on
+        # purpose, so the key has to say what it costs them.
         text = (ctx.exam["message"]
-                or "ALL EXAMS ATTEMPTED — PRESS SPACE TO CONTINUE")
+                or "ALL EXAMS ATTEMPTED — PRESS SPACE TO END THE SEMESTER")
         surf = font.render(text, True, (74, 53, 39))
         screen.blit(surf, (ctx.screen_w // 2 - surf.get_width() // 2, 340))
         return

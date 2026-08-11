@@ -17,7 +17,7 @@ import importlib
 
 import pygame
 
-from engine import soundtrack
+from engine import day_warning, soundtrack
 from engine.screen_manager import ScreenState
 
 # HUD is hidden on these. Everything else shows it.
@@ -25,6 +25,12 @@ HUD_HIDDEN = (
     ScreenState.MAIN_MENU, ScreenState.ENDGAME, ScreenState.MONOLOGUE,
     ScreenState.SETTINGS, ScreenState.LOAD_GAME, ScreenState.CERTIFICATE,
     ScreenState.SKILL_TREE, ScreenState.STATS, ScreenState.EXAM_RESULT,
+    # Name entry runs before the game proper: there is no semester to
+    # report yet, and the strip would sit over a ceremonial card.
+    ScreenState.NAME_ENTRY,
+    # The save picker is the load table under another title, and
+    # LOAD_GAME hides the HUD for the same reason: the card is full-bleed.
+    ScreenState.SAVE_GAME,
 )
 
 
@@ -115,6 +121,10 @@ class StateRouter:
                 credits=ctx.player().get_accumulated_credits(),
                 location=(ctx.level.get_level_name()
                           if ctx.level is not None else ""),
+                # Derived every frame rather than remembered, so the
+                # chip follows the day count down and disappears by
+                # itself when advance_semester() refills the pool.
+                low_days=day_warning.hud_days(ctx),
             )
         if ctx.pause_menu is not None and ctx.pause_menu.is_open():
             ctx.pause_menu.render(screen, ctx.pause_focus)

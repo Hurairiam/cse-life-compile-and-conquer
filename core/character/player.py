@@ -21,6 +21,19 @@ if TYPE_CHECKING:
     from academic.academic_history import AcademicHistory
     from core.skill_tree import SkillTree
 
+# The student ID printed on the registration panel, the stats card and
+# the graduation certificate -- a roll number rather than the old
+# "player_01" placeholder. This is the id play_registration.py has shown
+# on the registration screen all along, so the harness and the game now
+# agree; that file hardcodes its own copy on purpose, because it
+# deliberately imports no Player (see its module docstring).
+#
+# Fixed, not generated: save_bridge.restore() rebuilds the Player from
+# this constant, so a generated id would have to be persisted or it
+# would change every time a save was loaded.
+# [Sprint 4 — student ID]
+STUDENT_ID: str = "8324782"
+
 
 class Player(Character):
     """
@@ -34,7 +47,7 @@ class Player(Character):
 
     def __init__(self) -> None:
         super().__init__(
-            character_id="player_01",
+            character_id=STUDENT_ID,
             display_name="CSE Student",
             current_location_id="campus_main"
         )
