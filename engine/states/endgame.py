@@ -4,13 +4,21 @@ epilogue delivers the verdict, the certificate is the record.
 """
 import pygame
 
+from engine import ending_gate
 from engine.screen_manager import ScreenState
 
 
 def enter(ctx):
     if ctx.endgame_result is None:
         manager = ctx.session.trigger_endgame_evaluation()
-        ctx.endgame_result = manager.evaluate(ctx.player())
+        # PHASE 16 — the skill axis of the ending. "Highly skilled" is
+        # all twelve side quests Completed and nothing else; the rule
+        # and the reasoning are in engine/ending_gate.py. This is the
+        # manager's only caller, so it is the only place the verdict
+        # has to be supplied — the machine hangs off ctx and a Player
+        # cannot reach it.
+        ctx.endgame_result = manager.evaluate(
+            ctx.player(), ending_gate.is_highly_skilled(ctx))
     # Music is set centrally by engine/soundtrack.py via the router:
     # every screen takes the "menu" track except EXAM, which is silent.
     if ctx.audio is not None:

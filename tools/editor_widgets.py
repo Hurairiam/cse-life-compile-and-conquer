@@ -441,7 +441,11 @@ class PaletteGrid:
             else:
                 sprite = sprite_for(item, self.CELL)
                 if sprite is not None:
-                    surface.blit(sprite, cell.topleft)
+                    # CENTRED, not corner-blitted: a prop swatch keeps
+                    # its own proportions, so a tall tree comes back
+                    # narrower than the cell and a wide bench shorter.
+                    # A square sprite lands exactly where it always did.
+                    surface.blit(sprite, sprite.get_rect(center=cell.center))
                 else:
                     th.draw_placeholder(surface, cell)
 

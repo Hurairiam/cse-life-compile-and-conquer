@@ -32,11 +32,12 @@ import json
 import os
 import re
 from collections import deque
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from content.level_registry import (
     AMBIENT_DEFAULT,
     AMBIENT_PRESETS,
+    CHOICE_OPTIONS_MAX,
     DEFAULT_GROUND_TILE,
     EMPTY_TILE,
     EXP_MAX,
@@ -70,14 +71,23 @@ from content.level_registry import (
     MENU_REGISTRY,
     MONEY_MAX,
     MONEY_MIN,
+    NOTE_LINE_MAX,
+    NOTE_LINES_MAX,
+    NOTE_TITLE_DEFAULT,
+    NOTE_TITLE_MAX,
     ON_COMPLETE_DEFAULT,
     ON_COMPLETE_MODES,
+    PASS_BEHIND_DEFAULT,
+    BEHIND_TRANSPARENCY_DEFAULT,
     PORTAL_TYPE_ID,
     PROJECT_ROOT,
     ROTATION_DEFAULT,
+    get_prop_footprint,
     is_multicell_prop,
     normalise_rotation,
+    normalise_transparency,
     prop_cells,
+    transparency_to_alpha,
     SKILL_IDS,
     SPEED_MODIFIER_BASE,
     SPEED_MODIFIER_MAX,
@@ -119,7 +129,8 @@ _KNOWN_META_KEYS: tuple = ("level_name", "level_id", "grid_width",
                            "grid_height", "ambient", "music", "spawn")
 _KNOWN_PROP_KEYS: tuple = ("uid", "type_id", "x", "y", "passthrough",
                            "speed_modifier", "interactable", "interaction",
-                           "gate", "rotation")
+                           "gate", "rotation", "pass_behind",
+                           "behind_transparency")
 _KNOWN_NPC_KEYS: tuple = ("uid", "type_id", "x", "y", "facing",
                           "interactable", "dialog", "gate")
 _KNOWN_ZONE_KEYS: tuple = ("uid", "zone_id", "display_name", "x", "y",
@@ -706,12 +717,16 @@ class PropData:
         self.__x: int = int(x)
         self.__y: int = int(y)
         self.__passthrough: bool = default_passthrough
+        self.__pass_behind: bool = PASS_BEHIND_DEFAULT
+        self.__behind_transparency: int = BEHIND_TRANSPARENCY_DEFAULT
         self.__speed_modifier: float = SPEED_MODIFIER_BASE
         self.__interactable: bool = False
         self.__kind: str = INTERACTION_KIND_DEFAULT
         self.__amount: float = 0.0
         self.__skill_id: Optional[str] = None
         self.__menu_id: str = ""
+        self.__note_title: str = ""
+        self.__note_lines: List[str] = []
         self.__rotation: int = ROTATION_DEFAULT
         self.__triggers_per_semester: int = TRIGGERS_DEFAULT
         self.__target_level_id: str = ""
@@ -758,6 +773,36 @@ class PropData:
         self.__rotation = value
         return changed
 
+    def get_footprint_rect(self) -> Tuple[int, int, int, int]:
+        """
+        (x, y, w, h) in CELLS of everything this prop covers.
+
+        The stored position is the prop's BOTTOM-LEFT corner, so the
+        rectangle runs upward from it and its top row is y - h + 1.
+        Rotation is ignored on purpose, the same way set_rotation()
+        ignores it: a turned prop occupies the cells it always did.
+        """
+        cells_w, cells_h = get_prop_footprint(self.__type_id)
+        return (self.__x, self.__y - cells_h + 1, cells_w, cells_h)
+
+    def covers_cell(self, x: int, y: int) -> bool:
+        """True when a cell falls anywhere inside this prop's footprint."""
+        fx, fy, fw, fh = self.get_footprint_rect()
+        return fx <= x < fx + fw and fy <= y < fy + fh
+
+    def overlaps(self, other: "PropData") -> bool:
+        """
+        True when two props' footprints share at least one cell.
+
+        This is what makes "bring forward" mean something: the props a
+        given one is actually stacked with, rather than every prop in
+        the level.
+        """
+        ax, ay, aw, ah = self.get_footprint_rect()
+        bx, by, bw, bh = other.get_footprint_rect()
+        return (ax < bx + bw and bx < ax + aw
+                and ay < by + bh and by < ay + ah)
+
     def is_portal(self) -> bool:
         """
         True for the step-on portal prop type (Spec §9).
@@ -796,8 +841,56 @@ class PropData:
         kept: flipping a prop to BLOCKING makes its modifier dead
         data, which validate() then flags (MODIFIER_ON_BLOCKER)
         rather than silently discarding the designer's setting.
+
+        Making a prop solid also drops "pass from behind", because a
+        prop the player cannot walk into is one they can never end up
+        behind — the two settings would contradict each other and the
+        collision grid would have to pick a winner silently.
         """
         self.__passthrough = bool(value)
+        if not self.__passthrough:
+            self.__pass_behind = False
+
+    def get_pass_behind(self) -> bool:
+        """
+        True when the player walks BEHIND this prop instead of over it.
+
+        The prop is then drawn above the player and faded to
+        get_behind_transparency() while they are inside its footprint,
+        so a shopfront or a bookshelf can be stood behind without the
+        player disappearing into it.
+        """
+        return self.__pass_behind
+
+    def set_pass_behind(self, value: bool) -> None:
+        """
+        Turn walk-behind on or off.
+
+        Turning it ON also makes the prop passthrough: the whole point
+        is that the player walks INTO its cells, which a solid prop can
+        never allow. Writing both means every reader that predates this
+        setting — the collision grid, the validator, the game's own
+        older draw path — still gets the right answer from the
+        `passthrough` flag alone.
+        """
+        self.__pass_behind = bool(value)
+        if self.__pass_behind:
+            self.__passthrough = True
+
+    def get_behind_transparency(self) -> int:
+        """How see-through the prop goes, in percent, while walked behind."""
+        return self.__behind_transparency
+
+    def set_behind_transparency(self, value: Any) -> bool:
+        """Clamp into the legal range. True when the value changed."""
+        percent = normalise_transparency(value)
+        changed = percent != self.__behind_transparency
+        self.__behind_transparency = percent
+        return changed
+
+    def get_behind_alpha(self) -> int:
+        """The blit alpha (0-255) to draw this prop at while walked behind."""
+        return transparency_to_alpha(self.__behind_transparency)
 
     def get_speed_modifier(self) -> float:
         """Multiplier the player's speed eases toward on this cell."""
@@ -824,7 +917,7 @@ class PropData:
         self.__interactable = bool(value)
 
     def get_interaction_kind(self) -> str:
-        """"none", "money", "skill" or "menu"."""
+        """"none", "money", "skill", "menu", "travel" or "note"."""
         return self.__kind
 
     def set_interaction_kind(self, kind: str) -> bool:
@@ -834,6 +927,9 @@ class PropData:
 
         "menu" grants nothing — it opens a screen — so it clears the
         amount exactly as "none" does and seeds a menu id instead.
+        "note" grants nothing either — it shows authored text — and is
+        seeded the same way, with a default title rather than a blank
+        one so a prop switched to it is never nameless on screen.
         """
         if kind not in INTERACTION_KINDS:
             return False
@@ -860,6 +956,15 @@ class PropData:
             # kept in the same fields a portal uses.
             self.__amount = 0.0
             self.__skill_id = None
+        elif kind == "note":
+            # A sign grants nothing; it is read. The text is kept in the
+            # note fields, and the title is seeded so a prop flipped to
+            # this kind opens a popup with a heading on it rather than
+            # an empty bar.
+            self.__amount = 0.0
+            self.__skill_id = None
+            if not self.__note_title:
+                self.__note_title = NOTE_TITLE_DEFAULT
         else:
             self.__amount = 0.0
             self.__skill_id = None
@@ -898,6 +1003,72 @@ class PropData:
         """True when interacting with this prop should open a screen."""
         return (self.__interactable and self.__kind == "menu"
                 and bool(self.__menu_id))
+
+    # ── note (a sign the author writes) ────────────────────────
+
+    def get_note_title(self) -> str:
+        """
+        The heading a "note" prop's popup wears ("" = unset).
+
+        Kept even after the kind is switched away, exactly as the menu
+        id is: an author who flips a poster to money and back does not
+        lose what they had written on it.
+        """
+        return self.__note_title
+
+    def set_note_title(self, title: Optional[str]) -> bool:
+        """
+        Retitle the note, or None/"" to clear it.
+
+        Clamped rather than refused. A title is free text — there is no
+        "nearest legal value" to substitute and nothing downstream to
+        confuse — so an over-long one is cut to what the card can draw
+        instead of being rejected mid-keystroke in the editor.
+        """
+        text = "" if title is None else str(title).strip()[:NOTE_TITLE_MAX]
+        changed = text != self.__note_title
+        self.__note_title = text
+        return changed
+
+    def get_note_lines(self) -> List[str]:
+        """
+        The body lines a "note" prop shows, at most NOTE_LINES_MAX.
+
+        A copy, so a caller drawing them cannot edit the prop.
+        """
+        return list(self.__note_lines)
+
+    def set_note_lines(self, lines: Optional[Sequence[Any]]) -> bool:
+        """
+        Replace the note's body. None or an empty list clears it.
+
+        Blank lines are dropped rather than kept: ui/popup.py centres
+        each line at a fixed pitch, so an empty one is a visible gap in
+        the middle of the message, and the author who left the second
+        field empty meant "two lines", not "a hole".
+        """
+        cleaned: List[str] = []
+        for line in (lines or []):
+            text = str(line).strip()[:NOTE_LINE_MAX]
+            if text:
+                cleaned.append(text)
+            if len(cleaned) >= NOTE_LINES_MAX:
+                break
+        changed = cleaned != self.__note_lines
+        self.__note_lines = cleaned
+        return changed
+
+    def shows_note(self) -> bool:
+        """
+        True when interacting with this prop should show its note.
+
+        Requires actual text, the same way opens_menu() requires an
+        actual menu id: a note prop with nothing written on it must fall
+        through to the ordinary "nothing here" line rather than opening
+        an empty card, and validate() warns about it at save time.
+        """
+        return (self.__interactable and self.__kind == "note"
+                and bool(self.__note_lines))
 
     def get_amount(self) -> float:
         """BDT for money rewards, EXP points for skill rewards."""
@@ -1021,10 +1192,25 @@ class PropData:
         # level authored earlier still round-trips byte-identical.
         if self.__menu_id:
             data["interaction"]["menu_id"] = self.__menu_id
+        # Same rule again for the note: written only when something was
+        # actually typed, so every level authored before notes existed
+        # round-trips byte for byte. The title rides on the lines rather
+        # than on its own condition — a heading with no message under it
+        # is not a note, and writing it alone would leave a key behind
+        # that nothing reads.
+        if self.__note_lines:
+            data["interaction"]["note_title"] = self.__note_title
+            data["interaction"]["note_lines"] = list(self.__note_lines)
         # Omitted while unturned, so a level with no rotated props
         # serialises exactly as it did before rotation existed.
         if self.__rotation:
             data["rotation"] = self.__rotation
+        # Same rule for walk-behind: a prop that does not use it writes
+        # neither key, so every level authored before the setting
+        # existed round-trips byte-identical.
+        if self.__pass_behind:
+            data["pass_behind"] = True
+            data["behind_transparency"] = self.__behind_transparency
         # Written for step-on portals AND for any prop whose interaction
         # kind is "travel". A prop that does neither omits both keys, so
         # every level authored before travel props round-trips unchanged.
@@ -1051,12 +1237,26 @@ class PropData:
                                                SPEED_MODIFIER_BASE)))
         prop.set_interactable(bool(data.get("interactable", False)))
         prop.set_rotation(data.get("rotation", ROTATION_DEFAULT))
+        # After set_passthrough, never before: turning walk-behind on
+        # forces passthrough, and a stored `passthrough: false` beside
+        # `pass_behind: true` must not win over it.
+        prop.set_behind_transparency(data.get("behind_transparency",
+                                              BEHIND_TRANSPARENCY_DEFAULT))
+        prop.set_pass_behind(bool(data.get("pass_behind",
+                                           PASS_BEHIND_DEFAULT)))
 
         interaction: Dict[str, Any] = data.get("interaction") or {}
         # Read BEFORE the kind so switching to "menu" sees the stored
         # id and does not overwrite it with the default.
         if interaction.get("menu_id"):
             prop.set_menu_id(str(interaction["menu_id"]))
+        # Read before the kind for the same reason the menu id is:
+        # switching to "note" seeds a default title, and a stored one
+        # must not be overwritten by it.
+        if interaction.get("note_title"):
+            prop.set_note_title(str(interaction["note_title"]))
+        if interaction.get("note_lines"):
+            prop.set_note_lines(interaction["note_lines"])
         prop.set_interaction_kind(str(interaction.get(
             "kind", INTERACTION_KIND_DEFAULT)))
         if interaction.get("amount") is not None:
@@ -1096,6 +1296,23 @@ class DialogChain:
     in-game chat box can show the right NPC face (owner request:
     "in interaction chatboxes it should be the npc images with the
     emotions"). Chains without it fall back to the NPC's default.
+
+    CHOICE (owner request, 2026-08-08). A chain may end in a branch
+    instead of simply finishing: `choice` carries a prompt and up to
+    CHOICE_OPTIONS_MAX replies, each naming the chain to jump to.
+
+        {"prompt": "WHAT DO YOU SAY?",
+         "options": [{"label": "Sure.",       "goto": "rafi_yes"},
+                     {"label": "Not today.",  "goto": "rafi_no"}]}
+
+    An option whose `goto` is "" ends the conversation, which is what
+    makes a plain accept/decline pair work without authoring a dead
+    chain for the decline arm. A `goto` naming a chain that does not
+    exist is a WARNING, not a blocker — the conversation just ends,
+    and a typo in one reply must never stop a level loading.
+
+    Serialised only when there IS a choice, so every level file that
+    predates this still round-trips byte for byte.
     """
 
     def __init__(self, chain_id: str, lines: Optional[List[str]] = None,
@@ -1103,6 +1320,8 @@ class DialogChain:
         self.__chain_id: str = chain_id
         self.__lines: List[str] = list(lines) if lines else []
         self.__emotion: str = emotion
+        self.__choice_prompt: str = ""
+        self.__choice_options: List[Dict[str, str]] = []
         self.__extra: Dict[str, Any] = {}
 
     def get_chain_id(self) -> str:
@@ -1165,12 +1384,86 @@ class DialogChain:
         """Set the portrait emotion; validated against the NPC later."""
         self.__emotion = emotion or ""
 
+    # ── choice (owner request, 2026-08-08) ────────────────────
+
+    def has_choice(self) -> bool:
+        """True when this chain ends in a branch rather than just stopping."""
+        return len(self.__choice_options) > 0
+
+    def get_choice_prompt(self) -> str:
+        """The ALL-CAPS strip above the replies ("" = the box default)."""
+        return self.__choice_prompt
+
+    def set_choice_prompt(self, prompt: str) -> None:
+        """Label the reply list. Empty falls back to the box's own text."""
+        self.__choice_prompt = str(prompt or "").strip()
+
+    def get_choice_options(self) -> List[Dict[str, str]]:
+        """Copy of the reply list — mutate via set_choice()."""
+        return [dict(option) for option in self.__choice_options]
+
+    def get_choice_labels(self) -> List[str]:
+        """Just the reply text, in order, for the ChoiceBox to draw."""
+        return [option["label"] for option in self.__choice_options]
+
+    def get_choice_goto(self, index: int) -> str:
+        """
+        The chain id reply `index` jumps to, or "".
+
+        "" covers both "this reply ends the conversation" and "there is
+        no such reply", because the caller does the same thing for each.
+        """
+        if not 0 <= index < len(self.__choice_options):
+            return ""
+        return self.__choice_options[index].get("goto", "")
+
+    def set_choice(self, prompt: str,
+                   options: Optional[Sequence[Any]]) -> bool:
+        """
+        Replace the branch. An empty list clears it.
+
+        `options` accepts dicts ({"label":..., "goto":...}), (label, goto)
+        pairs, or bare strings for a reply that just ends the talk.
+        Options past CHOICE_OPTIONS_MAX are dropped rather than accepted
+        and then silently not drawn — ui/choice_box.py renders at most
+        that many, and a reply the player cannot see is worse than one
+        the author is told about.
+        """
+        cleaned: List[Dict[str, str]] = []
+        for option in (options or []):
+            if isinstance(option, dict):
+                label = str(option.get("label", "")).strip()
+                goto = str(option.get("goto", "")).strip()
+            elif isinstance(option, (tuple, list)) and option:
+                label = str(option[0]).strip()
+                goto = str(option[1]).strip() if len(option) > 1 else ""
+            else:
+                label, goto = str(option).strip(), ""
+            if label:
+                cleaned.append({"label": label, "goto": goto})
+        self.__choice_prompt = str(prompt or "").strip()
+        self.__choice_options = cleaned[:CHOICE_OPTIONS_MAX]
+        return True
+
+    def clear_choice(self) -> None:
+        """Drop the branch; the chain then simply ends."""
+        self.__choice_prompt = ""
+        self.__choice_options = []
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialise, re-emitting unknown keys."""
         data: Dict[str, Any] = dict(self.__extra)
         data.update({"chain_id": self.__chain_id, "lines": list(self.__lines)})
         if self.__emotion:
             data["emotion"] = self.__emotion
+        # Omitted entirely when there is no branch, so a level authored
+        # before choices existed serialises exactly as it did before.
+        if self.__choice_options:
+            choice: Dict[str, Any] = {
+                "options": [dict(o) for o in self.__choice_options]}
+            if self.__choice_prompt:
+                choice["prompt"] = self.__choice_prompt
+            data["choice"] = choice
         return data
 
     @staticmethod
@@ -1179,9 +1472,13 @@ class DialogChain:
         lines = [str(line) for line in (data.get("lines") or [])]
         chain = DialogChain(str(data.get("chain_id", "chain")), lines,
                             str(data.get("emotion", "")))
+        raw_choice = data.get("choice")
+        if isinstance(raw_choice, dict):
+            chain.set_choice(str(raw_choice.get("prompt", "")),
+                             raw_choice.get("options"))
         chain.__extra = {
             k: v for k, v in data.items()
-            if k not in ("chain_id", "lines", "emotion")
+            if k not in ("chain_id", "lines", "emotion", "choice")
         }
         return chain
 
@@ -1261,6 +1558,27 @@ class NpcData:
         if 0 <= index < len(self.__chains):
             return self.__chains[index]
         return None
+
+    def find_chain(self, chain_id: str) -> Optional[DialogChain]:
+        """
+        Chain by its authored id, or None — what a choice's `goto` needs.
+
+        Ids are unique per NPC (add_chain suffixes a duplicate), so the
+        first match is the only match.
+        """
+        if not chain_id:
+            return None
+        for chain in self.__chains:
+            if chain.get_chain_id() == chain_id:
+                return chain
+        return None
+
+    def find_chain_index(self, chain_id: str) -> int:
+        """The position of a chain by id, or -1."""
+        for index, chain in enumerate(self.__chains):
+            if chain.get_chain_id() == chain_id:
+                return index
+        return -1
 
     def get_chain_count(self) -> int:
         """Number of chains."""
@@ -1705,21 +2023,58 @@ class LevelData:
     # ── props ─────────────────────────────────────────────────
 
     def get_props(self) -> List[PropData]:
-        """Copy of the prop list."""
+        """
+        Copy of the prop list, in DRAW ORDER — bottom of the stack
+        first, so a renderer can simply walk it forwards.
+
+        The list order IS the layering. It survives a save because JSON
+        arrays are ordered, and it is what reorder_prop() rearranges.
+        """
         return list(self.__props)
+
+    def get_props_at(self, x: int, y: int) -> List[PropData]:
+        """
+        Every prop ANCHORED on a cell, bottom of the stack first.
+
+        Props stack: a rug, a table on it and a lamp on that are three
+        props on one cell, drawn in this order.
+        """
+        return [prop for prop in self.__props
+                if prop.get_position() == (x, y)]
 
     def get_prop_at(self, x: int, y: int) -> Optional[PropData]:
         """
-        The prop ANCHORED on a cell — at most one (Spec §3.3).
+        The TOPMOST prop anchored on a cell, or None.
 
         This is identity, not coverage: a 1x3 tree anchored at (4, 9)
         answers only for (4, 9). Use get_prop_root_at() to ask whether
         something solid occupies a cell.
+
+        Topmost, because that is the one an author is pointing at — it
+        is the one drawn over the others, so it is the one right-click
+        should edit and the eraser should take first.
         """
-        for prop in self.__props:
+        for prop in reversed(self.__props):
             if prop.get_position() == (x, y):
                 return prop
         return None
+
+    def get_prop_by_uid(self, uid: str) -> Optional[PropData]:
+        """The prop with this uid, or None."""
+        for prop in self.__props:
+            if prop.get_uid() == uid:
+                return prop
+        return None
+
+    @staticmethod
+    def __root_covers(prop: PropData, x: int, y: int) -> bool:
+        """True when a cell falls under a prop's SOLID rows."""
+        px, py = prop.get_position()
+        type_id = prop.get_type_id()
+        if not is_multicell_prop(type_id):
+            return (px, py) == (x, y)
+        return any(is_root and (cx, cy) == (x, y)
+                   for cx, cy, is_root in prop_cells(type_id, px, py))
 
     def get_prop_root_at(self, x: int, y: int) -> Optional[PropData]:
         """
@@ -1728,57 +2083,139 @@ class LevelData:
         A multi-cell prop only blocks on its root rows; the canopy is
         walk-behind, so this deliberately ignores those cells. Anything
         1x1 behaves exactly as before.
+
+        When props are STACKED on a cell a blocking one wins over a
+        walk-through one however they are layered. Collision is not a
+        drawing question: one solid thing on a cell is enough to stop
+        the player, and answering with whichever happened to be drawn
+        on top would make a wall vanish the moment a rug was laid over
+        its cell.
         """
+        found: Optional[PropData] = None
         for prop in self.__props:
-            px, py = prop.get_position()
-            type_id = prop.get_type_id()
-            if not is_multicell_prop(type_id):
-                if (px, py) == (x, y):
-                    return prop
+            if not self.__root_covers(prop, x, y):
                 continue
-            for cx, cy, is_root in prop_cells(type_id, px, py):
-                if is_root and (cx, cy) == (x, y):
-                    return prop
-        return None
+            if not prop.get_passthrough():
+                return prop
+            found = prop
+        return found
+
+    def get_props_covering(self, x: int, y: int) -> List[PropData]:
+        """
+        Every prop whose FOOTPRINT covers this cell, bottom first.
+
+        The renderer's fade list: with props stacked, more than one can
+        be standing over the player at once.
+        """
+        return [prop for prop in self.__props if prop.covers_cell(x, y)]
 
     def get_prop_covering(self, x: int, y: int) -> Optional[PropData]:
         """
-        The prop whose FOOTPRINT covers this cell, root or canopy.
+        The TOPMOST prop whose footprint covers this cell, root or
+        canopy, or None.
 
         Used by the renderer to decide when the player is standing
         behind something and it should fade.
         """
-        for prop in self.__props:
-            px, py = prop.get_position()
-            type_id = prop.get_type_id()
-            if not is_multicell_prop(type_id):
-                if (px, py) == (x, y):
-                    return prop
-                continue
-            for cx, cy, _ in prop_cells(type_id, px, py):
-                if (cx, cy) == (x, y):
-                    return prop
+        for prop in reversed(self.__props):
+            if prop.covers_cell(x, y):
+                return prop
         return None
 
     def add_prop(self, type_id: str, x: int, y: int) -> Optional[PropData]:
         """
-        Place a prop, replacing whatever prop was already on the cell.
+        Place a prop ON TOP of whatever is already on the cell.
         Returns None for unknown types or out-of-bounds cells.
+
+        Props STACK. Before layering this replaced the prop on the
+        cell, which made a lamp on a desk, or a sign on a wall,
+        impossible to author — the second placement silently deleted
+        the first. The new prop goes at the end of the list, so it
+        draws over everything already there, and reorder_prop() moves
+        it afterwards.
         """
         if get_prop_def(type_id) is None or not self.is_inside(x, y):
             return None
-        self.remove_prop_at(x, y)
         prop = PropData(self.__next_uid("prop"), type_id, x, y)
         self.__props.append(prop)
         return prop
 
     def remove_prop_at(self, x: int, y: int) -> bool:
-        """Delete the prop on a cell, if any."""
+        """
+        Delete the TOPMOST prop anchored on a cell, if any.
+
+        One layer per call, so holding the eraser over a stack peels it
+        the same way the eraser already peels NPC > prop > overlay >
+        ground.
+        """
         prop = self.get_prop_at(x, y)
         if prop is None:
             return False
         self.__props.remove(prop)
         return True
+
+    def remove_prop(self, uid: str) -> bool:
+        """Delete one prop by uid, wherever it sits in the stack."""
+        prop = self.get_prop_by_uid(uid)
+        if prop is None:
+            return False
+        self.__props.remove(prop)
+        return True
+
+    def reorder_prop(self, uid: str, action: str) -> bool:
+        """
+        Move a prop through the draw order. True when it actually moved.
+
+        `action` is one of:
+
+            "forward"  / "backward"   one step within its own stack
+            "front"    / "back"       above / below everything
+
+        A step is measured against the props this one OVERLAPS, not
+        against the whole list. Stepping through every unrelated prop
+        in the level would mean pressing ] forty times to lift a lamp
+        over the desk it is standing on, with nothing changing on
+        screen in between.
+        """
+        index = next((i for i, prop in enumerate(self.__props)
+                      if prop.get_uid() == uid), -1)
+        if index < 0:
+            return False
+        prop = self.__props[index]
+
+        if action == "front":
+            target = len(self.__props) - 1
+        elif action == "back":
+            target = 0
+        elif action == "forward":
+            target = next((i for i in range(index + 1, len(self.__props))
+                           if prop.overlaps(self.__props[i])), -1)
+        elif action == "backward":
+            target = next((i for i in range(index - 1, -1, -1)
+                           if prop.overlaps(self.__props[i])), -1)
+        else:
+            return False
+        if target < 0 or target == index:
+            return False
+
+        self.__props.pop(index)
+        self.__props.insert(target, prop)
+        return True
+
+    def get_prop_depth(self, uid: str) -> Tuple[int, int]:
+        """
+        (position, size) of a prop within its own overlapping stack,
+        counted from the bottom and 1-based — "2 of 3".
+
+        (0, 0) when there is no such prop. The editor prints this after
+        a reorder so an author can see the move landed even when the
+        two sprites look alike.
+        """
+        prop = self.get_prop_by_uid(uid)
+        if prop is None:
+            return (0, 0)
+        stack = [other for other in self.__props if prop.overlaps(other)]
+        return (stack.index(prop) + 1, len(stack))
 
     def replace_prop(self, uid: str, data: Dict[str, Any]) -> bool:
         """
@@ -2201,6 +2638,18 @@ class LevelData:
                         f"npc '{npc.get_uid()}' chain "
                         f"'{chain.get_chain_id()}' uses emotion "
                         f"'{emotion}' with no portrait", (x, y)))
+                # A reply pointing at a chain that is not there just ends
+                # the conversation, so this is advisory: a mistyped goto
+                # must never stop the level loading.
+                for option in chain.get_choice_options():
+                    goto = option.get("goto", "")
+                    if goto and npc.find_chain(goto) is None:
+                        issues.append(ValidationIssue(
+                            SEVERITY_WARNING, "DANGLING_CHOICE_GOTO",
+                            f"npc '{npc.get_uid()}' chain "
+                            f"'{chain.get_chain_id()}' reply "
+                            f"'{option.get('label', '')}' jumps to "
+                            f"'{goto}', which does not exist", (x, y)))
 
         total_money = 0.0
         total_exp = 0
@@ -2219,6 +2668,13 @@ class LevelData:
                     SEVERITY_WARNING, "MODIFIER_ON_BLOCKER",
                     f"prop '{prop.get_uid()}' is blocking, so its speed "
                     f"modifier never applies", (x, y)))
+            if prop.get_pass_behind() and \
+                    prop.get_behind_transparency() <= 0:
+                issues.append(ValidationIssue(
+                    SEVERITY_WARNING, "BEHIND_NOT_TRANSPARENT",
+                    f"prop '{prop.get_uid()}' is walked behind at 0% "
+                    f"transparency, so it hides the player completely",
+                    (x, y)))
             if prop.is_portal() and not prop.get_target_level_id():
                 issues.append(ValidationIssue(
                     SEVERITY_WARNING, "PORTAL_NO_TARGET",
@@ -2243,12 +2699,38 @@ class LevelData:
                         SEVERITY_WARNING, "UNKNOWN_MENU",
                         f"prop '{prop.get_uid()}' opens unknown menu "
                         f"'{menu_id}'", (x, y)))
+            # A warning, never a blocker: an author part-way through
+            # writing a sign must still be able to save the level, and
+            # the runtime already falls through to the ordinary
+            # "nothing here" line rather than opening an empty card.
+            if prop.get_interactable() and \
+                    prop.get_interaction_kind() == "note" and \
+                    not prop.get_note_lines():
+                issues.append(ValidationIssue(
+                    SEVERITY_WARNING, "NOTE_NO_TEXT",
+                    f"prop '{prop.get_uid()}' shows a note but nothing "
+                    f"is written on it", (x, y)))
             if prop.get_interactable():
                 payout = prop.get_amount() * prop.get_triggers_per_semester()
                 if prop.get_interaction_kind() == "money":
                     total_money += payout
                 elif prop.get_interaction_kind() == "skill":
                     total_exp += int(payout)
+
+        # Props stack now, so the same art can be placed twice on one
+        # cell without anything looking different. That is almost always
+        # a double-click rather than an intention, and it is invisible
+        # on the canvas — hence a warning naming the cell.
+        stacked: Dict[Tuple[int, int, str], int] = {}
+        for prop in self.__props:
+            key = (*prop.get_position(), prop.get_type_id())
+            stacked[key] = stacked.get(key, 0) + 1
+        for (x, y, type_id), count in stacked.items():
+            if count > 1:
+                issues.append(ValidationIssue(
+                    SEVERITY_WARNING, "DUPLICATE_PROP",
+                    f"{count} copies of '{type_id}' are stacked on "
+                    f"({x},{y})", (x, y)))
 
         if total_money > MAX_PROP_MONEY_PER_SEMESTER:
             issues.append(ValidationIssue(

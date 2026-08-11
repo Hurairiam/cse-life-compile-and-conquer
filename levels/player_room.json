@@ -8,8 +8,8 @@
     "ambient": "day",
     "music": "menu",
     "spawn": {
-      "x": 8,
-      "y": 8
+      "x": 4,
+      "y": 5
     }
   },
   "layers": {
@@ -129,7 +129,7 @@
         0,
         0,
         0,
-        0,
+        128,
         128,
         128,
         0
@@ -251,7 +251,7 @@
         5,
         5,
         5,
-        5,
+        -1,
         -1,
         -1,
         5
@@ -382,23 +382,6 @@
       "target_spawn": null
     },
     {
-      "uid": "prop_0014",
-      "type_id": "portal",
-      "x": 8,
-      "y": 9,
-      "passthrough": true,
-      "speed_modifier": 1.0,
-      "interactable": true,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "target_level_id": "campus_lobby",
-      "target_spawn": null
-    },
-    {
       "uid": "prop_0015",
       "type_id": "bed_1",
       "x": 1,
@@ -480,12 +463,13 @@
       "y": 3,
       "passthrough": false,
       "speed_modifier": 1.0,
-      "interactable": false,
+      "interactable": true,
       "interaction": {
-        "kind": "none",
+        "kind": "menu",
         "amount": 0.0,
         "skill_id": null,
-        "triggers_per_semester": 1
+        "triggers_per_semester": 1,
+        "menu_id": "end_semester"
       }
     },
     {
@@ -531,7 +515,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1,
-        "menu_id": "skill_tree"
+        "menu_id": "side_quests"
       }
     },
     {
@@ -547,7 +531,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1,
-        "menu_id": "skill_tree"
+        "menu_id": "side_quests"
       }
     },
     {
@@ -612,31 +596,20 @@
     },
     {
       "uid": "prop_0029",
-      "type_id": "yellowarrow",
+      "type_id": "rug",
       "x": 7,
       "y": 8,
       "passthrough": true,
       "speed_modifier": 1.0,
-      "interactable": false,
+      "interactable": true,
       "interaction": {
-        "kind": "none",
+        "kind": "menu",
         "amount": 0.0,
         "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "rotation": 270
+        "triggers_per_semester": 1,
+        "menu_id": "teleport"
+      }
     }
   ],
-  "npcs": [],
-  "zones": [
-    {
-      "uid": "zone_0001",
-      "zone_id": "lobby",
-      "display_name": "Campus Lobby",
-      "x": 7,
-      "y": 9,
-      "w": 2,
-      "h": 1
-    }
-  ]
+  "npcs": []
 }

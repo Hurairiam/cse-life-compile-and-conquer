@@ -28,6 +28,9 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import pygame
 
 from content.level_registry import (
+    BEHIND_TRANSPARENCY_MAX,
+    BEHIND_TRANSPARENCY_MIN,
+    BEHIND_TRANSPARENCY_STEP,
     EXP_MAX,
     EXP_MIN,
     EXP_STEP,
@@ -52,11 +55,16 @@ from content.level_registry import (
     GRID_MAX,
     GRID_MIN,
     LAYER_GROUND,
+    CHOICE_OPTIONS_MAX,
     INTERACTION_KINDS,
     MENU_ID_DEFAULT,
     MONEY_MAX,
     MONEY_MIN,
     MONEY_STEP,
+    NOTE_LINE_MAX,
+    NOTE_LINES_MAX,
+    NOTE_TITLE_DEFAULT,
+    NOTE_TITLE_MAX,
     ON_COMPLETE_MODES,
     SKILL_IDS,
     SPEED_MODIFIER_BASE,
@@ -70,6 +78,7 @@ from content.level_registry import (
     get_npc_display_name,
     get_npc_emotions,
     get_prop_def,
+    get_skill_display_name,
     get_tile_def,
     get_tile_indices,
     get_tile_layer,
@@ -520,16 +529,49 @@ class PropSettingsPopup(Modal):
     the skill tree, the results board — instead of paying out. Menus
     have no amount and no per-semester trigger cap, because opening a
     screen is not a reward to budget.
+
+    COLLISION is three-way rather than a pair of switches. "blocking",
+    "passthrough" and "pass behind" are the three things a prop can do
+    to a player who walks into it, and only one can be true at a time —
+    expressed as two independent toggles, the author could ask for a
+    solid prop that is also walked behind, and something downstream
+    would have to break the tie silently.
+
+    The LAYER buttons are staged, not immediate: this popup edits a
+    DETACHED copy and the canvas is behind it, so the move is applied
+    with everything else when OK is pressed. `[` and `]` on the canvas
+    are the live version.
     """
+
+    # chip value -> (passthrough, pass_behind)
+    COLLISION_MODES = {
+        "blocking": (False, False),
+        "passthrough": (True, False),
+        "pass behind": (True, True),
+    }
+
+    LAYER_ACTIONS = (("back", "|<"), ("backward", "<"),
+                     ("forward", ">"), ("front", ">|"))
+
+    # Where the note's body fields start inside the interaction box, and
+    # how far apart they sit. Row -1 is the title. Named and shared
+    # because __init__ places the fields and __render_note_fields labels
+    # them, and the two drifting apart puts every caption against the
+    # wrong box. The last row ends at 274 + 2*46 + 30 = 396, inside the
+    # interaction box's own 420.
+    NOTE_ROW_Y = 274
+    NOTE_ROW_PITCH = 46
+    NOTE_LABEL_GAP = 14
 
     def __init__(self, prop: PropData) -> None:
         definition = get_prop_def(prop.get_type_id()) or {}
         name = definition.get("name", prop.get_type_id())
-        # 560, not 486: a "travel" prop stacks the interaction-kind
+        # 590, not 486: a "travel" prop stacks the interaction-kind
         # chips, a destination field, an arrive-at mode and a spawn
         # cell. The kind can be switched while the popup is open, so
         # the height has to suit the tallest branch from the start.
-        super().__init__((660, 560),
+        # The last 30 px are the LAYER row on the button strip.
+        super().__init__((660, 590),
                          f"PROP SETTINGS - {name} ({prop.get_uid()})",
                          th.BORDER_BROWN,
                          [(CANCEL, "CANCEL", th.BTN_CANCEL),
@@ -542,21 +584,38 @@ class PropSettingsPopup(Modal):
 
         body = self.get_body_rect()
         self.__solid: ChipRow = ChipRow(
-            pygame.Rect(body.x, body.y + 16, 300, 26),
-            ["blocking", "passthrough"],
-            "passthrough" if prop.get_passthrough() else "blocking")
+            pygame.Rect(body.x, body.y + 16, 430, 26),
+            list(self.COLLISION_MODES),
+            "pass behind" if prop.get_pass_behind() else
+            ("passthrough" if prop.get_passthrough() else "blocking"))
+        # 240, not 300: the slider draws its own `x1.00` readout to the
+        # right of the track, and at 300 that readout ran into the
+        # transparency stepper sharing the row.
         self.__speed: Slider = Slider(
-            pygame.Rect(body.x, body.y + 66, 300, 20),
+            pygame.Rect(body.x, body.y + 66, 240, 20),
             prop.get_speed_modifier(), SPEED_MODIFIER_MIN,
             SPEED_MODIFIER_MAX, SPEED_MODIFIER_STEP, SPEED_MODIFIER_BASE)
         self.__speed.set_enabled(prop.get_passthrough())
+        # Shares the speed row: both describe what happens to a player
+        # who walks into this prop, and only one of them is ever the
+        # interesting one.
+        self.__transparency: Stepper = Stepper(
+            pygame.Rect(body.x + 320, body.y + 62, 210, 30),
+            prop.get_behind_transparency(), BEHIND_TRANSPARENCY_MIN,
+            BEHIND_TRANSPARENCY_MAX, BEHIND_TRANSPARENCY_STEP, 0, "%")
         self.__interactable: ChipRow = ChipRow(
             pygame.Rect(body.x, body.y + 122, 180, 26), ["yes", "no"],
             "yes" if prop.get_interactable() else "no")
+        # Staged layer move, applied by the editor after the settings.
+        self.__layer_action: str = ""
 
         inner_x = body.x + 12
+        # 450, not 330: "note" made six chips of five, and at 330 the
+        # row auto-shrank its font far enough that TRAVEL and NOTE were
+        # hard to tell apart at a glance. The body is 608 wide, so the
+        # extra 120 costs nothing.
         self.__kind: ChipRow = ChipRow(
-            pygame.Rect(inner_x, body.y + 184, 330, 26),
+            pygame.Rect(inner_x, body.y + 184, 450, 26),
             list(INTERACTION_KINDS), prop.get_interaction_kind())
         self.__amount: Stepper = Stepper(
             pygame.Rect(inner_x, body.y + 232, 210, 30), prop.get_amount(),
@@ -564,9 +623,13 @@ class PropSettingsPopup(Modal):
         self.__triggers: Stepper = Stepper(
             pygame.Rect(inner_x + 240, body.y + 232, 210, 30),
             prop.get_triggers_per_semester(), TRIGGERS_MIN, TRIGGERS_MAX, 1)
+        # Labelled the same way the menu picker is: the level file stores
+        # the raw id, the author reads the skill tree's own node name.
         self.__skill: Cycler = Cycler(
             pygame.Rect(inner_x, body.y + 292, 450, 30), list(SKILL_IDS),
-            prop.get_skill_id() or SKILL_IDS[0])
+            prop.get_skill_id() or SKILL_IDS[0],
+            {skill_id: get_skill_display_name(skill_id)
+             for skill_id in SKILL_IDS})
         # Shares the skill picker's row: only one of the two is ever
         # live, because a prop cannot both grant EXP and open a screen.
         menu_ids = get_menu_ids()
@@ -576,6 +639,28 @@ class PropSettingsPopup(Modal):
             {menu_id: get_menu_display_name(menu_id)
              for menu_id in menu_ids})
         self.__retune_amount()
+
+        # NOTE widgets. One title and NOTE_LINES_MAX body fields, laid
+        # out at a 48px pitch below the kind chips — the same band the
+        # menu picker and the travel fields use, because only one kind's
+        # controls are ever on screen at once.
+        #
+        # Separate fields per line rather than one box the runtime
+        # wraps: ui/popup.py neither wraps nor truncates, it draws the
+        # lines it is handed at a fixed pitch, so where the break falls
+        # is the author's decision and this is where they make it. The
+        # gate popup's locked-message editor is laid out the same way
+        # for the same reason.
+        stored = prop.get_note_lines()
+        self.__note_title: TextInput = TextInput(
+            pygame.Rect(inner_x, body.y + self.__note_row_y(-1), 450, 30),
+            prop.get_note_title(), NOTE_TITLE_MAX)
+        self.__note_lines: List[TextInput] = [
+            TextInput(pygame.Rect(inner_x, body.y + self.__note_row_y(index),
+                                  450, 30),
+                      stored[index] if index < len(stored) else "",
+                      NOTE_LINE_MAX)
+            for index in range(NOTE_LINES_MAX)]
 
         # Travel widgets sit BELOW the interaction-kind chips (which
         # live at +184) so the same rects serve a step-on portal and a
@@ -604,6 +689,10 @@ class PropSettingsPopup(Modal):
 
     # ── helpers ───────────────────────────────────────────────
 
+    def __note_row_y(self, index: int) -> int:
+        """Top of one note field, relative to the body. -1 is the title."""
+        return self.NOTE_ROW_Y + index * self.NOTE_ROW_PITCH
+
     def __retune_amount(self) -> None:
         """Point the amount stepper at the active reward's range."""
         if self.__kind.get_value() == "menu":
@@ -619,6 +708,36 @@ class PropSettingsPopup(Modal):
         """Whether the interaction sub-box should be live."""
         return self.__interactable.get_value() == "yes"
 
+    def __collision(self) -> Tuple[bool, bool]:
+        """(passthrough, pass_behind) for the chosen collision mode."""
+        return self.COLLISION_MODES.get(self.__solid.get_value(),
+                                        (False, False))
+
+    def __layer_button_rects(self) -> List[pygame.Rect]:
+        """
+        The four LAYER buttons, on the button strip beside OK / CANCEL.
+
+        Down here rather than in the body because layering is not a
+        property of the prop: it is something done TO the level, like
+        OK and CANCEL are. It also leaves the collision row wide enough
+        for the transparency stepper and its note.
+        """
+        card = self.get_rect()
+        return [pygame.Rect(card.x + 26 + index * 74, card.bottom - 62,
+                            66, th.BTN_H)
+                for index in range(len(self.LAYER_ACTIONS))]
+
+    def take_layer_action(self) -> str:
+        """
+        The staged layer move, cleared as it is read.
+
+        Public because the EDITOR applies it: reordering is a document
+        operation, and a popup that reached into the level would break
+        the one-popup-one-undo-step rule every other control here keeps.
+        """
+        action, self.__layer_action = self.__layer_action, ""
+        return action
+
     def __shows_travel(self) -> bool:
         """True when the destination controls should be on screen."""
         return self.__is_portal or self.__kind.get_value() == "travel"
@@ -627,13 +746,23 @@ class PropSettingsPopup(Modal):
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """Widgets first (in draw order), then the frame."""
-        passthrough = self.__solid.get_value() == "passthrough"
+        passthrough, pass_behind = self.__collision()
         if self.__solid.handle_event(event):
-            self.__speed.set_enabled(
-                self.__solid.get_value() == "passthrough")
+            self.__speed.set_enabled(self.__collision()[0])
             return
         if passthrough and self.__speed.handle_event(event):
             return
+        if pass_behind and self.__transparency.handle_event(event):
+            return
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            index = th.hit(self.__layer_button_rects(), event.pos)
+            if index >= 0:
+                # Clicking the staged move again cancels it, the same
+                # way clicking a selected palette item unselects it.
+                action = self.LAYER_ACTIONS[index][0]
+                self.__layer_action = "" if action == self.__layer_action \
+                    else action
+                return
         if self.__interactable.handle_event(event):
             return
         if self.__is_interactable():
@@ -654,6 +783,16 @@ class PropSettingsPopup(Modal):
                 if kind == "menu":
                     if self.__menu.handle_event(event):
                         return
+                elif kind == "note":
+                    # Above the reward branch, not inside it: a note has
+                    # no amount and no trigger cap, so falling through
+                    # to those would hand its clicks to controls that
+                    # are not even drawn.
+                    if self.__note_title.handle_event(event):
+                        return
+                    for field in self.__note_lines:
+                        if field.handle_event(event):
+                            return
                 elif kind != "none":
                     if self.__amount.handle_event(event):
                         return
@@ -664,8 +803,11 @@ class PropSettingsPopup(Modal):
         super().handle_event(event)
 
     def update(self, dt: float) -> None:
-        """Blink the portal target caret."""
+        """Blink the carets of every text field on the card."""
         self.__target.update(dt)
+        self.__note_title.update(dt)
+        for field in self.__note_lines:
+            field.update(dt)
 
     def on_button(self, value: str) -> None:
         """OK folds every widget back onto the detached prop."""
@@ -673,7 +815,13 @@ class PropSettingsPopup(Modal):
             self.set_result(CANCEL)
             return
         prop = self.__prop
-        prop.set_passthrough(self.__solid.get_value() == "passthrough")
+        passthrough, pass_behind = self.__collision()
+        # set_passthrough first: it CLEARS pass-behind on a prop turned
+        # solid, so setting them the other way round would drop the
+        # flag that was just switched on.
+        prop.set_passthrough(passthrough)
+        prop.set_behind_transparency(self.__transparency.get_value())
+        prop.set_pass_behind(pass_behind)
         prop.set_speed_modifier(self.__speed.get_value())
         prop.set_interactable(self.__is_interactable())
         if self.__shows_travel():
@@ -694,6 +842,16 @@ class PropSettingsPopup(Modal):
                 # A menu opens every time it is used, so it carries no
                 # amount and no per-semester budget to spend.
                 prop.set_menu_id(self.__menu.get_value())
+            elif kind == "note":
+                # A sign is read every time for the same reason, and
+                # carries its own words instead of a destination. Set
+                # AFTER set_interaction_kind(), which seeds a default
+                # title into an empty one — so an author who cleared the
+                # field on purpose gets their blank back, and title_of()
+                # falls back to the default at draw time instead.
+                prop.set_note_title(self.__note_title.get_text())
+                prop.set_note_lines([field.get_text()
+                                     for field in self.__note_lines])
             elif kind == "skill":
                 prop.set_skill_id(self.__skill.get_value())
             if kind in ("money", "skill"):
@@ -708,7 +866,7 @@ class PropSettingsPopup(Modal):
         """Collision controls, then the interaction sub-box."""
         body = self.get_body_rect()
         label = th.load_font(th.SIZE_LABEL)
-        passthrough = self.__solid.get_value() == "passthrough"
+        passthrough, pass_behind = self.__collision()
 
         th.draw_text(surface, label, "COLLISION", (body.x, body.y),
                      th.CREDIT_HL)
@@ -719,14 +877,22 @@ class PropSettingsPopup(Modal):
                      (body.x, body.y + 50), speed_colour)
         self.__speed.render(surface)
         if not passthrough:
+            # +92, not +88: the slider draws its snap notch four pixels
+            # below its own track, and at +88 that tick struck through
+            # this line.
             th.draw_text(surface, label, "(BLOCKING - NOT WALKABLE)",
-                         (body.x + 380, body.y + 70), th.STAT_BROWN)
+                         (body.x, body.y + 92), th.STAT_BROWN)
+
+        self.__render_behind_fields(surface, label, pass_behind)
 
         th.draw_text(surface, label, "INTERACTABLE", (body.x, body.y + 106),
                      th.CREDIT_HL)
         self.__interactable.render(surface)
+        self.__render_layer_buttons(surface, label)
 
-        box = pygame.Rect(body.x, body.y + 158, body.w, body.h - 158)
+        # 22 px short of the body's bottom: the LAYER label sits in
+        # that gap, above the button strip.
+        box = pygame.Rect(body.x, body.y + 158, body.w, body.h - 180)
         th.draw_panel(surface, box, th.HEADER_TAN, th.BORDER_ROW)
         if not self.__is_interactable():
             th.draw_text_centered(surface, th.load_font(th.SIZE_SUB),
@@ -741,6 +907,47 @@ class PropSettingsPopup(Modal):
             self.__render_portal_fields(surface, label)
         else:
             self.__render_reward_fields(surface, label)
+
+    def __render_behind_fields(self, surface: pygame.Surface,
+                               label: pygame.font.Font,
+                               pass_behind: bool) -> None:
+        """
+        The walk-behind transparency, beside the speed slider.
+
+        Drawn greyed rather than hidden when the mode is off, so the
+        author can see the setting exists — and see the number it will
+        use — before they switch to it.
+        """
+        body = self.get_body_rect()
+        x = body.x + 320
+        th.draw_text(surface, label, "BEHIND TRANSPARENCY", (x, body.y + 46),
+                     th.CREDIT_HL if pass_behind else th.STAT_BROWN)
+        self.__transparency.render(surface)
+        percent = int(self.__transparency.get_value())
+        if not pass_behind:
+            note, colour = "(PASS BEHIND IS OFF)", th.STAT_BROWN
+        elif percent <= 0:
+            note, colour = "0% HIDES THE PLAYER", th.BAR_RED
+        else:
+            note, colour = f"FADES TO {100 - percent}% SOLID", th.ROW_GREEN
+        th.draw_text(surface, label, note, (x, body.y + 96), colour)
+
+    def __render_layer_buttons(self, surface: pygame.Surface,
+                               label: pygame.font.Font) -> None:
+        """
+        Send to back / back one / forward one / bring to front.
+
+        Amber on the staged move, tan on the rest. Nothing has happened
+        to the level yet — the editor performs the move when this popup
+        returns, so CANCEL leaves the stack exactly as it was.
+        """
+        rects = self.__layer_button_rects()
+        th.draw_text(surface, label, "LAYER  ( [ AND ] ON THE MAP )",
+                     (rects[0].x, rects[0].y - 16), th.CREDIT_HL)
+        for rect, (action, glyph) in zip(rects, self.LAYER_ACTIONS):
+            th.draw_button(surface, rect, glyph,
+                           th.BAR_AMBER if action == self.__layer_action
+                           else th.HEADER_TAN, label)
 
     def __render_portal_fields(self, surface: pygame.Surface,
                                label: pygame.font.Font) -> None:
@@ -798,6 +1005,9 @@ class PropSettingsPopup(Modal):
         if kind == "menu":
             self.__render_menu_fields(surface, label)
             return
+        if kind == "note":
+            self.__render_note_fields(surface, label)
+            return
 
         th.draw_text(surface, label, "AMOUNT", (x, body.y + 216),
                      th.CREDIT_HL)
@@ -840,6 +1050,44 @@ class PropSettingsPopup(Modal):
                      "OPENS EVERY TIME — NO REWARD, NO TRIGGER LIMIT",
                      (x, body.y + 296), th.STAT_BROWN)
 
+    def __render_note_fields(self, surface: pygame.Surface,
+                             label: pygame.font.Font) -> None:
+        """
+        The words this prop shows when the player presses E.
+
+        One title and three body lines, drawn in the popup's own shape
+        so what the author types here is exactly what the card holds:
+        ui/popup.py centres at most three lines at a fixed pitch and
+        neither wraps nor truncates them, and the field lengths are what
+        fits its 600px card at its own font size.
+
+        No amount and no trigger cap are drawn, for the reason the menu
+        panel gives: a sign is read, not collected, so there is nothing
+        per-semester to budget.
+        """
+        body = self.get_body_rect()
+        x = body.x + 12
+        filled = sum(1 for field in self.__note_lines if field.get_text())
+
+        def caption(text: str, row: int) -> None:
+            """Label one field, off the same row arithmetic that placed it."""
+            th.draw_text(surface, label, text,
+                         (x, body.y + self.__note_row_y(row)
+                          - self.NOTE_LABEL_GAP), th.CREDIT_HL)
+
+        caption("POPUP TITLE", -1)
+        self.__note_title.render(surface, NOTE_TITLE_DEFAULT)
+        for index, field in enumerate(self.__note_lines):
+            caption(f"LINE {index + 1}", index)
+            field.render(surface, "(leave blank to skip)")
+
+        th.draw_text(surface, label,
+                     "READ EVERY TIME — NO REWARD, NO TRIGGER LIMIT"
+                     if filled else
+                     "NOTHING WRITTEN — THIS PROP WILL SHOW NOTHING",
+                     (x, body.y + self.__note_row_y(NOTE_LINES_MAX - 1) + 36),
+                     th.STAT_BROWN if filled else th.BAR_RED)
+
 
 # ─────────────────────────────────────────────────────────────
 # NPC DIALOG EDITOR  (Spec §6.3)
@@ -857,7 +1105,23 @@ class NpcDialogPopup(Modal):
 
     There is deliberately no availability control: the 0.75-1.00
     time-pool window is a game rule, not level data (Spec §6.1).
+
+    THE RIGHT COLUMN IS TABBED. A chain owns two lists — the lines it
+    speaks, and the optional replies it ends on — and they are never
+    edited at the same time. A LINES / REPLIES toggle reuses one table,
+    one button row and one text field for both, rather than growing the
+    card: at 1080x604 centred on a 1280x720 editor there are 58 px of
+    margin left, and a second full-size list does not fit in them.
+
+    A chain with no replies simply ends, which is every chain authored
+    before branches existed. Adding the first reply creates the branch;
+    removing the last one clears it again.
     """
+
+    # The reply "jumps to" picker needs a way to say "end the
+    # conversation". The schema spells that as an empty goto; a cycler
+    # cannot show an empty string, so it shows this instead.
+    END_TALK = "(end talk)"
 
     def __init__(self, npc: NpcData, assets: Any) -> None:
         super().__init__(
@@ -882,23 +1146,43 @@ class NpcDialogPopup(Modal):
         self.__interactable: ChipRow = ChipRow(
             pygame.Rect(right_x, body.y + 16, 180, 26), ["yes", "no"],
             "yes" if npc.get_interactable() else "no")
+        # 300, not right_w - 200: the last 188 px of this row now carry
+        # the LINES / REPLIES toggle, and three mode chips never needed
+        # 508 px.
         self.__on_complete: ChipRow = ChipRow(
-            pygame.Rect(right_x + 200, body.y + 16, right_w - 200, 26),
+            pygame.Rect(right_x + 200, body.y + 16, 300, 26),
             list(ON_COMPLETE_MODES), npc.get_on_complete())
+        self.__tab: ChipRow = ChipRow(
+            pygame.Rect(right_x + 520, body.y + 16, right_w - 520, 26),
+            ["lines", "replies"], "lines")
 
         self.__chains: RowTable = RowTable(
             pygame.Rect(body.x, body.y + 56, left_w, 200), "CHAINS")
+        # The two right-hand tables share one rectangle; only the one
+        # the toggle names is drawn or given events.
         self.__lines: RowTable = RowTable(
             pygame.Rect(right_x, body.y + 56, right_w, 200), "LINES")
+        self.__replies: RowTable = RowTable(
+            pygame.Rect(right_x, body.y + 56, right_w, 200), "REPLIES")
 
         self.__chain_id: TextInput = TextInput(
             pygame.Rect(body.x, body.y + 312, left_w, 30), "", 32)
         self.__line_text: TextInput = TextInput(
             pygame.Rect(right_x, body.y + 312, right_w, 30), "", 60)
+        self.__reply_label: TextInput = TextInput(
+            pygame.Rect(right_x, body.y + 312, right_w, 30), "", 40)
         self.__emotion: ChipRow = ChipRow(
             pygame.Rect(body.x, body.y + 364, left_w, 26),
             self.__emotions or ["neutral"],
             self.__emotions[0] if self.__emotions else "neutral")
+        # Row shared with the emotion chips, on the right half: where a
+        # reply jumps to, and the strip drawn above the whole list.
+        self.__goto: Cycler = Cycler(
+            pygame.Rect(right_x, body.y + 364, 340, 30), [self.END_TALK],
+            self.END_TALK)
+        self.__choice_prompt: TextInput = TextInput(
+            pygame.Rect(right_x + 368, body.y + 364, right_w - 368, 30),
+            "", 28)
 
         self.__chain_buttons: List[pygame.Rect] = self.__button_row(
             body.x, body.y + 262, left_w)
@@ -932,23 +1216,58 @@ class NpcDialogPopup(Modal):
         """The chain the tables are showing, or None."""
         return self.__npc.get_chain(self.__chains.get_selected())
 
+    def __on_replies(self) -> bool:
+        """True while the right column is editing replies, not lines."""
+        return self.__tab.get_value() == "replies"
+
+    def __options(self) -> List[Dict[str, str]]:
+        """The selected chain's replies, as a mutable copy."""
+        chain = self.__selected_chain()
+        return chain.get_choice_options() if chain is not None else []
+
+    def __write_options(self, options: List[Dict[str, str]]) -> None:
+        """
+        Push a whole reply list back onto the chain.
+
+        DialogChain exposes the branch wholesale rather than per-reply,
+        so every edit here is read-modify-write. An empty list clears
+        the branch, which is what makes "- REPLY" on the last row turn
+        the chain back into one that simply ends.
+        """
+        chain = self.__selected_chain()
+        if chain is None:
+            return
+        chain.set_choice(self.__choice_prompt.get_text(), options)
+
+    def __goto_choices(self) -> List[str]:
+        """
+        What a reply may jump to: end the talk, or any chain on this NPC.
+
+        Rebuilt on every refresh because renaming or adding a chain
+        changes it, and a cycler holding a stale id would write a
+        dangling goto the validator then has to warn about.
+        """
+        return [self.END_TALK] + [c.get_chain_id()
+                                  for c in self.__npc.get_chains()]
+
     def __refresh(self) -> None:
         """
         Re-read the tables and fields from the working NPC copy. Rows are
         filled BEFORE any selection is applied, because a table refuses a
         selection index it has no row for yet.
         """
-        self.__chains.set_rows(
-            [f"{c.get_chain_id()}  ({c.get_line_count()} lines)"
-             for c in self.__npc.get_chains()])
+        self.__refresh_chain_rows()
         if self.__chains.get_selected() < 0 and self.__npc.get_chain_count():
             self.__chains.set_selected(0)
 
         chain = self.__selected_chain()
         if chain is None:
             self.__lines.set_rows([])
+            self.__replies.set_rows([])
             self.__chain_id.set_text("")
             self.__line_text.set_text("")
+            self.__reply_label.set_text("")
+            self.__choice_prompt.set_text("")
             return
 
         self.__chain_id.set_text(chain.get_chain_id())
@@ -962,9 +1281,35 @@ class NpcDialogPopup(Modal):
         index = self.__lines.get_selected()
         self.__line_text.set_text(lines[index] if 0 <= index < len(lines)
                                   else "")
+        self.__refresh_replies(chain)
+
+    def __refresh_chain_rows(self) -> None:
+        """Re-read the chains TABLE only, leaving the id field alone."""
+        self.__chains.set_rows(
+            [f"{c.get_chain_id()}  ({c.get_line_count()} lines"
+             f"{', branches' if c.has_choice() else ''})"
+             for c in self.__npc.get_chains()])
+
+    def __refresh_replies(self, chain) -> None:
+        """Re-read the branch half of the form."""
+        options = chain.get_choice_options()
+        self.__refresh_reply_rows()
+        if self.__replies.get_selected() < 0 and options:
+            self.__replies.set_selected(0)
+        self.__choice_prompt.set_text(chain.get_choice_prompt())
+
+        self.__goto.set_options(self.__goto_choices())
+        index = self.__replies.get_selected()
+        if 0 <= index < len(options):
+            self.__reply_label.set_text(options[index]["label"])
+            self.__goto.set_value(options[index].get("goto")
+                                  or self.END_TALK)
+        else:
+            self.__reply_label.set_text("")
+            self.__goto.set_value(self.END_TALK)
 
     def __commit_fields(self) -> None:
-        """Push the two text fields back into the working copy."""
+        """Push every text field back into the working copy."""
         chain = self.__selected_chain()
         if chain is None:
             return
@@ -974,6 +1319,31 @@ class NpcDialogPopup(Modal):
         if index >= 0:
             chain.set_line(index, self.__line_text.get_text())
         chain.set_emotion(self.__emotion.get_value())
+        self.__commit_reply()
+
+    def __commit_reply(self) -> None:
+        """
+        Push the reply editor back onto the selected reply.
+
+        Runs even on the LINES tab so a half-typed label is not lost by
+        flipping the toggle; with no replies authored it is a no-op and
+        the prompt stays unwritten, which keeps a chain that has no
+        branch free of an empty `choice` block.
+        """
+        options = self.__options()
+        if not options:
+            return
+        index = self.__replies.get_selected()
+        if 0 <= index < len(options):
+            label = self.__reply_label.get_text().strip()
+            # An emptied label would be dropped by set_choice() and the
+            # reply would silently vanish mid-edit, so the old text
+            # stands until something replaces it. "- REPLY" deletes.
+            if label:
+                options[index]["label"] = label
+            goto = self.__goto.get_value()
+            options[index]["goto"] = "" if goto == self.END_TALK else goto
+        self.__write_options(options)
 
     # ── input ─────────────────────────────────────────────────
 
@@ -987,6 +1357,12 @@ class NpcDialogPopup(Modal):
                 self.__interactable.handle_event(event) or \
                 self.__on_complete.handle_event(event):
             return
+        if self.__tab.handle_event(event):
+            # Flipping the toggle commits whatever was being typed, so a
+            # half-edited line or label is never lost to a tab change.
+            self.__commit_fields()
+            self.__refresh()
+            return
         if self.__emotion.handle_event(event):
             self.__commit_fields()
             self.__refresh()
@@ -999,31 +1375,101 @@ class NpcDialogPopup(Modal):
                 return
             index = th.hit(self.__line_buttons, event.pos)
             if index >= 0:
-                self.__line_action(index)
+                if self.__on_replies():
+                    self.__reply_action(index)
+                else:
+                    self.__line_action(index)
                 return
 
         previous_chain = self.__chains.get_selected()
         if self.__chains.handle_event(event):
             if self.__chains.get_selected() != previous_chain:
                 self.__lines.set_selected(-1)
+                self.__replies.set_selected(-1)
             self.__refresh()
             return
-        if self.__lines.handle_event(event):
+        if self.__on_replies():
+            if self.__handle_reply_event(event):
+                return
+        elif self.__lines.handle_event(event):
             self.__refresh()
             return
         if self.__chain_id.handle_event(event):
+            # Rows only, never the field itself — set_chain_id() strips,
+            # so refreshing here would eat spaces mid-word.
             self.__commit_fields()
-            self.__chains.set_rows(
-                [f"{c.get_chain_id()}  ({c.get_line_count()} lines)"
-                 for c in self.__npc.get_chains()])
+            self.__refresh_chain_rows()
             return
-        if self.__line_text.handle_event(event):
+        if not self.__on_replies() and self.__line_text.handle_event(event):
             self.__commit_fields()
             chain = self.__selected_chain()
             if chain is not None:
                 self.__lines.set_rows(chain.get_lines())
             return
         super().handle_event(event)
+
+    def __handle_reply_event(self, event: pygame.event.Event) -> bool:
+        """
+        Route one event to the branch editor. True when consumed.
+
+        A TEXT FIELD IS NEVER REFRESHED FROM THE MODEL WHILE IT IS BEING
+        TYPED INTO — only the table rows are, exactly as the LINES side
+        already does. Writing the stored value back on every keystroke
+        makes the field uneditable in two ways: set_choice() strips a
+        label, so the space in "Teach me" is deleted as fast as it is
+        typed; and __commit_reply() keeps the old label when the field
+        goes empty, so the last character can never be backspaced away.
+        """
+        if self.__replies.handle_event(event):
+            # A selection change is the one time the fields must be
+            # repopulated. Whatever was being typed is already in the
+            # model, because every keystroke below commits it.
+            self.__refresh()
+            return True
+        if self.__goto.handle_event(event):
+            self.__commit_fields()
+            self.__refresh()
+            return True
+        if self.__reply_label.handle_event(event):
+            self.__commit_fields()
+            self.__refresh_reply_rows()
+            return True
+        if self.__choice_prompt.handle_event(event):
+            self.__commit_fields()
+            return True
+        return False
+
+    def __refresh_reply_rows(self) -> None:
+        """Re-read the replies TABLE only, leaving the editors alone."""
+        chain = self.__selected_chain()
+        if chain is None:
+            return
+        self.__replies.set_rows(
+            ["%s   ->   %s" % (o["label"], o.get("goto") or self.END_TALK)
+             for o in chain.get_choice_options()])
+
+    def __reply_action(self, index: int) -> None:
+        """+ REPLY / - REPLY / move up / move down."""
+        self.__commit_fields()
+        options = self.__options()
+        selected = self.__replies.get_selected()
+        if index == 0:
+            if len(options) >= CHOICE_OPTIONS_MAX:
+                return          # the box draws at most four (see schema)
+            options.append({"label": "New reply.", "goto": ""})
+            self.__replies.set_selected(len(options) - 1)
+        elif index == 1 and 0 <= selected < len(options):
+            del options[selected]
+            self.__replies.set_selected(min(selected, len(options) - 1))
+        elif index in (2, 3) and 0 <= selected < len(options):
+            target = selected + (-1 if index == 2 else 1)
+            if not 0 <= target < len(options):
+                return
+            options[selected], options[target] = \
+                options[target], options[selected]
+            self.__replies.set_selected(target)
+        self.__write_options(options)
+        self.__refresh()
 
     def __chain_action(self, index: int) -> None:
         """+ CHAIN / - CHAIN / move up / move down."""
@@ -1116,6 +1562,8 @@ class NpcDialogPopup(Modal):
         """Carets, the preview typewriter and the arrow pulse."""
         self.__chain_id.update(dt)
         self.__line_text.update(dt)
+        self.__reply_label.update(dt)
+        self.__choice_prompt.update(dt)
         self.__pulse += dt
         if self.__preview:
             self.__preview_elapsed += dt
@@ -1131,35 +1579,48 @@ class NpcDialogPopup(Modal):
         th.draw_text(surface, label, "FACING", (body.x, body.y), th.CREDIT_HL)
         th.draw_text(surface, label, "INTERACTABLE", (right_x, body.y),
                      th.CREDIT_HL)
-        th.draw_text(surface, label, "WHEN ALL CHAINS HAVE PLAYED",
+        th.draw_text(surface, label, "REPEAT MODE",
                      (right_x + 200, body.y), th.CREDIT_HL)
+        th.draw_text(surface, label, "EDITING",
+                     (right_x + 520, body.y), th.CREDIT_HL)
         self.__facing.render(surface)
         self.__interactable.render(surface)
         self.__on_complete.render(surface, th.BAR_AMBER)
+        self.__tab.render(surface, th.BAR_AMBER)
 
         self.__chains.render(surface)
-        self.__lines.render(surface)
 
         for rect, text in zip(self.__chain_buttons,
                               ("+ CHAIN", "- CHAIN", "UP", "DOWN")):
-            th.draw_button(surface, rect, text, th.HEADER_TAN,
-                           th.fit_font(text, rect.w - 6))
-        for rect, text in zip(self.__line_buttons,
-                              ("+ LINE", "- LINE", "UP", "DOWN")):
             th.draw_button(surface, rect, text, th.HEADER_TAN,
                            th.fit_font(text, rect.w - 6))
 
         th.draw_text(surface, label, "CHAIN ID", (body.x, body.y + 298),
                      th.CREDIT_HL)
         self.__chain_id.render(surface, "intro")
-        th.draw_text(surface, label, "LINE TEXT", (right_x, body.y + 298),
-                     th.CREDIT_HL)
-        self.__line_text.render(surface, "select a line to edit it")
-
         th.draw_text(surface, label, "PORTRAIT EMOTION",
                      (body.x, body.y + 350), th.CREDIT_HL)
         self.__emotion.render(surface)
 
+        if self.__on_replies():
+            self.__render_replies(surface, label, body, right_x)
+        else:
+            self.__render_lines(surface, label, body, right_x)
+
+        if self.__preview:
+            self.__render_preview(surface)
+
+    def __render_lines(self, surface: pygame.Surface, label, body,
+                       right_x: int) -> None:
+        """The right column while the LINES tab is up — unchanged."""
+        self.__lines.render(surface)
+        for rect, text in zip(self.__line_buttons,
+                              ("+ LINE", "- LINE", "UP", "DOWN")):
+            th.draw_button(surface, rect, text, th.HEADER_TAN,
+                           th.fit_font(text, rect.w - 6))
+        th.draw_text(surface, label, "LINE TEXT", (right_x, body.y + 298),
+                     th.CREDIT_HL)
+        self.__line_text.render(surface, "select a line to edit it")
         th.draw_text(surface, label,
                      "CHAINS PLAY IN ORDER, ONE PER INTERACTION.",
                      (right_x, body.y + 356), th.STAT_BROWN)
@@ -1167,8 +1628,30 @@ class NpcDialogPopup(Modal):
                      "LINES ARE PRE-SPLIT — KEEP THEM SHORT.",
                      (right_x, body.y + 372), th.STAT_BROWN)
 
-        if self.__preview:
-            self.__render_preview(surface)
+    def __render_replies(self, surface: pygame.Surface, label, body,
+                         right_x: int) -> None:
+        """The right column while the REPLIES tab is up."""
+        self.__replies.render(surface)
+        full = len(self.__options()) >= CHOICE_OPTIONS_MAX
+        for index, (rect, text) in enumerate(zip(
+                self.__line_buttons,
+                ("+ REPLY", "- REPLY", "UP", "DOWN"))):
+            # "+ REPLY" greys out at the cap rather than doing nothing
+            # when clicked: four is what ui/choice_box.py draws.
+            fill = th.PANEL_TAN if (index == 0 and full) else th.HEADER_TAN
+            th.draw_button(surface, rect, text, fill,
+                           th.fit_font(text, rect.w - 6))
+
+        th.draw_text(surface, label, "REPLY TEXT", (right_x, body.y + 298),
+                     th.CREDIT_HL)
+        self.__reply_label.render(
+            surface, "+ REPLY to give this chain a branch")
+        th.draw_text(surface, label, "THIS REPLY JUMPS TO",
+                     (right_x, body.y + 350), th.CREDIT_HL)
+        self.__goto.render(surface)
+        th.draw_text(surface, label, "PROMPT",
+                     (right_x + 368, body.y + 350), th.CREDIT_HL)
+        self.__choice_prompt.render(surface, "CHOOSE A REPLY")
 
     def __render_preview(self, surface: pygame.Surface) -> None:
         """
@@ -1314,7 +1797,9 @@ class GatePopup(Modal):
         self.__skill: Cycler = Cycler(
             pygame.Rect(left, body.y + 240, 420, 30),
             [self.NONE_SKILL] + list(SKILL_IDS),
-            gate_now.get_required_skill_id() or self.NONE_SKILL)
+            gate_now.get_required_skill_id() or self.NONE_SKILL,
+            {skill_id: get_skill_display_name(skill_id)
+             for skill_id in SKILL_IDS})
         self.__skill_level: Stepper = Stepper(
             pygame.Rect(left, body.y + 296, 210, 30),
             gate_now.get_required_skill_level(), GATE_SKILL_LEVEL_MIN,

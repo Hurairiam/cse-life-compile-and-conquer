@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from academic.course_catalog import build_course_catalog, get_course_by_code
 from academic.semester import Semester
+from engine import lecture_reader, quest_state, return_points
 from engine.game_clock import GameClock
 from engine.game_session import GameSession
 from engine.registration_manager import RegistrationManager
@@ -59,6 +60,9 @@ def capture(ctx) -> dict:
         spawn_x=spawn[0], spawn_y=spawn[1],
         triggered_prop_uids=sorted(ctx.triggered_prop_uids),
         talked_npc_uids=sorted(ctx.talked_npc_uids),
+        dialogue_choices=dict(getattr(ctx, "dialogue_choices", {}) or {}),
+        return_positions=return_points.to_state(ctx),
+        quest_states=quest_state.to_state(ctx),
         global_career_clock_days=ctx.session.get_global_career_clock_days(),
         playtime_seconds=int(ctx.playtime_seconds),
     )
@@ -72,17 +76,24 @@ def restore(ctx, state: dict) -> bool:
     s = state.get("semester") or {}
     a = state.get("academic") or {}
     w = state.get("world") or {}
+    q = state.get("quests") or {}
     c = state.get("clock") or {}
 
     # -- fresh systems ------------------------------------------
     ctx.full_catalog = build_course_catalog()
     ctx.session = GameSession()
-    ctx.game_clock = GameClock(ctx.session)
     ctx.registration_manager = RegistrationManager()
     from engine.catalog_builder import SemesterCatalogBuilder
     ctx.catalog_builder = SemesterCatalogBuilder(ctx.registration_manager)
     ctx.reg_scroll = 0
     player = ctx.session.get_active_player()
+
+    # -- the name the player chose at the start of the run -------
+    # capture() has always written this; it was simply never read back,
+    # so a loaded game reverted to the default name. A save written
+    # before name entry existed carries "", and set_display_name()
+    # refuses a blank, so those still load with the default intact.
+    player.set_display_name(str(p.get("display_name", "") or ""))
 
     # -- semester number (advance_semester is the only mutator) --
     target = max(1, int(p.get("current_semester", 1) or 1))
@@ -90,6 +101,21 @@ def restore(ctx, state: dict) -> bool:
         player.advance_semester()
     semester = Semester(target)
     ctx.session.set_active_semester(semester)
+
+    # BUG FIX (Phase 15): the clock is built HERE, not above with the
+    # session. GameClock.__init__ caches session.get_active_semester()
+    # in its own __current_semester and only ever replaces it in
+    # advance_semester() -- so a clock constructed before the line above
+    # held the Semester GameSession.__init__ made, while ctx.semester(),
+    # the HUD, the 15-day firewall and engine/day_warning.py all read
+    # the one that just replaced it. Every charge through
+    # process_time_consumable() then came off an orphaned object and the
+    # displayed day count never moved. restore() runs on every load AND
+    # on new_game(), so this was true of every run: it is the same class
+    # of bug game_clock.py's own BUG FIX note records, one object
+    # further out. Caught by Phase 15's day charge, which is the first
+    # feature whose whole point is the number going down.
+    ctx.game_clock = GameClock(ctx.session)
 
     # -- wallet: adjust from whatever the fresh Player starts at -
     wanted = float(p.get("wallet_balance", 0.0) or 0.0)
@@ -139,9 +165,53 @@ def restore(ctx, state: dict) -> bool:
                          int(w.get("spawn_y", 0) or 0))
     ctx.triggered_prop_uids = set(w.get("triggered_prop_uids") or [])
     ctx.talked_npc_uids = set(w.get("talked_npc_uids") or [])
+    # Branching-dialogue replies. Missing from saves written before
+    # branches existed, and the int() guard keeps a hand-edited file
+    # from putting a string where a reply index belongs.
+    answers = w.get("dialogue_choices")
+    ctx.dialogue_choices = {}
+    if isinstance(answers, dict):
+        for key, value in answers.items():
+            try:
+                ctx.dialogue_choices[str(key)] = int(value)
+            except (TypeError, ValueError):
+                continue
+    # Per-area return points. Absent from saves written before Phase 4,
+    # and from_state() drops any hand-edited entry that is not four ints
+    # rather than letting it reach walker.place().
+    ctx.return_positions = return_points.from_state(w.get("return_positions"))
     ctx.level = None                 # STAGE 5 reloads from ctx.level_id
 
+    # -- the twelve side quests (Phase 12) ----------------------
+    # A save written before the quest system has no "quests" block at
+    # all, so q is {} and from_state(None) hands back twelve Unoffered
+    # quests -- a loaded old save is simply one that has not been
+    # offered anything yet. Every malformed entry is dropped rather
+    # than raising: refusing to load a playthrough over a hand-edited
+    # quest name would be a worse bug than starting that one quest
+    # over.
+    ctx.quest_states = quest_state.from_state(q.get("states"))
+
     # -- reset transient screen state ---------------------------
+    # The conversation refs point into the level document that is about
+    # to be dropped, so they go with it — a loaded game never resumes
+    # mid-sentence.
+    ctx.dialogue_npc = None
+    ctx.dialogue_chain = None
+    ctx.choice_options = []
+    ctx.choice_prompt = ""
+    ctx.choice_result = None
+    # A side quest offer that was on screen when the game was saved is
+    # not an answer, and the machine above has just been rebuilt from
+    # the file — so the offer is dropped and the quest is put again the
+    # next time the player talks to that NPC (Phase 13).
+    ctx.quest_offer_open = False
+    ctx.pending_quest_id = None
+    # A lecture sitting is not something a loaded game can be in the
+    # middle of (Phase 15, Decision R2). Per-sheet progress is never
+    # written to the payload, so there is nothing here to restore --
+    # only a stale sitting from earlier in this process to drop.
+    lecture_reader.end()
     ctx.playtime_seconds = float(state.get("playtime_seconds", 0) or 0)
     ctx.exam = {"course_index": 0, "tier_index": 0,
                 "answers": {}, "message": None}

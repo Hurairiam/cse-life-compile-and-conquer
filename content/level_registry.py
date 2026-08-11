@@ -34,6 +34,8 @@ import random
 from typing import Any, Dict, List, Optional
 
 from content.asset_scanner import (
+    SOURCE_CELL_PX,
+    cells_for_px,
     family_of_path,
     scan_npcs,
     scan_props,
@@ -71,6 +73,12 @@ def resolve_asset(relative_path: str) -> str:
 
 TILE_SIZE_PX: int = 48          # on-screen size of one cell (Style Guide §5.4)
 EMPTY_TILE: int = -1            # "no tile here" — overlay layer only
+
+# One cell of SOURCE art, the unit every sprite is measured in. Owned
+# by content/asset_scanner.py (which runs with no pygame and no
+# registry) and re-exported here so nothing outside content/ has to
+# know which of the two modules holds it.
+TILE_SOURCE_PX: int = SOURCE_CELL_PX
 
 # ─────────────────────────────────────────────────────────────
 # NPC DRAW SIZE
@@ -258,13 +266,54 @@ def next_rotation(value: Any) -> int:
     return ROTATIONS[(ROTATIONS.index(current) + 1) % len(ROTATIONS)]
 
 
+def get_prop_pixel_size(type_id: str) -> tuple:
+    """
+    (width, height) of a prop's art in SOURCE pixels.
+
+    This is what the renderers scale from, so a prop is drawn at its
+    own proportions rather than squeezed into a square. Entries that
+    never declared px_w/px_h — every hand-written 16x16 prop above —
+    fall back to their footprint, which for those is the same number.
+    """
+    entry = PROP_REGISTRY.get(type_id)
+    if entry is None:
+        return (TILE_SOURCE_PX, TILE_SOURCE_PX)
+    if entry.get("px_w") and entry.get("px_h"):
+        return (max(1, int(entry["px_w"])), max(1, int(entry["px_h"])))
+    cell = max(1, int(entry.get("cell_px", TILE_SOURCE_PX)))
+    return (max(1, int(entry.get("cells_w", 1))) * cell,
+            max(1, int(entry.get("cells_h", 1))) * cell)
+
+
+def get_prop_draw_size(type_id: str, cell_px: int = TILE_SIZE_PX) -> tuple:
+    """
+    The on-screen (width, height) of a prop at a given cell size.
+
+    Scaled from the art's own pixels against the 16 px cell unit, so a
+    16x16 prop is exactly one cell, a 16x48 tree is one by three, and a
+    24x40 signboard is one and a half by two and a half. Fractions of a
+    cell are fine here — only COLLISION rounds to whole cells.
+    """
+    px_w, px_h = get_prop_pixel_size(type_id)
+    scale = max(1, int(cell_px)) / TILE_SOURCE_PX
+    return (max(1, int(round(px_w * scale))),
+            max(1, int(round(px_h * scale))))
+
+
 def get_prop_footprint(type_id: str) -> tuple:
-    """(cells_w, cells_h) for a prop type. Unknown types are 1x1."""
+    """
+    (cells_w, cells_h) of GRID a prop claims. Unknown types are 1x1.
+
+    Declared values win; anything else is derived from the art, rounded
+    up, so a prop drawn 24 px wide reserves the two cells it physically
+    overlaps instead of the one it would fit in.
+    """
     entry = PROP_REGISTRY.get(type_id)
     if entry is None:
         return (1, 1)
-    return (max(1, int(entry.get("cells_w", 1))),
-            max(1, int(entry.get("cells_h", 1))))
+    px_w, px_h = get_prop_pixel_size(type_id)
+    return (max(1, int(entry.get("cells_w", cells_for_px(px_w)))),
+            max(1, int(entry.get("cells_h", cells_for_px(px_h)))))
 
 
 def get_prop_root_height(type_id: str) -> int:
@@ -571,12 +620,21 @@ MIN_SEMESTER_DEFAULT: int = 1
 
 def _bind_roster_fields() -> None:
     """
-    Stamp `roster_id` and `min_semester` onto every NPC_REGISTRY entry.
+    Stamp `roster_id`, `min_semester` and `name` onto every NPC_REGISTRY
+    entry.
 
     Run once at import. Building the mapping programmatically rather
     than hand-writing two more keys per entry is what keeps the two
     files honest: a roster change cannot silently disagree with the
     editor.
+
+    `name` is bound for the same reason and was found drifting: the
+    roster called them "Prof. Rahman" and "Ms. Roya", the hand-written
+    entries below said "Rahman" and "Roya", and it is the entry below
+    that gets drawn on the dialogue card. The roster is where a
+    character's name is decided, so it wins. A hand-written name is
+    still honoured wherever the roster has nothing to say — a placeable
+    NPC with no narrative entry keeps the one written here.
     """
     try:
         from content.npc_roster import NPC_ROSTER
@@ -591,6 +649,8 @@ def _bind_roster_fields() -> None:
             entry["min_semester"] = int(
                 roster_entry.get("semester_available_from",
                                  MIN_SEMESTER_DEFAULT))
+            entry["name"] = str(
+                roster_entry.get("display_name") or entry.get("name", type_id))
         else:
             entry["min_semester"] = _MIN_SEMESTER_FALLBACK.get(
                 type_id, MIN_SEMESTER_DEFAULT)
@@ -605,12 +665,44 @@ FACING_DEFAULT: str = "down"
 ON_COMPLETE_MODES: tuple = ("loop_last", "loop_all", "silent")
 ON_COMPLETE_DEFAULT: str = "loop_last"
 
+# How many replies a DialogChain's branch may offer. MUST stay equal to
+# ui/choice_box.py::MAX_OPTIONS — that is what actually gets drawn, and
+# a fifth reply would be authored, saved and then silently invisible.
+# Declared here rather than imported because content/ is pure data and
+# may not pull in pygame; ui/choice_box.py carries the matching comment.
+CHOICE_OPTIONS_MAX: int = 4
+
 # ─────────────────────────────────────────────────────────────
 # PROP INTERACTION BOUNDS  (Spec §5.3)
 # ─────────────────────────────────────────────────────────────
 
-INTERACTION_KINDS: tuple = ("none", "money", "skill", "menu", "travel")
+# "note" is APPENDED, never inserted, the same rule MENU_REGISTRY below
+# states: this tuple is a shared choke point, an author's chip row reads
+# it in order, and a pure append conflicts far less than a reorder.
+INTERACTION_KINDS: tuple = ("none", "money", "skill", "menu", "travel",
+                            "note")
 INTERACTION_KIND_DEFAULT: str = "none"
+
+# ─────────────────────────────────────────────────────────────
+# NOTE PROPS
+# ─────────────────────────────────────────────────────────────
+# A "note" prop shows text the author typed and does nothing else — a
+# sign, a poster, a scribbled page on a desk. It grants nothing, so
+# there is no amount and no per-semester budget to spend, and it is
+# READ EVERY TIME for the same reason a "menu" prop opens every time:
+# a notice you may only read once a term is not a notice.
+#
+# The shape is ui/popup.py's, because that is what draws it: one title
+# and at most three centred body lines, neither wrapped nor truncated
+# by the popup. The two length caps are what fits the 600px card at
+# its own font sizes, measured rather than guessed — 50 body characters
+# and 34 title characters is the ceiling, and these sit inside it.
+# ─────────────────────────────────────────────────────────────
+
+NOTE_LINES_MAX: int = 3     # must stay equal to ui/popup.py::MAX_BODY_LINES
+NOTE_TITLE_MAX: int = 28
+NOTE_LINE_MAX: int = 44
+NOTE_TITLE_DEFAULT: str = "A NOTE"
 
 # ─────────────────────────────────────────────────────────────
 # MENU REGISTRY
@@ -646,6 +738,25 @@ MENU_REGISTRY: Dict[str, Dict[str, Any]] = {
     "load_game":    {"name": "Load Game",           "state": "LOAD_GAME"},
     "main_menu":    {"name": "Main Menu",           "state": "MAIN_MENU"},
     "activity":     {"name": "Exam / Lecture",      "state": "ACTIVITY"},
+    # Appended, never inserted: this dict is a shared choke point and a
+    # pure append conflicts far less than a reorder.
+    "teleport":     {"name": "Teleport",            "state": "TELEPORT"},
+    # Ends the current semester once its exams are done. A prop wearing
+    # this is the door out of the post-exam free-roam stretch, so which
+    # object it hangs on is an authoring choice rather than a hardcoded
+    # one -- the editor's menu dropdown reads this dict, so adding it
+    # needed no editor change at all.
+    "end_semester": {"name": "End Semester",        "state": "END_SEMESTER"},
+    # Hands every day left in the term to the main quest at one go,
+    # through the same GameClock pipeline every other cost uses -- so the
+    # end-of-semester warning and the HUD counter fire on the way down
+    # without either being repeated. Appended, never inserted, for the
+    # reason above.
+    "pass_days":    {"name": "Pass Remaining Days",  "state": "PASS_DAYS"},
+    # The side quest list. Hung on the PC in the player's room, but a
+    # menu id rather than a hardcoded prop so any terminal an author
+    # likes can open it. Appended, never inserted, for the reason above.
+    "side_quests":  {"name": "Side Quests",          "state": "SIDE_QUESTS"},
 }
 
 MENU_ID_DEFAULT: str = "registration"
@@ -668,6 +779,54 @@ SPEED_MODIFIER_BASE: float = 1.0
 SPEED_MODIFIER_STEP: float = 0.05
 SPEED_SMOOTH_RATE: float = 5.0     # eased per second, never snaps (Spec §5.2)
 
+# ─────────────────────────────────────────────────────────────
+# PASS FROM BEHIND  (per-prop collision mode)
+# ─────────────────────────────────────────────────────────────
+# A third collision mode beside "blocking" and "passthrough": the
+# player WALKS INTO the prop's cells and comes out BEHIND it. The prop
+# is drawn over the player and fades, so they are never lost inside a
+# bookshelf or a shopfront.
+#
+# Stored as a TRANSPARENCY percentage rather than an alpha byte
+# because that is the number an author types: 35 means "35% see-through
+# while somebody is behind it", and a hand-edited level reads plainly.
+# 0 is fully solid-looking (and therefore hides the player, which is
+# why the popup warns about it); the maximum stops short of 100 so a
+# faded prop never vanishes completely and leaves an invisible object
+# on the map.
+#
+# Distinct from the automatic canopy fade a multi-cell tree already
+# gets: that one is derived from the footprint, this one is a switch
+# the author throws on any prop of any size.
+# ─────────────────────────────────────────────────────────────
+
+PASS_BEHIND_DEFAULT: bool = False
+BEHIND_TRANSPARENCY_DEFAULT: int = 35      # percent see-through
+BEHIND_TRANSPARENCY_MIN: int = 0
+BEHIND_TRANSPARENCY_MAX: int = 95
+BEHIND_TRANSPARENCY_STEP: int = 5
+
+
+def normalise_transparency(value: Any) -> int:
+    """Clamp a transparency percentage into the legal range."""
+    try:
+        percent = int(round(float(value)))
+    except (TypeError, ValueError):
+        return BEHIND_TRANSPARENCY_DEFAULT
+    return max(BEHIND_TRANSPARENCY_MIN,
+               min(BEHIND_TRANSPARENCY_MAX, percent))
+
+
+def transparency_to_alpha(percent: Any) -> int:
+    """
+    Blit alpha (0-255) for a transparency percentage.
+
+    35% transparent is 65% opaque, which is 166 — the one conversion
+    in the codebase, so the editor's preview and the game's fade can
+    never drift apart.
+    """
+    return int(round(255 * (100 - normalise_transparency(percent)) / 100))
+
 BASE_PLAYER_SPEED_PX_S: float = 150.0
 
 # ─────────────────────────────────────────────────────────────
@@ -684,23 +843,91 @@ MAX_PROP_EXP_PER_SEMESTER: int = 20
 # ─────────────────────────────────────────────────────────────
 # SKILL IDS
 # ─────────────────────────────────────────────────────────────
-# SkillTree keys are free-form strings, so the game has no formal
-# skill list yet. This is the canonical set the editor's skill
-# dropdown offers, so level data can never invent a typo'd node.
-# Extend here when the skill tree content lands.
+# The set the editor's skill dropdown offers, so level data can never
+# invent a typo'd node.
+#
+# RECONCILED (owner ruling, 2026-08-08). This used to be a separate
+# 9-entry authoring list — programming, algorithms, mathematics,
+# hardware, networking, databases, software_engineering, communication,
+# general — that overlapped the real skill tree on "networking" alone.
+# A skill prop or a gate authored against it therefore named a node the
+# tree never draws, the save file never stores and the endgame never
+# counts. Saif's twelve are the source of truth:
+#
+#     academic/side_quest_catalog.py      the 12 SideQuest topics
+#     engine/endgame_manager.py           TRACKED_SKILL_IDS
+#     engine/save_bridge.py               TRACKED_SKILL_IDS
+#     content/skill_tree_layout.py        SKILL_NODES  (mirrors them)
+#
+# DERIVED, not hand-copied. SKILL_NODES is the one content-package
+# module that already carries the full set, and reading it here is the
+# same trick _bind_roster_fields() uses on npc_roster: a change to the
+# tree cannot silently disagree with the editor, because there is only
+# one list. _SKILL_IDS_FALLBACK mirrors it purely so this module stays
+# importable on its own; it is never consulted when the import works.
+#
+# "general" is deliberately NOT offered. SideQuest.execute_action() and
+# exploration.__trigger_prop() still fall back to it in code when no id
+# is set, but it is not a tree node and nothing counts it, so an author
+# must never be able to pick it.
 # ─────────────────────────────────────────────────────────────
 
-SKILL_IDS: tuple = (
-    "programming",
-    "algorithms",
-    "mathematics",
-    "hardware",
-    "networking",
-    "databases",
-    "software_engineering",
-    "communication",
-    "general",
+_SKILL_IDS_FALLBACK: tuple = (
+    "programming_language", "git", "networking", "technical_communication",
+    "dsa", "oop", "linux_cli", "databases_sql", "debugging_testing",
+    "ai_tools", "docker", "web_app_dev",
 )
+
+
+def _load_skill_ids() -> tuple:
+    """The canonical skill ids, read from the skill tree's own node set."""
+    try:
+        from content.skill_tree_layout import SKILL_NODES
+    except ImportError:                      # pragma: no cover
+        return _SKILL_IDS_FALLBACK
+    return tuple(SKILL_NODES) or _SKILL_IDS_FALLBACK
+
+
+SKILL_IDS: tuple = _load_skill_ids()
+
+# Human-readable labels for the editor's dropdowns. Raw ids like
+# "technical_communication" are what the level file stores, but they are
+# not what an author should have to read off a 450 px cycler.
+_SKILL_NAME_FALLBACK: Dict[str, str] = {
+    "programming_language": "Programming",
+    "git": "Version Control",
+    "networking": "Networking",
+    "technical_communication": "Tech Writing",
+    "dsa": "Data Structures",
+    "oop": "OOP",
+    "linux_cli": "Linux CLI",
+    "databases_sql": "Databases & SQL",
+    "debugging_testing": "Debug & Test",
+    "ai_tools": "AI Tools",
+    "docker": "Docker",
+    "web_app_dev": "Web App Dev",
+}
+
+
+def get_skill_display_name(skill_id: str) -> str:
+    """
+    The label the editor shows for a skill id.
+
+    Falls back to the id with underscores opened out, so a node added to
+    the tree without a label here still reads sensibly instead of
+    vanishing from the dropdown.
+    """
+    if not skill_id:
+        return ""
+    try:
+        from content.skill_tree_layout import SKILL_NODES
+        node = SKILL_NODES.get(skill_id)
+        if node and node.get("display_name"):
+            return str(node["display_name"])
+    except ImportError:                      # pragma: no cover
+        pass
+    name = _SKILL_NAME_FALLBACK.get(skill_id)
+    return name if name else skill_id.replace("_", " ").title()
 
 # ─────────────────────────────────────────────────────────────
 # GATE BOUNDS  (Feature 6, phase F5)

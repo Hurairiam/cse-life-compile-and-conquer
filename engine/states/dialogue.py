@@ -1,15 +1,31 @@
 """
 NPC conversation. DialogueManager owns the card, the portrait, the
-speaker name and the typewriter; this module only owns input and the
-return route.
+speaker name and the typewriter; this module owns input and the
+return route. Which chain plays and where a reply jumps to belong to
+engine/dialogue_flow.py.
 
 ctx.dialogue_return  -> ScreenState to go back to (default EXPLORATION)
-ctx.choice_options   -> list[str]; non-empty draws the ChoiceBox above
-                        the card. Nothing sets it today; the hook is here
-                        so a branching section needs no rewrite.
+ctx.choice_options   -> list[str]; non-empty docks the ChoiceBox above
+                        the card. TWO things set it, and they are asked
+                        in this order:
+                          1. an authored per-chain branch, via
+                             dialogue_flow.open_choice(), while the
+                             chain's last line is still on screen
+                          2. the semester quest offer, via
+                             dialogue_flow.open_offer(), once the chain
+                             has run out
+                        ctx.quest_offer_open says which one owns the
+                        widget, because the answer routes differently.
+
+WHILE A BRANCH IS OPEN THE CHOICE BOX OWNS EVERY EVENT. It has to:
+SPACE and RETURN both confirm a reply AND advance a line, and a click
+that misses a reply row used to fall through to the advance path and
+skip the question entirely. Swallowing the lot means the only way past
+a branch is to answer it.
 """
 import pygame
 
+from engine import dialogue_flow
 from engine.screen_manager import ScreenState
 
 BG = (20, 24, 38)
@@ -17,63 +33,64 @@ BG = (20, 24, 38)
 
 def enter(ctx):
     ctx.dialogue_manager.set_typewriter_enabled(True)
-    if ctx.choice_box is not None:
-        ctx.choice_box.reset()
+    # A reply list left over from the previous conversation would draw
+    # over this one's first line, so the branch state starts clean.
+    dialogue_flow.reset_choice(ctx)
 
 
 def __leave(ctx):
-    ctx.choice_options = []
-    if ctx.choice_box is not None:
-        ctx.choice_box.reset()
-    ctx.go(ctx.dialogue_return or ScreenState.EXPLORATION)
+    target = ctx.dialogue_return or ScreenState.EXPLORATION
+    dialogue_flow.end_talk(ctx)
+    ctx.go(target)
+
+
+def __at_last_line(ctx):
+    """True when the line on screen is the final one of this chain."""
+    shown, total = ctx.dialogue_manager.get_progress()
+    return total > 0 and shown >= total
+
 
 def __advance(ctx):
     """SPACE/click: finish the line first, then move to the next one."""
     if ctx.dialogue_manager.skip_reveal():
         return
+    # An AUTHORED branch is asked while its last line is STILL ON
+    # SCREEN, not after. advance() past the end deactivates
+    # DialogueManager, and an inactive manager renders nothing — the
+    # reply list would then float over an empty screen with no sight of
+    # what it is replying to. ui/choice_box.py docks deliberately above
+    # the dialog card so the two read as one panel, which only works if
+    # the card is still there.
+    if __at_last_line(ctx) and dialogue_flow.open_choice(ctx):
+        return
     ctx.play_sfx("page_turn")
     if ctx.dialogue_manager.advance():
         return
-    if ctx.choice_options:
-        # Choices are already showing — wait for the choice box's own
-        # input (arrows + Enter, or a click). SPACE must not fall
-        # through to __leave() while a decision is pending.
-        return
-    if ctx.pending_quest_npc:
-        from content.npc_quest_offers import SEMESTER_QUEST_OFFERS
-        offer = SEMESTER_QUEST_OFFERS[ctx.pending_quest_npc]
-        ctx.dialogue_manager.load_dialogue(offer["offer_lines"])
-        ctx.choice_options = ["Accept", "Decline"]
+    # The QUEST OFFER is asked here instead, after the chain has really
+    # run out, because it brings its own lines and reactivates the box.
+    # Second in the order on purpose: an authored branch belongs to the
+    # chain being told, and the offer is what happens once it is over.
+    if dialogue_flow.open_offer(ctx):
         return
     __leave(ctx)
 
 
+def __answer(ctx, index):
+    """Commit the picked reply, and leave if it ended the conversation."""
+    resolve = (dialogue_flow.resolve_offer if dialogue_flow.is_offer_open(ctx)
+               else dialogue_flow.resolve_choice)
+    if not resolve(ctx, index):
+        __leave(ctx)
+
+
 def handle_events(ctx, events):
-    options = ctx.choice_options
     for event in events:
+        if dialogue_flow.is_choice_open(ctx):
+            __handle_choice_event(ctx, event)
+            continue
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             __leave(ctx)
             return
-        if options and ctx.choice_box is not None:
-            if ctx.choice_box.handle_event(event, len(options)):
-                if ctx.choice_box.take_confirmed():
-                    ctx.play_sfx("confirm")
-                    picked_index = ctx.choice_box.get_selected()
-                    ctx.choice_options = []
-                    ctx.choice_box.reset()
-                    if ctx.pending_quest_npc:
-                        from content.npc_quest_offers import SEMESTER_QUEST_OFFERS
-                        offer = SEMESTER_QUEST_OFFERS[ctx.pending_quest_npc]
-                        if picked_index == 0:  # Accept
-                            ctx.unlocked_side_quests.add(offer["quest_id"])
-                            ctx.dialogue_manager.load_dialogue(offer["accept_lines"])
-                        else:  # Decline
-                            ctx.dialogue_manager.load_dialogue(offer["decline_lines"])
-                        ctx.decided_quest_semesters.add(ctx.pending_quest_npc)
-                        ctx.pending_quest_npc = None
-                    else:
-                        __leave(ctx)
-                continue
         advance = (
             (event.type == pygame.KEYDOWN
              and event.key in (pygame.K_SPACE, pygame.K_RETURN))
@@ -83,6 +100,32 @@ def handle_events(ctx, events):
             return
 
 
+def __handle_choice_event(ctx, event):
+    """
+    Route one event to the reply list, and consume it either way.
+
+    ESC is deliberately NOT an escape hatch here. Everywhere else it
+    backs out, but a branch is a question the player was asked, and
+    letting ESC skip it would leave the answer unrecorded while the
+    conversation ended anyway — the one outcome the author cannot
+    express. There is always a reply that ends the talk if that is
+    what the choice is for.
+    """
+    if ctx.choice_box is None:
+        # No widget to answer with — refusing to strand the player
+        # matters more than the branch.
+        __leave(ctx)
+        return
+    count = len(ctx.choice_options)
+    if not ctx.choice_box.handle_event(event, count):
+        return
+    if ctx.choice_box.take_confirmed():
+        ctx.play_sfx("confirm")
+        index = ctx.choice_box.get_selected()
+        ctx.choice_result = index
+        __answer(ctx, index)
+
+
 def update(ctx, dt):
     ctx.dialogue_manager.update(dt)
 
@@ -90,6 +133,7 @@ def update(ctx, dt):
 def render(ctx, screen):
     screen.fill(BG)
     ctx.dialogue_manager.render(screen)
-    if ctx.choice_options and ctx.choice_box is not None:
+    if dialogue_flow.is_choice_open(ctx) and ctx.choice_box is not None:
+        prompt = getattr(ctx, "choice_prompt", "") or "CHOOSE A REPLY"
         ctx.choice_box.render(screen, ctx.choice_options,
-                              ctx.choice_box.get_selected())
+                              ctx.choice_box.get_selected(), prompt)

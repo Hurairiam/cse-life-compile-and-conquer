@@ -436,6 +436,9 @@ def build_state(display_name: str = "", character_id: str = "",
                 level_id: str = "", spawn_x: int = 0, spawn_y: int = 0,
                 triggered_prop_uids: Optional[List[str]] = None,
                 talked_npc_uids: Optional[List[str]] = None,
+                dialogue_choices: Optional[Dict[str, int]] = None,
+                return_positions: Optional[Dict[str, List[int]]] = None,
+                quest_states: Optional[Dict[str, str]] = None,
                 global_career_clock_days: int = 0,
                 playtime_seconds: int = 0) -> Dict[str, Any]:
     """
@@ -474,6 +477,29 @@ def build_state(display_name: str = "", character_id: str = "",
             "spawn_y": int(spawn_y),
             "triggered_prop_uids": list(triggered_prop_uids or []),
             "talked_npc_uids": list(talked_npc_uids or []),
+            # Replies the player gave to branching dialogue, keyed
+            # "<level>:<npc uid>:<chain id>". Absent from any save
+            # written before branches existed, which loads as {}.
+            "dialogue_choices": dict(dialogue_choices or {}),
+            # Where the player was standing in each area when they last
+            # left it, "<level_id>": [landing_x, landing_y, stood_x,
+            # stood_y]. Additive in exactly the way dialogue_choices
+            # above is: a save written without it loads as {} and every
+            # area opens at its SET SPAWN cell, so SAVE_SCHEMA_VERSION
+            # stays where it is.
+            "return_positions": dict(return_positions or {}),
+        },
+        "quests": {
+            # The twelve side quests, "<quest id>": "<state>", one of
+            # unoffered / declined / missed / unlocked / completed.
+            # Additive in exactly the way dialogue_choices and
+            # return_positions above are: a save written before the
+            # quest system loads with the whole block absent, which
+            # engine/quest_state.py::from_state() reads as twelve
+            # Unoffered quests, so SAVE_SCHEMA_VERSION stays where it
+            # is. Bumping would only make older builds refuse a file
+            # they can read perfectly well.
+            "states": dict(quest_states or {}),
         },
         "clock": {
             "global_career_clock_days": int(global_career_clock_days),

@@ -69,6 +69,9 @@ TEXT_INSET = 12         # gap from the row edge to its text
 MARKER_W = 6            # the amber bracket on the selected row
 
 MAX_OPTIONS = 4         # more than four replies does not fit the dock
+# MUST stay equal to content/level_registry.py::CHOICE_OPTIONS_MAX, which
+# is what the level schema clamps an authored branch to. This file is the
+# one that actually draws them, so this number is the real limit.
 
 BODY_SIZE = 12
 LABEL_SIZE = 10

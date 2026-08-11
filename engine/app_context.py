@@ -53,6 +53,12 @@ class AppContext:
                      "answers": {}, "message": None}
 
         # -- STAGE 2: audio + settings ------------------------------
+        # Loading a preference is only half the job — it must also be
+        # pushed at whatever consumes it, here, before main() draws its
+        # first frame. apply_all() covers audio and text speed;
+        # apply_display() re-opens the window, and is a separate call
+        # because the settings screen's BACK reverts through apply_all()
+        # and must not flash the display (see settings_store).
         prefs = settings_store.load()
         self.music_volume = prefs["music_volume"]
         self.sfx_volume = prefs["sfx_volume"]
@@ -61,6 +67,7 @@ class AppContext:
         self.audio = AudioManager(music_volume=self.music_volume,
                                   sfx_volume=self.sfx_volume)
         settings_store.apply_all(self)
+        settings_store.apply_display(self)
 
         # -- STAGE 3: title / save / load ---------------------------
         from engine.save_manager import SaveManager
@@ -81,19 +88,41 @@ class AppContext:
         self.monologue = None
         self.dialog_box = None            # owned by DialogueManager
         self.choice_box = ChoiceBox(screen_w, screen_h)
-        self.choice_options = []
-        self.unlocked_side_quests = set()
-        self.decided_quest_semesters = set()
-        self.pending_quest_npc = None
+        self.choice_options = []       # non-empty = a branch is open
+        self.choice_prompt = ""        # the strip above the replies
+        self.choice_result = None      # the index the player picked
+        # TWO different things can dock that reply list, and this says
+        # which one currently owns it: an authored per-chain branch
+        # (dialogue_flow.open_choice) or the semester quest offer
+        # (dialogue_flow.open_offer). They share the widget, never the
+        # screen, and the answer routes differently for each.
+        self.quest_offer_open = False
+        # The twelve side quests as a five-state machine, and the ONE
+        # store that answers for them -- engine/save_bridge.py rebuilds
+        # it from the save's "quests" block. Phase 9's own bookkeeping
+        # (unlocked_side_quests / decided_quest_semesters) was retired
+        # here in Phase 13 when the offer moved onto this machine: two
+        # stores for one quest is two answers to disagree with.
+        from engine.quest_state import QuestStateMachine
+        self.quest_states = QuestStateMachine()
+        # The side quest the conversation in progress owes an answer
+        # for, or None. Owned by engine/dialogue_flow.py for the length
+        # of one talk and never saved -- an unanswered offer is not a
+        # decision, so it does not survive walking away.
+        self.pending_quest_id = None
         self.seen_quest_intro_semesters = set()
         self.quest_intro_popup = MessagePopup(screen_w, screen_h, box_y=40)
-        self.choice_result = None
         self.monologue_title = ""
         self.monologue_subtitle = ""
         self.monologue_lines = []
         self.monologue_next = None     # ScreenState to enter after beat
         self.dialogue_return = None    # ScreenState to return to
         self.dialogue_portrait = None
+        # Owned by engine/dialogue_flow.py for the length of one talk.
+        self.dialogue_npc = None       # NpcData being spoken to
+        self.dialogue_chain = None     # DialogChain currently playing
+        # {"<level>:<uid>:<chain>": reply index} — survives save/load.
+        self.dialogue_choices = {}
 
         # -- STAGE 5: world -----------------------------------------
         from ui.interaction_prompt import InteractionPrompt
@@ -115,6 +144,10 @@ class AppContext:
         self.talked_npc_uids = set()
         self.triggered_prop_uids = set()
         self.pending_spawn = None
+        # {level_id: (landing_x, landing_y, stood_x, stood_y)} — where
+        # the player left each area. Owned by engine/return_points.py
+        # and, like dialogue_choices, it survives save/load.
+        self.return_positions = {}
 
         # -- STAGE 6: gates -----------------------------------------
         from ui.gate_notice import GateNotice
