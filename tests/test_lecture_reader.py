@@ -319,18 +319,30 @@ def test_flow_the_state_machine_was_not_modified():
     """
     "Do not modify the state machine's transition rules."
 
-    Five states and four transitions, exactly as Phase 12 left them.
+    Five states, and every transition Phase 12 defined still defined.
     R1 (RETRYABLE) is what makes this possible — a ONE-SHOT rule would
-    have needed a sixth state and a fifth transition.
+    have needed a sixth state and a transition of this phase's own.
+
+    NOT AN EQUALITY ANY MORE. Task 2 (Sprint 5) added three edges off
+    Declined so a refused offer comes back for the rest of the term.
+    Pinning the exact set here would make this file fail whenever
+    another phase legitimately extends the machine, which is not what
+    it is guarding. What it guards is that THE READER adds nothing and
+    removes nothing — so: the five states are unchanged, Phase 12's
+    four edges all survive, and Completed is still reachable only from
+    Unlocked, which is the rule this phase actually depends on.
     """
     assert len(QUEST_STATES) == 5
-    assert len(LEGAL_TRANSITIONS) == 4
-    assert LEGAL_TRANSITIONS == frozenset((
-        (STATE_UNOFFERED, STATE_DECLINED),
-        (STATE_UNOFFERED, STATE_MISSED),
-        (STATE_UNOFFERED, STATE_UNLOCKED),
-        (STATE_UNLOCKED, STATE_COMPLETED),
-    ))
+    for edge in ((STATE_UNOFFERED, STATE_DECLINED),
+                 (STATE_UNOFFERED, STATE_MISSED),
+                 (STATE_UNOFFERED, STATE_UNLOCKED),
+                 (STATE_UNLOCKED, STATE_COMPLETED)):
+        assert edge in LEGAL_TRANSITIONS, "Phase 12 lost %s -> %s" % edge
+    into_completed = {frm for (frm, to) in LEGAL_TRANSITIONS
+                      if to == STATE_COMPLETED}
+    assert into_completed == {STATE_UNLOCKED}, \
+        "a quest can now be completed without being accepted: %s" % (
+            into_completed,)
 
 
 def test_flow_mark_completed_is_the_only_transition_this_phase_makes():

@@ -282,10 +282,17 @@ def arm_offer(ctx: Any, npc_data: Any) -> bool:
     reply list appears leaves the quest Unoffered and is asked again
     next time.
 
-    A quest already accepted, declined or missed is never re-armed:
-    quest_offer.offered_quest_id() answers None from every state but
-    Unoffered, so walking back to Purnno after declining plays his
-    ordinary dialogue with no reminder and no second question.
+    TASK 2 — DECLINING IS NOT THE END OF IT. This used to read "a quest
+    already accepted, declined or missed is never re-armed ... walking
+    back to Purnno after declining plays his ordinary dialogue with no
+    reminder and no second question". Declined now re-arms:
+    quest_offer.offered_quest_id() answers a quest id from Unoffered AND
+    Declined, so re-approaching that NPC puts the same offer again for
+    as long as the semester lasts. Accepted, completed and missed are
+    still never re-armed.
+
+    Nothing on this path changed to make that work — the mechanic is one
+    word in QuestStateMachine.can_offer(), which this already called.
     """
     ctx.pending_quest_id = quest_offer.offered_quest_id(ctx, npc_data)
     return ctx.pending_quest_id is not None

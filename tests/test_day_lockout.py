@@ -451,9 +451,14 @@ def test_unlocked_a_sitting_already_open_is_not_interrupted():
 
 
 def test_unlocked_the_state_machine_was_not_modified():
-    """Out of scope, asserted rather than claimed: five states, four
-    transitions, exactly as Phase 12 left them."""
-    assert len(LEGAL_TRANSITIONS) == 4
+    """
+    Out of scope for the day lockout, asserted rather than claimed.
+
+    The count was 4 until Task 2 (Sprint 5) added three edges off
+    Declined for the side-quest re-offer. This phase never depended on
+    the size of the table — only on the two edges it drives — so it
+    asserts those and stops pinning another phase's rulebook.
+    """
     assert (STATE_UNOFFERED, STATE_UNLOCKED) in LEGAL_TRANSITIONS
     assert (STATE_UNLOCKED, STATE_COMPLETED) in LEGAL_TRANSITIONS
 
