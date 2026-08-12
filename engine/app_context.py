@@ -148,6 +148,7 @@ class AppContext:
         # the player left each area. Owned by engine/return_points.py
         # and, like dialogue_choices, it survives save/load.
         self.return_positions = {}
+        self.npc_visit_counts = {}
 
         # -- STAGE 6: gates -----------------------------------------
         from ui.gate_notice import GateNotice
