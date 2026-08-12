@@ -386,8 +386,19 @@ class SkillTreeScreen:
 
         level = int(selected.get("level", 0))
         max_level = int(selected.get("max_level", 1))
+        # TASK 3/4: this read "LEVEL n / max". Skills are binary, so the
+        # number is replaced by the same two words the stats screen
+        # draws, from the same helper — one spelling of "completed" in
+        # the whole UI. The BAR keeps its level/max_level arithmetic
+        # untouched: what reaches it is already the completion-derived
+        # view (engine/skill_completion.py::CompletionView), so it fills
+        # empty / half / full without knowing anything changed.
+        from engine.skill_completion import (LABEL_COMPLETED,
+                                             LABEL_NOT_COMPLETED)
+        done = max_level > 0 and level >= max_level
         screen.blit(load_font(SIZE_BODY).render(
-            f"LEVEL {level} / {max_level}", True, CREDIT_HL), (left, y))
+            LABEL_COMPLETED if done else LABEL_NOT_COMPLETED, True,
+            CREDIT_HL if done else STAT_BROWN), (left, y))
         y += 22
         self.__draw_bar(screen, pygame.Rect(left, y, width, PANEL_BAR_H),
                         level, max_level)

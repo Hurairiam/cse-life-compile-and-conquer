@@ -1,7 +1,7 @@
 """Player profile / transcript. Read-only; every value is a parameter."""
 import pygame
 
-from engine import progression
+from engine import progression, skill_completion
 from engine.screen_manager import ScreenState
 
 
@@ -38,7 +38,11 @@ def render(ctx, screen):
         career_days=ctx.session.get_global_career_clock_days(),
         career_cap=progression.CAREER_CAP_DAYS,
         wallet=player.get_wallet_balance(),
-        skills=progression.skill_levels(ctx),
+        # TASK 3: was progression.skill_levels(ctx), a {skill_id: level}
+        # map. Levels are gone; these are (label, ratio, status) rows
+        # built off the Phase 1 completed flag, in the same order the
+        # map used to arrive in.
+        skills=skill_completion.stats_rows(ctx),
         completed_count=len(history.get_completed_course_codes()),
         backlog_courses=list(history.get_backlog_courses()),
     )

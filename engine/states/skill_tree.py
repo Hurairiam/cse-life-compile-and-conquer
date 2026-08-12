@@ -22,18 +22,27 @@ was not edited for this — `build_view_model()` already defaults
 import pygame
 
 from content.skill_tree_layout import NODE_ORDER, build_view_model
+from engine import skill_completion
 from engine.screen_manager import ScreenState
 
 
 def __nodes(ctx):
     """
-    The view model, built with no points to spend.
+    The view model, built off the completed flag and with no points.
+
+    Two changes from before, both Task 4's consequences:
 
     `build_view_model(tree)` defaults `available_points` to 0, which
     makes every `can_invest` False — the honest answer now that nothing
     can be invested.
+
+    The tree handed in is `skill_completion.tree_view(ctx)`, not the real
+    SkillTree. Every real level is 0 now, so the actual tree would draw
+    twelve LOCKED nodes; the view reports the flag in the shape the
+    layout module reads, and the screen goes on working unedited. See
+    CompletionView's own docstring for why it is shaped that way.
     """
-    return build_view_model(ctx.player().get_skill_tree())
+    return build_view_model(skill_completion.tree_view(ctx))
 
 
 def enter(ctx):
