@@ -17,13 +17,21 @@ placeholder is a BUILD SCAFFOLD, NOT CONTENT — it is deleted the moment
 the two branches meet and must never survive into a demo. Nothing in
 this file writes dialogue (G2).
 
-THE BEAT 2 -> BEAT 3 HANDOFF IS THE TRAP
-────────────────────────────────────────
-The router only fires enter() when the state CHANGES, so going to INTRO
-from INTRO does not re-enter and beat 3 would play beat 2's lines over
-beat 2's level. §5 calls this out explicitly. __end_beat() therefore
-detects that case and calls enter(ctx) directly rather than routing
-through ctx.go().
+BEAT 3 IS WALKED INTO, NOT HANDED TO
+────────────────────────────────────
+Beat 2 used to hand straight to beat 3, which meant the tutorial moved
+the player from their room to the lecture hall for them. It does not any
+more (owner ruling): beat 2 ends on EXPLORATION with beat 3 still armed,
+the player crosses the campus themselves, and
+engine/intro_sequence.py::check_level_trigger() starts beat 3 the frame
+they enter the lecture hall. enter() therefore must NOT re-stage a level
+the player is already standing in — see __already_standing_in().
+
+The INTRO -> INTRO guard in __end_beat() is kept even though nothing
+reaches it today. The router only fires enter() when the state CHANGES,
+so any future beat that routes INTRO from INTRO would silently play the
+previous beat's lines over the previous beat's level; the guard costs
+two lines and that failure costs an afternoon.
 """
 import pygame
 
@@ -51,12 +59,19 @@ FADE_IN_SECONDS = 0.7
 
 SPEAKER_FALLBACK = "Ms. Roya"
 
+# ROYA IS A STILL, NOT AN ANIMATION (owner ruling). The cutscenes draw
+# ONE frame of her idle sheet and never cycle it: column 0 of row 0 of
+# assets/npcs/npc_roya_idle.png. ui/cutscene_stage.py::frame_for() is
+# what used to pick a frame from a clock and is now simply not called
+# from here — it is still the drawing module's public API and a placed
+# NPC on the map still animates exactly as it did.
+STAGE_FRAME = 0
+
 # Module-level, the way engine/states/save_game.py, pass_days.py and
 # side_quest_lecture.py all keep theirs. app_context.py is shared and
-# worth not touching for four floats.
+# worth not touching for three floats.
 __phase = PHASE_TALK
 __fade_clock = 0.0
-__anim_clock = 0.0
 __draw_npc = True
 __stage = None
 
@@ -120,10 +135,11 @@ def enter(ctx):
     """
     Stage the armed beat and put its first line up.
 
-    Called by the router on entry, and directly by __end_beat() for the
-    beat 2 -> beat 3 handoff.
+    Called by the router on every entry — including the one
+    engine/intro_sequence.py::check_level_trigger() causes when the
+    player walks into the lecture hall carrying an armed beat 3.
     """
-    global __phase, __fade_clock, __anim_clock, __draw_npc, __stage
+    global __phase, __fade_clock, __draw_npc, __stage
     beat = intro_sequence.current_beat(ctx)
     if beat is None:
         # Defensive: this state should never be entered unarmed.
@@ -133,11 +149,10 @@ def enter(ctx):
     __stage = intro_sequence.stage_for(beat)
     __phase = PHASE_TALK
     __fade_clock = 0.0
-    __anim_clock = 0.0
     __draw_npc = True
 
     level_id = __stage.get("level_id")
-    if level_id:
+    if level_id and not __already_standing_in(ctx, level_id):
         # The same call engine/states/cutscene.py already makes. It
         # builds ctx.walker at the level's spawn, so the player is
         # standing in shot without this file placing anybody.
@@ -162,6 +177,22 @@ def enter(ctx):
     ctx.dialogue_manager.set_typewriter_enabled(True)
     ctx.dialogue_manager.load_dialogue(lines, portrait)
     ctx.dialogue_manager.set_speaker(__speaker(beat))
+
+
+def __already_standing_in(ctx, level_id):
+    """
+    True when the player is ALREADY in the level this beat stages.
+
+    A walk-in beat (intro_sequence.WALK_IN_TRIGGERS) fires because the
+    player walked through the door themselves, so re-staging the level
+    would reload it and snap them back to its spawn — the tutorial
+    yanking them two cells the moment they arrive. Beat 2 is unaffected:
+    registration leaves the player in campus_main, so player_room does
+    not match and it stages exactly as it always did.
+    """
+    return (getattr(ctx, "level_id", None) == level_id
+            and getattr(ctx, "level", None) is not None
+            and getattr(ctx, "walker", None) is not None)
 
 
 def exit(ctx):
@@ -210,11 +241,12 @@ def __end_beat(ctx):
     """
     The beat is over: fade, or route onward.
 
-    THE BEAT 2 -> BEAT 3 CASE IS HANDLED HERE, not by the router.
-    after_room_tour() arms beat 3 and returns INTRO, and the router does
-    not re-enter a state it is already in — so this calls enter(ctx)
-    directly. Get that wrong and beat 3 plays beat 2's lines over beat
-    2's level.
+    Beat 2 now leaves on EXPLORATION with beat 3 armed, so the player
+    walks to the lecture hall themselves. The INTRO -> INTRO branch
+    below is therefore unreached today and deliberately kept: the router
+    does not re-enter a state it is already in, so a beat that ever
+    routes INTRO from INTRO would play the previous beat's lines over
+    the previous beat's level without it.
     """
     global __phase, __fade_clock
     if __stage is not None and __stage.get("fade_out"):
@@ -231,14 +263,12 @@ def __end_beat(ctx):
 
 
 def update(ctx, dt):
-    """Tick the typewriter, the idle animation and the fade."""
-    global __phase, __fade_clock, __anim_clock, __draw_npc
+    """Tick the typewriter and the fade. Roya does not move — STAGE_FRAME."""
+    global __phase, __fade_clock, __draw_npc
     try:
         step = max(0.0, float(dt))
     except (TypeError, ValueError):
         step = 0.0
-    # Always, so Roya's idle keeps cycling through the fade too.
-    __anim_clock += step
 
     if __phase == PHASE_TALK:
         ctx.dialogue_manager.update(step)
@@ -280,7 +310,7 @@ def render(ctx, screen):
     """
     stage = __stage if __stage is not None else \
         intro_sequence.stage_for(intro_sequence.current_beat(ctx))
-    frame = cutscene_stage.frame_for(__anim_clock)
+    frame = STAGE_FRAME
 
     if stage.get("level_id") is None:
         cutscene_stage.draw_black_stage(
