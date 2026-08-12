@@ -72,7 +72,8 @@ from typing import Any, Dict, Optional
 
 from content.npc_quest_offers import SEMESTER_QUEST_OFFERS
 from content.side_quest_definitions import get_quest_for_semester, get_semester
-from engine.quest_state import STATE_UNOFFERED, QuestStateError
+from engine.quest_state import (STATE_DECLINED, STATE_UNOFFERED,
+                                QuestStateError)
 
 # The reply list this offer docks, and which index means yes. Two fixed
 # replies rather than an authored branch: a DialogChain's `choice` is
@@ -215,12 +216,17 @@ def offered_quest_id(ctx: Any, npc_data: Any) -> Optional[str]:
 
 def is_still_offerable(ctx: Any, quest_id: Any) -> bool:
     """
-    True when `quest_id` is still this term's quest and still Unoffered.
+    True when `quest_id` is still this term's quest and still unanswered.
 
     The guard resolve() runs before it writes. Deliberately re-derived
     from the context rather than trusted from the arming call, so an
     answer can only ever land on the quest the game is actually in the
     middle of.
+
+    TASK 2: Declined passes now, for the same reason can_offer() accepts
+    it — the offer is live again, so the answer to it must be writable.
+    Unlocked, Completed and Missed still fail, which is what stops an
+    accepted quest being re-answered.
     """
     machine = machine_of(ctx)
     if machine is None or not quest_id:
@@ -228,7 +234,8 @@ def is_still_offerable(ctx: Any, quest_id: Any) -> bool:
     if get_quest_for_semester(semester_of(ctx)) != quest_id:
         return False
     try:
-        return machine.get_state(quest_id) == STATE_UNOFFERED
+        return machine.get_state(quest_id) in (STATE_UNOFFERED,
+                                               STATE_DECLINED)
     except QuestStateError:
         return False
 
@@ -239,9 +246,18 @@ def resolve(ctx: Any, quest_id: Any, accepted: bool) -> bool:
     """
     Record Accept or Decline. False when nothing was written.
 
-    Accepting is always permanent: Unlocked, and can_offer() answers
-    False from there for every semester. Declining is permanent for
-    semesters 2-12 -- Declined, same as accepting, never asked again.
+
+    The ONLY place this module touches the machine.
+
+    TASK 2 — ONLY ACCEPT IS PERMANENT. This used to read "both outcomes
+    are permanent ... the question is never put a second time under any
+    circumstance", and that is no longer the rule. Accept still ends the
+    offer for good: Unlocked answers False from can_offer(). Decline
+    leaves the quest offerable, so walking back to the NPC puts the same
+    question again, for as long as the term lasts. The boundary is the
+    semester, not the answer — expire_semester() moves a still-Declined
+    quest to Missed when the term closes.
+
 
     SEMESTER 1 IS THE ONE EXCEPTION (owner ruling). A semester-1 decline
     does NOT transition the quest at all -- it stays Unoffered on
@@ -277,32 +293,29 @@ def resolve(ctx: Any, quest_id: Any, accepted: bool) -> bool:
 
 # ── the term ending ────────────────────────────────────────────
 
-def expire_semester(ctx: Any, semester: Any = None) -> Optional[str]:
+def expire_semester(ctx: Any) -> Optional[str]:
     """
-    A term ended: its quest is Missed if it was never put. Returns the
-    quest id that expired, or None.
+    Expire all unoffered quests for the current semester.
 
-    Called from engine/states/exam.py::close_semester(), which recon §7
-    records as the one place in the game a semester rolls over — and
-    called BEFORE its freeze check by owner ruling, so a run that ends
-    on ENDGAME still closes its books and Phase 16's ending gate sees
-    the true picture.
+    Returns the quest_id of any quest that transitioned from Declined
+    to Missed, or None if no transition occurred.
 
-    `semester` defaults to the one `ctx` is currently in, which inside
-    close_semester() is the term that is ending: advance_semester() has
-    not run yet at the call site.
+    The ONLY place this module touches the machine outside resolve().
 
-    THIS IS ALSO WHERE AN UNREACHABLE NPC LANDS. A quest whose NPC the
-    player never walked up to — never visited the map, never pressed E,
-    or an author's gate hid them for the term — has simply never been
-    offered, so it is Missed here along with the ones that were ignored
-    on purpose. There is no fallback offer and no second chance: that
-    is what Missed is for.
+    Declined quests outlive their term only inside a single interaction —
+    walk away and the offer is live again. At semester rollover, a still-
+    Declined quest becomes Missed, alongside any quest never offered at
+    all. An Unlocked (accepted) quest is not touched; it persists across
+    semesters.
+
+    QuestStateError is caught to handle contexts without a quest machine.
+    A semester rollover is a place where being wrong should cost nothing,
+    never the playthrough.
     """
     machine = machine_of(ctx)
     if machine is None:
         return None
-    number = semester_of(ctx) if semester is None else semester
+    number = semester_of(ctx)
     try:
         number = int(number)
     except (TypeError, ValueError):
@@ -362,11 +375,27 @@ if __name__ == "__main__":
     assert not resolve(ctx, "SQ_GIT_GITHUB", False), "answered twice"
     assert ctx.quest_states.get_state("SQ_GIT_GITHUB") == "unlocked"
 
-    # -- declining is permanent too ---------------------------------
+    # -- declining is NOT permanent (Task 2) ------------------------
+    # It holds until the player walks back, and the offer returns for
+    # the rest of the term. Accepting stays permanent, above.
     ctx = _Ctx(2)
     assert resolve(ctx, "SQ_OOP", False)
     assert ctx.quest_states.get_state("SQ_OOP") == "declined"
-    assert offered_quest_id(ctx, _Npc("rahman")) is None, "asked twice"
+    assert offered_quest_id(ctx, _Npc("rahman")) == "SQ_OOP", \
+        "a declined quest was not re-offered"
+    assert resolve(ctx, "SQ_OOP", False), "could not decline a second time"
+    assert ctx.quest_states.get_state("SQ_OOP") == "declined"
+    assert resolve(ctx, "SQ_OOP", True), "could not accept after declining"
+    assert ctx.quest_states.get_state("SQ_OOP") == "unlocked"
+    assert offered_quest_id(ctx, _Npc("rahman")) is None, \
+        "an accepted quest was offered again"
+
+    # -- ...but the term ending IS permanent ------------------------
+    ctx = _Ctx(2)
+    assert resolve(ctx, "SQ_OOP", False)
+    assert expire_semester(ctx) == "SQ_OOP", "a decline outlived its term"
+    assert ctx.quest_states.get_state("SQ_OOP") == "missed"
+    assert offered_quest_id(ctx, _Npc("rahman")) is None
 
     # -- a term nobody was talked to ends Missed --------------------
     ctx = _Ctx(3)
