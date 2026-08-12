@@ -57,6 +57,11 @@ from engine.screen_manager import ScreenState
 # module stays importable by tooling that has no ui/ or pygame.
 
 
+# Semester-1 only. Talk 1 plays the NPC's existing chain (index 0).
+# Talk 2+ plays "sem1_return" and stays there. Authored in the level
+# editor by giving a new chain this exact chain_id — nothing about
+# the semester-indexed lookup used for every other semester changes.
+SEM1_RETURN_CHAIN_ID: str = "sem1_return"
 # ── which chain plays ──────────────────────────────────────────
 
 def chain_index_for(npc_data: Any, semester: int) -> int:
@@ -115,20 +120,56 @@ def start_talk(ctx: Any, npc_data: Any) -> bool:
             "NOT YET", ["They are not around this semester."], SEVERITY_INFO)
         return False
 
-    index = chain_index_for(npc_data, semester)
-    chain = npc_data.get_chain(index) if index >= 0 else None
+    start = npc_data.get_effective_min_semester()
+    if semester == start == 1:
+        chain = _pick_semester1_chain(ctx, npc_data)
+    else:
+        index = chain_index_for(npc_data, semester)
+        chain = npc_data.get_chain(index) if index >= 0 else None
+
+    
+
+    
     if not play_chain(ctx, npc_data, chain):
         ctx.play_sfx("error")
         return False
 
     ctx.talked_npc_uids.add("%s:%s" % (ctx.level_id, npc_data.get_uid()))
     reset_choice(ctx)
-    arm_offer(ctx, npc_data)
+
+    # Semester 1: the very first talk (chain 0) is just an introduction
+    # -- no quest offer yet. _pick_semester1_chain() already bumped the
+    # visit counter to 1 for that first talk, so checking it here after
+    # the pick tells us whether this was that first visit.
+    key = "%s:%s" % (ctx.level_id, npc_data.get_uid())
+    is_first_sem1_visit = (semester == start == 1
+                           and ctx.npc_visit_counts.get(key, 0) <= 1)
+    if not is_first_sem1_visit:
+        arm_offer(ctx, npc_data)
+
     ctx.dialogue_return = ScreenState.EXPLORATION
     ctx.go(ScreenState.DIALOGUE)
     return True
 
 
+def _pick_semester1_chain(ctx: Any, npc_data: Any) -> Optional[Any]:
+    """
+    Sequential semester-1 chain by visit count: index 0, then
+    "sem1_return" forever after.
+
+    Falls back to the normal index-0 chain if the author has not yet
+    added the extra chain, so an NPC without it plays exactly as it
+    did before this feature existed.
+    """
+    if not isinstance(getattr(ctx, "npc_visit_counts", None), dict):
+        ctx.npc_visit_counts = {}
+    key = "%s:%s" % (ctx.level_id, npc_data.get_uid())
+    visit = ctx.npc_visit_counts.get(key, 0)
+    ctx.npc_visit_counts[key] = visit + 1
+
+    if visit == 0:
+        return npc_data.get_chain(0)
+    return npc_data.find_chain(SEM1_RETURN_CHAIN_ID) or npc_data.get_chain(0)
 # ── the branch ─────────────────────────────────────────────────
 
 def answer_key(ctx: Any, npc_data: Any, chain: Any) -> str:
@@ -300,11 +341,18 @@ def open_offer(ctx: Any) -> bool:
     advance() has emptied the chain rather than while its last line is
     still up. Loading them reactivates the manager, so the reply list
     still has a card to dock above.
+
+    The lines come from quest_offer.offer_lines_for(), not straight off
+    the offer dict -- that is what appends the "did you change your
+    mind?" line on a semester-1 quest's second ask.
     """
     offer = pending_offer(ctx)
     if offer is None:
         return False
-    ctx.dialogue_manager.load_dialogue(list(offer["offer_lines"]))
+    lines = quest_offer.offer_lines_for(ctx, getattr(ctx, "pending_quest_id", None))
+    print("[DEBUG] pending_quest_id=%s offer_lines_for=%s fallback=%s" %
+          (getattr(ctx, "pending_quest_id", None), lines, offer["offer_lines"]))
+    ctx.dialogue_manager.load_dialogue(lines if lines else list(offer["offer_lines"]))
     ctx.choice_options = list(OFFER_REPLIES)
     ctx.choice_prompt = OFFER_PROMPT
     ctx.choice_result = None
