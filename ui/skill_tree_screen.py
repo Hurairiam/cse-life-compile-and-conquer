@@ -143,8 +143,8 @@ class SkillTreeScreen:
 
     Holds no skill state: render() is handed the view model that
     content/skill_tree_layout.py built, and the caller reads
-    get_node_rects() / get_invest_rect() / get_back_rect() to interpret
-    clicks. The screen returns no decisions (§6.2) and calls no mutator.
+    get_node_rects() / get_back_rect() to interpret clicks. The screen
+    returns no decisions (§6.2) and calls no mutator.
     """
 
     def __init__(self) -> None:
@@ -159,9 +159,10 @@ class SkillTreeScreen:
         self.__back: pygame.Rect = pygame.Rect(
             self.__panel.x + PANEL_PAD,
             self.__panel.bottom - PANEL_PAD - BTN_H, BTN_W, BTN_H)
-        self.__invest: pygame.Rect = pygame.Rect(
-            self.__panel.x + PANEL_PAD,
-            self.__back.y - BTN_GAP - BTN_H, BTN_W, BTN_H)
+        # TASK 4: the INVEST rect sat one BTN_GAP above BACK. Both it and
+        # get_invest_rect() are gone, so there is no rect left for a
+        # click to hit-test against — the control cannot be reached by
+        # any path, not merely hidden.
         self.__icon: Optional[pygame.Surface] = None
         self.__icon_loaded: bool = False
 
@@ -187,10 +188,6 @@ class SkillTreeScreen:
             rects[str(node.get("skill_id", ""))] = self.__node_rect(node)
         return rects
 
-    def get_invest_rect(self) -> pygame.Rect:
-        """The INVEST button rectangle."""
-        return self.__invest
-
     def get_back_rect(self) -> pygame.Rect:
         """The BACK button rectangle."""
         return self.__back
@@ -205,17 +202,22 @@ class SkillTreeScreen:
     # -- drawing ----------------------------------------------
     def render(self, screen: pygame.Surface,
                nodes: Sequence[Dict[str, Any]] = (),
-               selected_skill_id: str = "",
-               available_points: int = 0) -> None:
+               selected_skill_id: str = "") -> None:
         """
         Draw the whole skill tree from the handed-in view model (§6.1).
 
         `nodes` is exactly what build_view_model() returns; the screen
         reads its keys and draws them, and interprets nothing else.
+
+        TASK 4: the trailing `available_points` parameter is gone. It fed
+        the POINTS readout and the INVEST button, both removed, and no
+        caller passed it except the one that has stopped
+        (`engine/states/skill_tree.py`). play_sandbox.py already called
+        this with two arguments, so it is unaffected.
         """
         screen.fill(PANEL_TAN)
         self.__draw_card(screen)
-        self.__draw_title(screen, available_points)
+        self.__draw_title(screen)
 
         entries = list(nodes or ())
         rects = self.get_node_rects(entries)
@@ -224,8 +226,7 @@ class SkillTreeScreen:
         self.__draw_connectors(screen, entries, rects)
         for node in entries:
             self.__draw_node(screen, node, rects, selected_skill_id)
-        self.__draw_panel(screen, entries, selected_skill_id,
-                          available_points)
+        self.__draw_panel(screen, entries, selected_skill_id)
 
     def __draw_card(self, screen: pygame.Surface) -> None:
         """Framed card with an inner border and corner brackets (§4.2)."""
@@ -244,16 +245,20 @@ class SkillTreeScreen:
             pygame.draw.line(screen, BORDER_BROWN, (px, py),
                              (px + dx2, py + dy2), 3)
 
-    def __draw_title(self, screen: pygame.Surface,
-                     available_points: int) -> None:
-        """The screen title and the unspent-points readout."""
+    def __draw_title(self, screen: pygame.Surface) -> None:
+        """
+        The screen title.
+
+        TASK 4: the unspent-points readout ("POINTS n", top right) went
+        with the INVEST button. Leaving it would have advertised a
+        currency with nothing left to spend it on — the points were only
+        ever derived (completed courses x 2, minus levels invested), so
+        no stored figure was orphaned by dropping it.
+        """
         y = self.__card.y + TITLE_Y
         screen.blit(load_font(SIZE_TITLE).render("SKILL TREE", True,
                                                  TEXT_COFFEE),
                     (self.__card.x + GRAPH_LEFT, y))
-        points = load_font(SIZE_BODY).render(
-            f"POINTS {int(available_points)}", True, CREDIT_HL)
-        screen.blit(points, (self.__panel.right - points.get_width(), y + 4))
 
     def __draw_connectors(self, screen: pygame.Surface,
                           nodes: Sequence[Dict[str, Any]],
@@ -358,7 +363,7 @@ class SkillTreeScreen:
 
     def __draw_panel(self, screen: pygame.Surface,
                      nodes: Sequence[Dict[str, Any]],
-                     selected_skill_id: str, available_points: int) -> None:
+                     selected_skill_id: str) -> None:
         """The right-hand detail panel for whichever node is selected."""
         pygame.draw.rect(screen, HEADER_TAN, self.__panel)
         pygame.draw.rect(screen, BORDER_BROWN, self.__panel, BORDER_ROW)
@@ -371,7 +376,6 @@ class SkillTreeScreen:
         if selected is None:
             screen.blit(load_font(SIZE_BODY).render("SELECT A SKILL", True,
                                                     STAT_BROWN), (left, y))
-            self.__draw_button(screen, self.__invest, "INVEST", HEADER_TAN)
             self.__draw_button(screen, self.__back, "BACK", HEADER_TAN)
             return
 
@@ -382,8 +386,19 @@ class SkillTreeScreen:
 
         level = int(selected.get("level", 0))
         max_level = int(selected.get("max_level", 1))
+        # TASK 3/4: this read "LEVEL n / max". Skills are binary, so the
+        # number is replaced by the same two words the stats screen
+        # draws, from the same helper — one spelling of "completed" in
+        # the whole UI. The BAR keeps its level/max_level arithmetic
+        # untouched: what reaches it is already the completion-derived
+        # view (engine/skill_completion.py::CompletionView), so it fills
+        # empty / half / full without knowing anything changed.
+        from engine.skill_completion import (LABEL_COMPLETED,
+                                             LABEL_NOT_COMPLETED)
+        done = max_level > 0 and level >= max_level
         screen.blit(load_font(SIZE_BODY).render(
-            f"LEVEL {level} / {max_level}", True, CREDIT_HL), (left, y))
+            LABEL_COMPLETED if done else LABEL_NOT_COMPLETED, True,
+            CREDIT_HL if done else STAT_BROWN), (left, y))
         y += 22
         self.__draw_bar(screen, pygame.Rect(left, y, width, PANEL_BAR_H),
                         level, max_level)
@@ -416,10 +431,11 @@ class SkillTreeScreen:
                     BAR_RED), (left, y))
                 y += REQ_PITCH
 
-        can_invest = bool(selected.get("can_invest", False))
-        self.__draw_button(screen, self.__invest, "INVEST",
-                           BTN_CONFIRM if can_invest else HEADER_TAN,
-                           TEXT_COFFEE if can_invest else STAT_BROWN)
+        # TASK 4: the INVEST button was drawn here, tinted BTN_CONFIRM
+        # when the node's `can_invest` was True. Both the button and the
+        # flag it read are unused now — `can_invest` still exists in the
+        # view model (content/skill_tree_layout.py is Saif's file and
+        # comes back False by default), it simply has nothing to drive.
         self.__draw_button(screen, self.__back, "BACK", HEADER_TAN)
 
     def __draw_button(self, screen: pygame.Surface, rect: pygame.Rect,
@@ -536,12 +552,12 @@ if __name__ == "__main__":
         return tree
 
     skills = _fresh_tree()
-    points = 3
     selected = NODE_ORDER[0]
 
     running = True
     while running:
-        model = build_view_model(skills, points)
+        # TASK 4: built with no points, the way the game builds it now.
+        model = build_view_model(skills)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -563,34 +579,22 @@ if __name__ == "__main__":
                     step = 4 if event.key == pygame.K_RIGHT else -4
                     index = NODE_ORDER.index(selected)
                     selected = NODE_ORDER[(index + step) % len(NODE_ORDER)]
-                elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER,
-                                   pygame.K_i):
-                    # The RUNNER decides and mutates -- never the screen.
-                    entry = next((n for n in model
-                                  if n["skill_id"] == selected), None)
-                    if entry and entry["can_invest"]:
-                        skills.increment_skill(selected, 1)
-                        points -= 1
-                elif event.key == pygame.K_p:
-                    points += 5
                 elif event.key == pygame.K_r:
-                    skills, points = _fresh_tree(), 3
+                    skills = _fresh_tree()
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                # TASK 4: ENTER/I invested and the INVEST rect was
+                # hit-tested here. Both are gone, along with the P key
+                # that topped the points up — there is no spend left for
+                # this harness to exercise.
                 for skill_id, rect in ui.get_node_rects(model).items():
                     if rect.collidepoint(event.pos):
                         selected = skill_id
-                entry = next((n for n in model
-                              if n["skill_id"] == selected), None)
-                if ui.get_invest_rect().collidepoint(event.pos):
-                    if entry and entry["can_invest"]:
-                        skills.increment_skill(selected, 1)
-                        points -= 1
 
-        ui.render(window, build_view_model(skills, points), selected, points)
+        ui.render(window, model, selected)
 
         hint = hint_font.render(
-            "arrows/click select  |  ENTER invest  |  P +5 points"
-            "  |  R reset  |  F11  |  ESC", True, HINT_BROWN)
+            "arrows/click select  |  R reset  |  F11  |  ESC", True,
+            HINT_BROWN)
         window.blit(hint, (window.get_width() - hint.get_width() - 24,
                            window.get_height() - hint.get_height() - 14))
 

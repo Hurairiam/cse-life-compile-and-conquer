@@ -101,6 +101,11 @@ SKILL_ROW_H    = 38         # (§4.4)
 SKILL_PITCH    = 44
 SKILL_LABEL_W  = 210        # the label column inside a skill row
 SKILL_BAR_H    = 10
+# TASK 3: the status word column, where "LV n" used to sit. "LV 10" fit
+# in 66px; "NOT COMPLETED" is thirteen glyphs and does not, so the
+# column is widened and the bar gives up the difference. The bar still
+# clears 100px, which is enough to read a half from a full at a glance.
+SKILL_STATUS_W = 152
 
 HEADER_H       = 26         # a section header strip
 BTN_W          = 180
@@ -332,7 +337,7 @@ class StatsScreen:
                            "SKILLS")
         rects = self.get_skill_row_rects(len(rows))
         font = load_font(SIZE_LABEL)
-        for (label, level, max_level), rect in zip(rows, rects):
+        for (label, ratio, status), rect in zip(rows, rects):
             pygame.draw.rect(screen, ROW_WHITE, rect)
             pygame.draw.rect(screen, BORDER_BROWN, rect, BORDER_ROW)
             split = rect.x + SKILL_LABEL_W
@@ -343,12 +348,24 @@ class StatsScreen:
             rendered = font.render(text, True, TEXT_COFFEE)
             screen.blit(rendered, (rect.x + 8,
                                    rect.centery - rendered.get_height() // 2))
-            value = font.render(f"LV {int(level)}", True, CREDIT_HL)
+            # TASK 3: this drew "LV n" from the numeric level. The level
+            # is gone; the word comes from the Phase 1 completed flag,
+            # already resolved by the caller. Completed is tinted the
+            # value colour and not-completed the muted one, so the two
+            # states differ by more than the reader's eyesight.
+            value = font.render(
+                self.__truncate(str(status).upper(), font,
+                                SKILL_STATUS_W - 12),
+                True, CREDIT_HL if ratio >= 1.0 else STAT_BROWN)
             screen.blit(value, (split + 10,
                                 rect.centery - value.get_height() // 2))
-            track = pygame.Rect(split + 76, rect.centery - SKILL_BAR_H // 2,
-                                rect.right - (split + 76) - 12, SKILL_BAR_H)
-            self.__draw_bar(screen, track, level, max_level, ROW_BLUE)
+            bar_x = split + 10 + SKILL_STATUS_W
+            track = pygame.Rect(bar_x, rect.centery - SKILL_BAR_H // 2,
+                                rect.right - bar_x - 12, SKILL_BAR_H)
+            # Fed a 0..1 ratio against a fixed span of 1, so __draw_bar's
+            # own arithmetic is untouched and every other bar on this
+            # screen keeps drawing exactly as it did.
+            self.__draw_bar(screen, track, ratio, 1.0, ROW_BLUE)
 
     def __draw_ledger(self, screen: pygame.Surface, completed_count: int,
                       backlog_courses: Sequence[str]) -> None:
@@ -418,23 +435,46 @@ class StatsScreen:
         return max(0.0, min(1.0, float(current) / float(total)))
 
     @staticmethod
-    def __resolve_skills(skills: Any) -> List[Tuple[str, int, int]]:
+    def __resolve_skills(skills: Any) -> List[Tuple[str, float, str]]:
         """
-        Normalise the skills argument into (label, level, max_level) rows.
+        Normalise the skills argument into (label, ratio, status) rows.
 
-        Accepts a `{skill_id: level}` map — what a SkillTree exposes —
-        with ids prettified for display, or a ready sequence of triples.
+        TASK 3. These used to be (label, level, max_level) and the screen
+        drew "LV n" plus level/max. There is no level any more: the game
+        hands in what `engine/skill_completion.py::stats_rows()` built,
+        which is a ready sequence of triples — a 0.0-1.0 bar ratio and
+        the status word, both derived from the one completed flag.
+
+        THE DICT FORM IS A HARNESS FALLBACK, not the game's path.
+        `play_sandbox.py` runs on a FakeSkillTree with no quest machine
+        behind it and still passes `{skill_id: level}`. Rather than crash
+        it or edit a standalone runner, a positive level is shown as
+        completed. Nothing in the real game reaches this branch —
+        `engine/states/stats.py` passes triples — so it is not the
+        "second derivation" Task 3 forbids.
         """
         if isinstance(skills, dict):
-            return [(str(key).replace("_", " "), int(value), 10)
-                    for key, value in skills.items()]
-        rows: List[Tuple[str, int, int]] = []
+            from engine.skill_completion import (LABEL_COMPLETED,
+                                                 LABEL_NOT_COMPLETED)
+            rows: List[Tuple[str, float, str]] = []
+            for key, value in skills.items():
+                done = False
+                try:
+                    done = float(value) > 0
+                except (TypeError, ValueError):
+                    done = False
+                rows.append((str(key).replace("_", " "),
+                             1.0 if done else 0.0,
+                             LABEL_COMPLETED if done else LABEL_NOT_COMPLETED))
+            return rows
+        rows = []
         for entry in (skills or ()):
-            if isinstance(entry, (tuple, list)) and len(entry) >= 2:
-                label = str(entry[0])
-                level = int(entry[1])
-                ceiling = int(entry[2]) if len(entry) > 2 else 10
-                rows.append((label, level, ceiling))
+            if isinstance(entry, (tuple, list)) and len(entry) >= 3:
+                try:
+                    ratio = max(0.0, min(1.0, float(entry[1])))
+                except (TypeError, ValueError):
+                    ratio = 0.0
+                rows.append((str(entry[0]), ratio, str(entry[2])))
         return rows
 
     @staticmethod

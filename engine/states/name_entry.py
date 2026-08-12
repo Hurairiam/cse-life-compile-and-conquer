@@ -1,6 +1,12 @@
 """
-Name entry. The first thing START GAME asks, before the opening
-monologue and before registration.
+Name entry. Asked between Roya's briefing and registration.
+
+PHASE 18 MOVED IT AND STRIPPED IT. It used to be the first thing START
+GAME showed, and committing a name armed the ceremonial opening
+monologue. Roya's briefing (beat 1) does that job now, so this screen
+sits after it and hands straight to REGISTRATION. The MONOLOGUE state
+itself is untouched and still runs between semesters 2-12 -- only the
+call site here went away.
 
 ORDER MATTERS. main_menu calls save_bridge.new_game() before routing
 here, and that rebuilds the GameSession -- and with it a brand new
@@ -18,8 +24,8 @@ reads player.get_display_name(), so this one write reaches all of them.
 """
 import pygame
 
+from engine import intro_sequence
 from engine.screen_manager import ScreenState
-from engine.states import monologue
 from ui.name_entry_screen import (
     NameEntryScreen, MAX_NAME_LENGTH, is_allowed_char)
 
@@ -51,11 +57,10 @@ def enter(ctx):
 
 
 def __commit(ctx):
-    """Name the player, then hand over to the opening beat."""
+    """Name the player, then hand back to the intro."""
     ctx.player().set_display_name(__name)
     ctx.play_sfx("confirm")
-    monologue.start_opening(ctx, ScreenState.REGISTRATION)
-    ctx.go(ScreenState.MONOLOGUE)
+    ctx.go(intro_sequence.after_name_entry(ctx))       # -> REGISTRATION
 
 
 def __back(ctx):
@@ -94,13 +99,11 @@ def handle_events(ctx, events):
                 __commit(ctx)
                 return
             __type(event)
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if ui.get_confirm_rect().collidepoint(event.pos):
-                __commit(ctx)
-                return
-            if ui.get_back_rect().collidepoint(event.pos):
-                __back(ctx)
-                return
+        # Phase 18 §9: the CONFIRM and BACK buttons are gone from the
+        # card, so the two mouse branches that hit-tested them go with
+        # them. ENTER commits and ESC goes back -- that is the whole
+        # control set, and it is what this file's docstring already
+        # said the keyboard does.
 
 
 def update(ctx, dt):

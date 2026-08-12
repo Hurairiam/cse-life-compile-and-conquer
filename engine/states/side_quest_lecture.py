@@ -39,6 +39,7 @@ import pygame
 
 from engine import lecture_reader
 from engine.screen_manager import ScreenState
+from ui import skip_button
 from ui.popup import RESULT_CONFIRM, SEVERITY_INFO, SEVERITY_WARNING
 
 BG = (231, 214, 189)            # PANEL_TAN, the same fill lecture.py uses
@@ -50,7 +51,7 @@ REMINDER_Y = 186                # what leaving costs, stated up front
 HINT_Y = 486                    # just above the dialog box's top edge
 
 REMINDER = "THIS TOPIC ONLY COUNTS ONCE THE LAST SHEET IS READ"
-HINT = "SPACE  NEXT          ESC  LEAVE"
+HINT = "SPACE  NEXT     TAB  SKIP     ESC  LEAVE"
 
 # Module-level rather than on ctx, the way engine/states/teleport.py,
 # save_game.py, pass_days.py and side_quests.py all keep theirs.
@@ -98,18 +99,49 @@ def __load(ctx):
 # ── input ──────────────────────────────────────────────────────
 
 def handle_events(ctx, events):
-    """SPACE or a click reads on; ESC asks to leave."""
+    """SPACE or a click reads on; SKIP finishes it; ESC asks to leave."""
     for event in events:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 __ask_to_leave(ctx)
                 return
+            if event.key == pygame.K_TAB:
+                __skip(ctx)
+                return
             if event.key == pygame.K_SPACE:
                 __advance(ctx)
                 return
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            # The button first: a click inside it is a skip, not a page
+            # turn. Tested against skip_button.get_rect() — the same
+            # rectangle render() drew — so the two cannot disagree.
+            if skip_button.hit(ctx.screen_w, event.pos):
+                __skip(ctx)
+                return
             __advance(ctx)
             return
+
+
+def __skip(ctx):
+    """
+    End the lecture now, with the topic counted (Task 1).
+
+    Completion parity: `lecture_reader.skip_to_end()` drives the SAME
+    `advance()` loop reading would, so the quest reaches Completed by
+    the one path that can get it there and the Phase 1 skill flag flips
+    with it. This function then calls `__finish()` — the identical
+    landing SPACE takes on the last sheet — so the notice, the sound and
+    the exit are shared rather than reproduced.
+
+    Deliberately no confirmation. Skipping COMPLETES the topic; it is
+    not the destructive exit ESC guards, and asking "are you sure?"
+    before something purely beneficial trains players to click through
+    the question that matters.
+    """
+    if not lecture_reader.is_open():
+        return
+    lecture_reader.skip_to_end(ctx)
+    __finish(ctx)
 
 
 def __advance(ctx):
@@ -219,6 +251,9 @@ def render(ctx, screen):
     __line(ctx, screen, ctx.fonts["small"], REMINDER, MUTED, REMINDER_Y)
     __line(ctx, screen, ctx.fonts["small"], HINT, MUTED, HINT_Y)
     ctx.dialogue_manager.render(screen)
+    # Drawn last so nothing lands on top of it, and top-right below the
+    # HUD strip the router paints over this screen (Task 1).
+    skip_button.render(screen, ctx.screen_w)
 
 
 def __line(ctx, screen, font, text, colour, y):

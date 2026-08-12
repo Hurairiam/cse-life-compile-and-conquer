@@ -253,17 +253,21 @@ def test_above_a_sitting_still_opens_and_charges():
     lecture_reader.end()
 
 
-def test_above_a_sitting_still_completes_and_pays_the_skill():
+def test_above_a_sitting_still_completes_the_skill():
     """The whole Phase 15 pipeline, unchanged, above the threshold."""
     from content.side_quest_definitions import get_skill_id
+    from engine import skill_completion
     ctx = unlocked(1)
     quest_id = quest_of(1)
     assert lecture_reader.start(ctx, quest_id) is None
     while lecture_reader.is_open():
         lecture_reader.advance(ctx)
     assert ctx.quest_states.get_state(quest_id) == STATE_COMPLETED
-    assert ctx.player().get_skill_tree().get_skill_level(
-        get_skill_id(quest_id)) > 0
+    # TASK 4: the sitting used to pay 15 EXP onto the node and this
+    # asserted the level moved. Skills are binary now — the assertion
+    # is the same claim ("the skill was earned"), read off the flag
+    # that replaced the level.
+    assert skill_completion.is_completed(ctx, get_skill_id(quest_id))
     lecture_reader.end()
 
 
@@ -447,9 +451,14 @@ def test_unlocked_a_sitting_already_open_is_not_interrupted():
 
 
 def test_unlocked_the_state_machine_was_not_modified():
-    """Out of scope, asserted rather than claimed: five states, four
-    transitions, exactly as Phase 12 left them."""
-    assert len(LEGAL_TRANSITIONS) == 4
+    """
+    Out of scope for the day lockout, asserted rather than claimed.
+
+    The count was 4 until Task 2 (Sprint 5) added three edges off
+    Declined for the side-quest re-offer. This phase never depended on
+    the size of the table — only on the two edges it drives — so it
+    asserts those and stops pinning another phase's rulebook.
+    """
     assert (STATE_UNOFFERED, STATE_UNLOCKED) in LEGAL_TRANSITIONS
     assert (STATE_UNLOCKED, STATE_COMPLETED) in LEGAL_TRANSITIONS
 

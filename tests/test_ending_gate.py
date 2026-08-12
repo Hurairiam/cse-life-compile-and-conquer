@@ -538,17 +538,28 @@ def test_tolerance_rows_are_twelve_even_with_no_machine() -> None:
 
 # ── the state machine was not modified ─────────────────────────
 
-def test_untouched_five_states_and_four_transitions() -> None:
-    """Phase 16 reads the machine and never writes to it."""
+def test_untouched_five_states_and_the_phase_12_transitions() -> None:
+    """
+    Phase 16 reads the machine and never writes to it.
+
+    NOT AN EQUALITY ANY MORE. Task 2 (Sprint 5) added three edges off
+    Declined so a refused offer returns for the rest of the term. The
+    gate does not care how a quest reaches Completed, only that it did,
+    so this asserts what the gate actually depends on: the five states,
+    Phase 12's four edges all still present, and Completed reachable
+    only from Unlocked — which is what makes "all twelve Completed" mean
+    "all twelve were taken and read".
+    """
     assert set(QUEST_STATES) == {STATE_UNOFFERED, STATE_DECLINED,
                                  STATE_MISSED, STATE_UNLOCKED,
                                  STATE_COMPLETED}
-    assert LEGAL_TRANSITIONS == frozenset((
-        (STATE_UNOFFERED, STATE_DECLINED),
-        (STATE_UNOFFERED, STATE_MISSED),
-        (STATE_UNOFFERED, STATE_UNLOCKED),
-        (STATE_UNLOCKED, STATE_COMPLETED),
-    ))
+    for edge in ((STATE_UNOFFERED, STATE_DECLINED),
+                 (STATE_UNOFFERED, STATE_MISSED),
+                 (STATE_UNOFFERED, STATE_UNLOCKED),
+                 (STATE_UNLOCKED, STATE_COMPLETED)):
+        assert edge in LEGAL_TRANSITIONS, "Phase 12 lost %s -> %s" % edge
+    assert {frm for (frm, to) in LEGAL_TRANSITIONS
+            if to == STATE_COMPLETED} == {STATE_UNLOCKED}
 
 
 def test_untouched_the_gate_writes_nothing() -> None:

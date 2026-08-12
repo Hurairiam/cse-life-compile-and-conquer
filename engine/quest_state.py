@@ -83,11 +83,36 @@ TERMINAL_STATES: Tuple[str, ...] = (
 # The whole rulebook, and the only place transitions are decided. Every
 # (from, to) pair NOT in this set raises — including the identity pairs,
 # so accepting a quest twice is an error rather than a shrug.
+# TASK 2 (Sprint 5) — DECLINED IS NO LONGER TERMINAL WITHIN A TERM.
+#
+# It used to be: Unoffered -> Declined and nothing after it, so refusing
+# an NPC once closed that quest out for good. The owner's ruling is that
+# a decline holds only until the player walks back, and the offer
+# returns for as long as the semester lasts.
+#
+# Three edges are added, and only these three:
+#
+#   Declined -> Unlocked   the player walks back and says yes
+#   Declined -> Declined   they walk back and say no again, any number
+#                          of times; a self-edge rather than a silent
+#                          no-op in decline(), so __transition() stays
+#                          the only writer and nothing bypasses it
+#   Declined -> Missed     the term ends. THIS is what keeps the decline
+#                          permanent at the boundary: a quest refused
+#                          all semester expires exactly like one that
+#                          was never offered, so it can never be taken
+#                          in a later term.
+#
+# Unlocked and Completed are untouched. An accepted or completed quest
+# is never re-offered, which is the half of the old rule that stays.
 LEGAL_TRANSITIONS: frozenset = frozenset((
     (STATE_UNOFFERED, STATE_DECLINED),
     (STATE_UNOFFERED, STATE_MISSED),
     (STATE_UNOFFERED, STATE_UNLOCKED),
     (STATE_UNLOCKED, STATE_COMPLETED),
+    (STATE_DECLINED, STATE_UNLOCKED),
+    (STATE_DECLINED, STATE_DECLINED),
+    (STATE_DECLINED, STATE_MISSED),
 ))
 
 
@@ -140,17 +165,24 @@ class QuestStateMachine:
         `npc_id` is the short NPC_REGISTRY type id ("purnno"), which is
         what `engine/states/exploration.py::__talk` holds when the
         player presses E. Three things must all hold: the semester has a
-        quest, this NPC is the one who offers it, and it is still
-        Unoffered — so an accepted, declined or missed quest is never
-        put a second time. Never raises: an unknown NPC or a semester
+        quest, this NPC is the one who offers it, and it has not been
+        taken or lost. Never raises: an unknown NPC or a semester
         outside 1-12 is simply False.
+
+        TASK 2: Declined answers True now, alongside Unoffered. That one
+        word is the whole re-offer mechanic — every path that puts an
+        offer already asks this question, so walking back to any NPC who
+        owes a quest re-offers it without a second code path anywhere.
+        Unlocked, Completed and Missed still answer False: an accepted
+        or finished quest is never put again, and a term that has ended
+        cannot be revisited.
         """
         quest_id = get_quest_for_semester(semester)
         if quest_id is None:
             return False
         if str(npc_id or "").strip() != get_npc_id(quest_id):
             return False
-        return self.__states[quest_id] == STATE_UNOFFERED
+        return self.__states[quest_id] in (STATE_UNOFFERED, STATE_DECLINED)
 
     def get_unlocked_quests(self) -> List[str]:
         """Quest ids accepted but not yet finished, in semester order."""
@@ -173,11 +205,24 @@ class QuestStateMachine:
 
     # ── writing ────────────────────────────────────────────────
     def accept(self, quest_id: Any) -> None:
-        """Player took the offer: Unoffered -> Unlocked."""
+        """
+        Player took the offer: Unoffered or Declined -> Unlocked.
+
+        TASK 2: accepting after an earlier decline is legal now. Saying
+        no in week one and yes in week six is the whole point of the
+        offer coming back.
+        """
         self.__transition(quest_id, STATE_UNLOCKED)
 
     def decline(self, quest_id: Any) -> None:
-        """Player refused the offer: Unoffered -> Declined. Terminal."""
+        """
+        Player refused the offer: Unoffered or Declined -> Declined.
+
+        TASK 2: no longer terminal. Declining a second, fifth or tenth
+        time is legal and idempotent — the quest stays Declined and
+        stays offerable until the term ends, at which point
+        expire_for_semester() moves it to Missed for good.
+        """
         self.__transition(quest_id, STATE_DECLINED)
 
     def mark_completed(self, quest_id: Any) -> None:
@@ -187,25 +232,42 @@ class QuestStateMachine:
         never be recorded for a quest the player did not take."""
         self.__transition(quest_id, STATE_COMPLETED)
 
-    def expire_unoffered_for_semester(self, semester: Any) -> Optional[str]:
+    def expire_for_semester(self, semester: Any) -> Optional[str]:
         """
-        The semester ended. If its quest was never put to the player, it
-        is Missed. Returns the quest id it expired, or None.
+        The semester ended. Its quest is Missed unless it was answered
+        for real. Returns the quest id it expired, or None.
 
         This is the ONE method that is allowed to do nothing, and it is
         not an exception to the rule above: it is not a request to move
-        a particular quest, it is "this term is over". A quest already
-        Accepted, Declined or Completed has had its answer and keeps it;
-        only a still-Unoffered one is Missed. A semester outside 1-12
-        has no quest and returns None.
+        a particular quest, it is "this term is over". A semester
+        outside 1-12 has no quest and returns None.
+
+        TASK 2 WIDENED WHAT EXPIRES. It used to move only a still-
+        Unoffered quest, on the reasoning that Accepted, Declined and
+        Completed had each "had their answer and keep it". Declining is
+        no longer an answer that lasts — the offer returns for the rest
+        of the term — so a quest left Declined when the term closes has
+        effectively not been taken, and expires exactly like one that
+        was never put. That is what makes the brief's rule true: on
+        semester change the quest is unavailable regardless of whether
+        it was offered, accepted or declined.
+
+        Unlocked and Completed still keep their state. Accepting is
+        still an answer, and a quest the player took is theirs to
+        finish.
         """
         quest_id = get_quest_for_semester(semester)
         if quest_id is None:
             return None
-        if self.__states[quest_id] != STATE_UNOFFERED:
+        if self.__states[quest_id] not in (STATE_UNOFFERED, STATE_DECLINED):
             return None
         self.__transition(quest_id, STATE_MISSED)
         return quest_id
+
+    # The pre-Task-2 name, kept so nothing that already imports it
+    # breaks. It always meant "this term is over"; only the set of
+    # states that answer to that widened.
+    expire_unoffered_for_semester = expire_for_semester
 
     # ── save payload ───────────────────────────────────────────
     def to_dict(self) -> Dict[str, str]:
