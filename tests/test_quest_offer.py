@@ -290,29 +290,69 @@ def test_second_interaction_never_offers_again_after_accepting():
         assert fresh.dialogue_manager.get_current_line() == first_line
 
 
-def test_second_interaction_never_offers_again_after_declining():
-    """Same again from the other terminal state."""
+def test_second_interaction_offers_again_after_declining():
+    """
+    TASK 2, the acceptance criterion: decline, walk away, come back,
+    and the same NPC puts the same offer again — in every semester, so
+    this is the whole game and not one special-cased NPC.
+
+    This test used to assert the opposite. Declining was terminal until
+    the owner's Sprint 5 ruling; it now holds only until the player
+    walks back.
+    """
     for semester in SEMESTERS:
         ctx = context_at(semester)
         quest_id = get_quest_for_semester(semester)
         full_talk(ctx, semester, accept=False)
-        level, npc = npc_for(semester)
-        assert talk(ctx, level, npc)
-        assert not run_to_offer(ctx), "offered twice in semester %d" % semester
         assert ctx.quest_states.get_state(quest_id) == STATE_DECLINED
 
+        level, npc = npc_for(semester)
+        assert talk(ctx, level, npc)
+        assert run_to_offer(ctx), \
+            "the offer did not return in semester %d" % semester
+        assert ctx.pending_quest_id == quest_id, \
+            "a different quest came back in semester %d" % semester
 
-def test_a_third_and_fourth_interaction_are_still_silent():
-    """"Never presented again under any circumstance" — not just once
-    more. Ten more conversations, both terminal states."""
-    for accept in (True, False):
-        ctx = context_at(1)
-        full_talk(ctx, 1, accept=accept)
-        for attempt in range(10):
-            level, npc = npc_for(1)
-            assert talk(ctx, level, npc)
-            assert not run_to_offer(ctx), "offered on attempt %d" % attempt
-            run_out(ctx)
+
+def test_the_returned_offer_can_be_accepted():
+    """Saying no in week one and yes in week six is the point of it."""
+    for semester in SEMESTERS:
+        ctx = context_at(semester)
+        quest_id = get_quest_for_semester(semester)
+        full_talk(ctx, semester, accept=False)
+        full_talk(ctx, semester, accept=True)
+        assert ctx.quest_states.get_state(quest_id) == STATE_UNLOCKED, \
+            "the second answer did not stick in semester %d" % semester
+
+
+def test_declining_ten_times_keeps_re_offering():
+    """Every time, for as long as the semester lasts — not just once."""
+    ctx = context_at(1)
+    quest_id = get_quest_for_semester(1)
+    for attempt in range(10):
+        full_talk(ctx, 1, accept=False)
+        assert ctx.quest_states.get_state(quest_id) == STATE_DECLINED, \
+            "state drifted on attempt %d" % attempt
+    # ...and it is still there on the eleventh.
+    level, npc = npc_for(1)
+    assert talk(ctx, level, npc)
+    assert run_to_offer(ctx), "the offer stopped coming back"
+
+
+def test_an_accepted_quest_is_never_offered_again():
+    """
+    The half of the old rule that stays.
+
+    Accepting IS permanent — only declining comes back — so ten more
+    conversations must stay silent.
+    """
+    ctx = context_at(1)
+    full_talk(ctx, 1, accept=True)
+    for attempt in range(10):
+        level, npc = npc_for(1)
+        assert talk(ctx, level, npc)
+        assert not run_to_offer(ctx), "offered on attempt %d" % attempt
+        run_out(ctx)
 
 
 # ══ only the semester's own NPC ════════════════════════════════
@@ -364,15 +404,25 @@ def test_edge_a_answer_then_rollover_keeps_the_answer():
 
     A conversation is ScreenState.DIALOGUE and a rollover happens on
     the exam screen or at the end_semester prop, so the two can never
-    interleave — the ordering is total. Answer first: the quest is not
-    Unoffered, so close_semester()'s expiry leaves it exactly where the
-    player put it.
+    interleave — the ordering is total.
+
+    TASK 2 SPLIT THE TWO ANSWERS APART. Accepting is still an answer
+    that outlives the term: the quest is Unlocked and the expiry leaves
+    it alone. Declining is not — it holds only while the term runs, so
+    closing the term takes a still-declined quest to Missed exactly
+    like one that was never put. That is the brief's "on semester
+    change the quest becomes unavailable regardless".
     """
-    for accept, expected in ((True, STATE_UNLOCKED), (False, STATE_DECLINED)):
-        ctx = context_at(1)
-        full_talk(ctx, 1, accept=accept)
-        assert quest_offer.expire_semester(ctx) is None, "expiry overrode it"
-        assert ctx.quest_states.get_state("SQ_GIT_GITHUB") == expected
+    ctx = context_at(1)
+    full_talk(ctx, 1, accept=True)
+    assert quest_offer.expire_semester(ctx) is None, "expiry overrode accept"
+    assert ctx.quest_states.get_state("SQ_GIT_GITHUB") == STATE_UNLOCKED
+
+    ctx = context_at(1)
+    full_talk(ctx, 1, accept=False)
+    assert quest_offer.expire_semester(ctx) == "SQ_GIT_GITHUB", \
+        "a declined quest survived the term it was declined in"
+    assert ctx.quest_states.get_state("SQ_GIT_GITHUB") == STATE_MISSED
 
 
 def test_edge_a_rollover_then_talk_offers_nothing():
@@ -611,13 +661,24 @@ def test_close_semester_expires_the_unoffered_quest():
     assert ctx.quest_states.get_state("SQ_WEB_APP_DEV") == STATE_UNOFFERED
 
 
-def test_close_semester_leaves_an_answered_quest_alone():
-    """Accepted, declined and completed quests keep their answer."""
-    for accept, expected in ((True, STATE_UNLOCKED), (False, STATE_DECLINED)):
-        ctx = context_at(2)
-        full_talk(ctx, 2, accept=accept)
-        exam.close_semester(ctx)
-        assert ctx.quest_states.get_state("SQ_OOP") == expected
+def test_close_semester_leaves_a_taken_quest_alone():
+    """
+    Accepted and completed quests keep their answer through a rollover.
+
+    TASK 2: declined no longer does. A quest still refused when the term
+    closes is Missed — the decline was only ever good for that term —
+    so it is asserted here as Missed rather than Declined.
+    """
+    ctx = context_at(2)
+    full_talk(ctx, 2, accept=True)
+    exam.close_semester(ctx)
+    assert ctx.quest_states.get_state("SQ_OOP") == STATE_UNLOCKED
+
+    ctx = context_at(2)
+    full_talk(ctx, 2, accept=False)
+    exam.close_semester(ctx)
+    assert ctx.quest_states.get_state("SQ_OOP") == STATE_MISSED, \
+        "a declined quest survived the term it was declined in"
 
     ctx = context_at(2)
     full_talk(ctx, 2, accept=True)
@@ -665,7 +726,13 @@ def test_close_semester_expires_only_the_term_that_ended():
 # ══ persistence, and the retirement of Phase 9's stores ════════
 
 def test_the_answer_survives_a_save_and_a_load():
-    """Through a real file on disk, both answers, all twelve."""
+    """
+    Through a real file on disk, both answers, all twelve.
+
+    TASK 2 changed what "still not offered after the round trip" means
+    for a decline: it IS offered again, because the term is still
+    running. Accepts stay silent. Both are checked below.
+    """
     folder = tempfile.mkdtemp(prefix="cse_life_offer_")
     try:
         saves = SaveManager(save_dir=folder)
@@ -684,10 +751,15 @@ def test_the_answer_survives_a_save_and_a_load():
             quest_id = get_quest_for_semester(semester)
             assert ctx.quest_states.get_state(quest_id) \
                 == expected[quest_id], quest_id
-            # And it is still not offered after the round trip.
+            # The state survives the round trip, and so does what it
+            # means: an accept stays silent, a decline comes back.
             level, npc = npc_for(semester)
             talk(ctx, level, npc)
-            assert not run_to_offer(ctx), "offered again after loading"
+            offered = run_to_offer(ctx)
+            if expected[quest_id] == STATE_UNLOCKED:
+                assert not offered, "an accepted quest was offered after load"
+            else:
+                assert offered, "a declined quest stopped coming back"
     finally:
         shutil.rmtree(folder, ignore_errors=True)
 
