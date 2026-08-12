@@ -424,6 +424,37 @@ def advance(ctx: Any) -> bool:
     return False
 
 
+def skip_to_end(ctx: Any) -> bool:
+    """
+    Finish the open sitting now, exactly as reading it would (Task 1).
+
+    True when a sitting was open and is now finished; False when there
+    was nothing to skip.
+
+    COMPLETION PARITY IS THE WHOLE POINT, so this CALLS `advance()` in a
+    loop rather than reproducing what the last one does. `advance()` is
+    the only thing that fires `__complete()`, and `__complete()` is the
+    only thing that marks the quest Completed — which is in turn what
+    `engine/skill_completion.py` reads. A skip therefore lands on
+    byte-identical state to paging through: same terminal quest state,
+    same completed flag, same sheet index, same `__finished`. There is
+    no second path to keep in step, because there is no second path.
+
+    Nothing here charges or refunds days: `start()` took the day cost
+    once when the sitting opened, and skipping does not give it back —
+    the player paid for the topic, and they are getting the topic.
+
+    The loop is bounded by the sheet count: `advance()` walks `__index`
+    up and returns False at the end, so this cannot spin even if a
+    content table hands back a ragged list.
+    """
+    if not is_open():
+        return False
+    while advance(ctx):
+        pass
+    return True
+
+
 def completion_notice(ctx: Any) -> Tuple[str, List[str]]:
     """
     The card shown for a topic just finished — (title, lines).
