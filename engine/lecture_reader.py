@@ -430,20 +430,25 @@ def completion_notice(ctx: Any) -> Tuple[str, List[str]]:
 
     Names both of the topic's names on purpose. The PC's list calls it
     "Version Control" and the sheets call themselves "Git & GitHub";
-    saying both here is the one place the two are tied together, and the
-    third line is the only report the player gets that the skill moved.
+    saying both here is the one place the two are tied together.
 
     The title gets a line of its own rather than being folded into the
     sentence below it: "Object-Oriented Programming (OOP)" is 33
     characters, and inside "All 3 sheets of ... read." it overruns the
-    600px box. Three lines is the popup's maximum and this uses all of
-    them.
+    600px box.
+
+    TASK 4. The third line used to read "<skill> is now level N", the
+    only report the player got that the skill moved. Skills are binary
+    now and no level moves, so the line is REMOVED rather than reworded:
+    replacing it would mean writing new player-facing popup copy, which
+    is Ayesha's under G2. Two lines, and the stats screen carries the
+    completed status. Reported as a G2 gap — if she wants a closing line
+    here, it is hers to write.
     """
     count = get_sheet_count()
     return ("TOPIC COMPLETE",
             [topic(),
-             "All %d sheet%s read." % (count, "" if count == 1 else "s"),
-             "%s is now level %d." % (skill_name(), __skill_level(ctx))])
+             "All %d sheet%s read." % (count, "" if count == 1 else "s")])
 
 
 # ── leaving one ────────────────────────────────────────────────
@@ -503,49 +508,42 @@ def end() -> None:
 
 def __complete(ctx: Any) -> None:
     """
-    Mark the quest Completed and raise its skill. Both, or neither.
+    Mark the quest Completed. That transition IS the skill completing.
 
-    The order matters. `mark_completed()` raises unless the quest is
-    Unlocked, and that raise is the guard against paying a skill out for
-    a quest the player never took — so the transition goes first and the
-    skill only follows a transition that was allowed. A reward with no
-    completion behind it is the one outcome worth refusing outright.
+    TASK 4. This used to do two things — mark the quest Completed and
+    then pay `skill_reward()` (15) onto the quest's skill node. The
+    grant is DELETED. Skills are binary now, and
+    `engine/skill_completion.py` reads this very transition to answer
+    "is this skill completed?", so the one line below is the whole of
+    it. There is deliberately no second boolean to keep in step.
 
-    Unreachable in practice: `blocker()` proved the quest was Unlocked
-    before the days were charged, and nothing between then and here can
-    move it — the reader is a modal screen with no other actor on it.
+    `mark_completed()` raises unless the quest is Unlocked, and that
+    raise is still the guard against completing a quest the player never
+    took. Unreachable in practice: `blocker()` proved the quest was
+    Unlocked before the days were charged, and nothing between then and
+    here can move it — the reader is a modal screen with no other actor
+    on it.
 
-    The skill tree is fetched BEFORE the transition too, for the same
-    "both or neither" reason. `GameSession.__init__` injects one into
-    every Player it builds, so None means a harness context rather than
-    a real run — and marking a quest Completed on a context that cannot
-    pay the skill out would burn a terminal state for nothing.
+    The skill tree is no longer fetched. It was only ever fetched to pay
+    the grant, and the "both or neither" ordering that protected existed
+    for the same reason. Nothing here touches the tree at all now, so a
+    harness context without a Player completes its quest normally.
     """
     machine = side_quest_list.machine_of(ctx)
-    tree = __skill_tree(ctx)
-    if machine is None or tree is None:
+    if machine is None:
         return
     try:
         machine.mark_completed(__quest_id)
     except QuestStateError:
         return
-    tree.increment_skill(get_skill_id(__quest_id), skill_reward(__quest_id))
 
 
-def __skill_tree(ctx: Any):
-    """The player's skill tree, or None on a harness context."""
-    try:
-        return ctx.player().get_skill_tree()
-    except AttributeError:
-        return None
-
-
-def __skill_level(ctx: Any) -> int:
-    """The live level of the skill this quest feeds, or 0."""
-    tree = __skill_tree(ctx)
-    if tree is None:
-        return 0
-    return int(tree.get_skill_level(get_skill_id(__quest_id or "")))
+# TASK 4. `__skill_tree()` and `__skill_level()` lived here. Both existed
+# only to serve the deleted grant and the "is now level N" line it fed,
+# and this module no longer reads or writes a skill level at all. The
+# public `skill_reward()` above is kept: it reports what the catalog
+# authored, tests assert it, and it is the number Task 4 stopped paying
+# rather than a number that changed.
 
 
 def __player_days(ctx: Any) -> int:
@@ -620,9 +618,13 @@ if __name__ == "__main__":
         print("  %-12s %s" % (progress_label(), current_sheet()["title"]))
         advance(context)
     print("state            : %s" % context.quest_states.get_state(quest))
-    print("skill            : %s = %d"
-          % (skill_name(), context.player().get_skill_tree()
-             .get_skill_level("git")))
+    # TASK 4: the skill is binary and reads off the state printed above,
+    # not off a level. Asserted rather than printed, because "completed"
+    # following "completed" tells the reader nothing on its own.
+    from engine import skill_completion
+    assert skill_completion.is_completed(context, "git"), \
+        "reading a topic to the end did not complete its skill"
+    print("skill            : %s = completed" % skill_name())
     print("notice           : %s" % (completion_notice(context),))
     print("days after read  : %d  (not charged per sheet)"
           % side_quest_list.days_left(context))

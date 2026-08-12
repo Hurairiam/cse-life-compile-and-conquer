@@ -35,20 +35,25 @@ def available_points(ctx) -> int:
     return max(0, earned - total_invested(ctx))
 
 
-def invest(ctx, skill_id: str) -> bool:
-    """Spend one point on a node. False when it is not allowed."""
-    if not skill_id or available_points(ctx) <= 0:
-        return False
-    tree = ctx.player().get_skill_tree()
-    if tree is None:
-        return False
-    node = SKILL_NODES.get(skill_id)
-    if node is None:
-        return False
-    if tree.get_skill_level(skill_id) >= int(node.get("max_level", 10)):
-        return False
-    tree.increment_skill(skill_id, 1)
-    return True
+# TASK 4 — invest() IS DELETED.
+#
+# It spent one derived point to raise one skill node by one level, and
+# was the game's only manual-investment path. Skills are binary now:
+# `engine/skill_completion.py` answers "completed?" off the side quest's
+# own state, and nothing raises a level any more.
+#
+# Its three callers all went with it — the ENTER/SPACE binding and the
+# INVEST click in engine/states/skill_tree.py, and the button in
+# ui/skill_tree_screen.py. Deleted rather than left retired (the
+# treatment engine/ending_gate.py gave the average-skill helpers)
+# because those were a teammate's public API in a file otherwise
+# identical to main, and this is neither: progression.py is this
+# branch's own file, and a live mutator left importable is a second
+# entry point waiting to be called.
+#
+# `available_points()` above is KEPT. It reads nothing that changed, it
+# is the honest answer to "how many course-derived points exist", and
+# `total_invested()` still reports what old saves carry.
 
 
 def skill_levels(ctx) -> dict:

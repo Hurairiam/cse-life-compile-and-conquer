@@ -48,7 +48,8 @@ from content.side_quest_definitions import (           # noqa: E402
     QUEST_IDS, get_day_cost, get_lecture_sheets, get_skill_id)
 from content.side_quest_lectures import (              # noqa: E402
     DEFAULT_SHEET, get_sheet)
-from engine import lecture_reader, side_quest_list     # noqa: E402
+from engine import (lecture_reader, side_quest_list,   # noqa: E402
+                    skill_completion)
 from engine.game_clock import GameClock                # noqa: E402
 from engine.game_session import GameSession            # noqa: E402
 from engine.quest_state import (                       # noqa: E402
@@ -249,10 +250,15 @@ def test_flow_the_last_sheet_marks_completed_and_applies_the_skill():
         quest_id = quest_of(semester)
         skill_id = get_skill_id(quest_id)
         tree = ctx.player().get_skill_tree()
-        assert tree.get_skill_level(skill_id) == 0
+        assert not skill_completion.is_completed(ctx, skill_id)
         assert read_to_the_end(ctx, quest_id) == SHEETS_PER_QUEST
         assert ctx.quest_states.get_state(quest_id) == STATE_COMPLETED
-        assert tree.get_skill_level(skill_id) == SKILL_REWARD
+        # TASK 4: was `tree.get_skill_level(skill_id) == SKILL_REWARD`.
+        # The skill is binary now and the level never moves — both
+        # halves of that are asserted, so a grant creeping back in
+        # fails here rather than passing quietly.
+        assert skill_completion.is_completed(ctx, skill_id)
+        assert tree.get_skill_level(skill_id) == 0
         lecture_reader.end()
 
 
@@ -261,16 +267,16 @@ def test_flow_nothing_is_applied_before_the_last_sheet():
     way in and not on the way through."""
     ctx = unlocked(1)
     quest_id = quest_of(1)
-    tree = ctx.player().get_skill_tree()
+    skill_id = get_skill_id(quest_id)
     lecture_reader.start(ctx, quest_id)
     for _ in range(SHEETS_PER_QUEST - 1):
         assert ctx.quest_states.get_state(quest_id) == STATE_UNLOCKED
-        assert tree.get_skill_level(get_skill_id(quest_id)) == 0
+        assert not skill_completion.is_completed(ctx, skill_id)
         lecture_reader.advance(ctx)
     assert ctx.quest_states.get_state(quest_id) == STATE_UNLOCKED
     lecture_reader.advance(ctx)                        # the last one
     assert ctx.quest_states.get_state(quest_id) == STATE_COMPLETED
-    assert tree.get_skill_level(get_skill_id(quest_id)) == SKILL_REWARD
+    assert skill_completion.is_completed(ctx, skill_id)
     lecture_reader.end()
 
 
@@ -699,8 +705,7 @@ def test_edge_a_sheet_that_fails_to_load_does_not_stop_the_sequence():
         assert len(titles) == 3, "the sequence stopped at the broken sheet"
         assert titles[1] == DEFAULT_SHEET["title"]
         assert ctx.quest_states.get_state(quest_id) == STATE_COMPLETED
-        assert ctx.player().get_skill_tree().get_skill_level(
-            get_skill_id(quest_id)) == SKILL_REWARD
+        assert skill_completion.is_completed(ctx, get_skill_id(quest_id))
         assert ctx.semester().get_time_pool_days() == 80 - DAY_COST
     lecture_reader.end()
 
@@ -997,11 +1002,10 @@ def test_screen_reads_a_topic_end_to_end():
     """
     ctx = opened(2)
     quest_id = quest_of(2)
-    tree = ctx.player().get_skill_tree()
     assert ctx.semester().get_time_pool_days() == 80 - DAY_COST
     page_to_the_end(ctx)
     assert ctx.quest_states.get_state(quest_id) == STATE_COMPLETED
-    assert tree.get_skill_level(get_skill_id(quest_id)) == SKILL_REWARD
+    assert skill_completion.is_completed(ctx, get_skill_id(quest_id))
     assert ctx.semester().get_time_pool_days() == 80 - DAY_COST
     assert ctx.message_popup.get_title() == "TOPIC COMPLETE"
     assert landed_on(ctx) is ScreenState.EXPLORATION
