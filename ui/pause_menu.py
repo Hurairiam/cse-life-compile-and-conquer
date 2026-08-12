@@ -3,7 +3,7 @@ ui/pause_menu.py
 CSE Life: Compile & Conquer — phase F10  (Feature 7, the pause overlay)
 ─────────────────────────────────────────────────────────────
 The in-game pause menu: a dim overlay and a small centred card of
-six buttons.
+seven buttons.
 
 An OVERLAY, not a screen — the world stays visible and dimmed
 underneath, and while it is open it eats every event
@@ -57,7 +57,10 @@ SCREEN_W       = 1280
 SCREEN_H       = 720
 
 CARD_W         = 420
-CARD_H         = 360
+# TASK 8: 360 fitted exactly six buttons (5*60 + 44 = 344, leaving 8px
+# top and bottom). LOAD GAME makes seven — 6*60 + 44 = 404 — so the card
+# grows by the one pitch that costs, and the same 8px margin comes back.
+CARD_H         = 420
 BORDER_CARD    = 3
 CORNER_LEN     = 22         # corner bracket arm length
 
@@ -72,27 +75,41 @@ MARKER_H       = 18         # bracket height
 
 SIZE_BODY      = 11         # button labels
 
-# The six actions, in draw order. A caller matches the index it gets
+# The seven actions, in draw order. A caller matches the index it gets
 # from get_button_rects() against this tuple rather than a label string,
 # so relabelling a button never breaks the wiring.
+#
+# TASK 8: LOAD GAME is placed immediately after SAVE GAME — the brief
+# asks for it "next to Save game", and the pair reads as one idea there.
+# Inserting rather than appending is safe precisely because of the rule
+# above: nothing stores an index across frames (ctx.pause_focus is
+# re-read every frame from get_focused_index()), and every caller
+# resolves an index to an action through ACTIONS before acting on it.
 ACTION_RESUME: str = "resume"
 ACTION_SKILL_TREE: str = "skill_tree"
 ACTION_STATS: str = "stats"
 ACTION_SETTINGS: str = "settings"
 ACTION_SAVE_GAME: str = "save_game"
+ACTION_LOAD_GAME: str = "load_game"
 ACTION_QUIT_TO_MENU: str = "quit_to_menu"
 
 ACTIONS: Tuple[str, ...] = (
     ACTION_RESUME, ACTION_SKILL_TREE, ACTION_STATS,
-    ACTION_SETTINGS, ACTION_SAVE_GAME, ACTION_QUIT_TO_MENU)
+    ACTION_SETTINGS, ACTION_SAVE_GAME, ACTION_LOAD_GAME,
+    ACTION_QUIT_TO_MENU)
 
 LABELS: Tuple[str, ...] = (
-    "RESUME", "SKILL TREE", "STATS", "SETTINGS", "SAVE GAME", "QUIT TO MENU")
+    "RESUME", "SKILL TREE", "STATS", "SETTINGS", "SAVE GAME", "LOAD GAME",
+    "QUIT TO MENU")
 
 # RESUME reads as the constructive action and QUIT TO MENU as the
-# destructive one; the four in between are neutral (§4.6).
+# destructive one; the five in between are neutral (§4.6). LOAD GAME is
+# neutral rather than destructive: it discards the run in progress, but
+# so does QUIT TO MENU, and the slot picker it opens is the place that
+# asks — same as reaching it from the title screen.
 FILLS: Tuple[Tuple[int, int, int], ...] = (
-    BTN_CONFIRM, HEADER_TAN, HEADER_TAN, HEADER_TAN, HEADER_TAN, BTN_CANCEL)
+    BTN_CONFIRM, HEADER_TAN, HEADER_TAN, HEADER_TAN, HEADER_TAN,
+    HEADER_TAN, BTN_CANCEL)
 
 _FONT_CACHE: Dict[int, pygame.font.Font] = {}
 
@@ -129,10 +146,12 @@ class PauseMenu:
             (int(screen_w) - CARD_W) // 2, (int(screen_h) - CARD_H) // 2,
             CARD_W, CARD_H)
 
-        # Six buttons at a 60 px pitch occupy 5*60 + 44 = 344 px, which
-        # leaves exactly 8 px above and below inside a 360 px card. That
+        # Seven buttons at a 60 px pitch occupy 6*60 + 44 = 404 px, which
+        # leaves exactly 8 px above and below inside a 420 px card. That
         # is why this overlay carries no title -- there is no room for
         # one, and the labels already say what everything does.
+        # Derived from len(ACTIONS), so an eighth entry would need CARD_H
+        # raised but never this arithmetic touched.
         span = BTN_PITCH * (len(ACTIONS) - 1) + BTN_H
         top = self.__card.y + (CARD_H - span) // 2
         left = self.__card.x + (CARD_W - BTN_W) // 2
