@@ -1,78 +1,106 @@
 # CSE Life: Compile & Conquer
 
-Welcome to **CSE Life: Compile & Conquer**, an analytical, text-based simulation engine and resource-management role-playing game. Built on a strict Object-Oriented Programming (OOP) framework, this system models the strategic, academic, professional, and financial lifecycle of a Computer Science and Engineering (CSE) undergraduate student.
+A 2D life-simulation RPG built with **Python** and **Pygame**, where the player navigates a Computer Science & Engineering undergraduate's journey through course registration, exams, time and resource management, and campus exploration.
 
-The system utilizes an **evolutionary prototyping strategy**, establishing a verified architectural baseline before scaling into a decoupled, multi-phase lifecycle ecosystem.
+Object-Oriented Programming is a core design constraint, with major game systems implemented through class hierarchies demonstrating abstraction, encapsulation, inheritance, and polymorphism.
 
----
+## Gameplay
 
-## 🗺️ System Architecture & Architecture Blueprint
+Players take on the role of a CSE student progressing semester by semester:
 
-The simulation environment is organized into discrete architectural phases to model immediate academic requirements as well as post-graduate career horizons.
+- Register for courses under credit-limit and prerequisite constraints
+- Manage a limited time pool and wallet balance across academic and exploration activities
+- Sit timed multiple-choice exams with pass/fail outcomes affecting credits and backlog status
+- Explore a tile-based campus, interact with NPCs through dialogue, and encounter gated areas with entry requirements
+- Save and resume progress across sessions
+- Reach different endings based on accumulated credits, skills, and academic standing
 
-### 1. Phase 1: Short-Scope (Core Undergraduate Simulation)
-*Focuses on strict undergraduate constraints, abstract class verification contracts, custom runtime exceptions, and the fundamental semester progression loop.*
+## Scope
 
-* 📄 [Short Scope — Use Case Diagram](diagrams/short_scope/Short_Use_Case.pdf)
-* 📄 [Short Scope — Activity Diagram](diagrams/short_scope/Short_Activity_Diagram.pdf)
-* 📄 [Short Scope — UML Class Diagram](diagrams/short_scope/Short_UML.pdf)
-* 📄 [Short Scope — System Sequence Diagram (SSD)](diagrams/short_scope/Short_System_Sequence_Diagram.pdf)
+The project is defined across two scopes:
 
-### 2. Phase 2: Full-Scope (Extended Professional Horizon)
-*Models the post-graduate horizon, featuring dynamic professional tracks (Corporate Enterprise Career vs. Volatile Freelance Track), certifications, advanced financial dependencies, and an expanded chronological endgame evaluation engine.*
+- **Short Scope (MVP)** — the currently implemented core loop: registration, exploration, exams, NPC dialogue, gates, save/load, and endgame evaluation. This is the playable scope.
+- **Full Scope** — a larger design extending into a post-graduate career simulation, including corporate and freelance tracks, certifications, and an expanded financial system. It exists as UML documentation only and is not currently implemented.
 
-* 📄 [Full Scope — Use Case Diagram](diagrams/full_scope/Full_Use_Case.pdf)
-* 📄 [Full Scope — Activity Diagram](diagrams/full_scope/Full_Activity_Diagram.pdf)
-* 📄 [Full Scope — UML Class Diagram](diagrams/full_scope/Full_UML.pdf)
-* 📄 [Full Scope — System Sequence Diagram (SSD)](diagrams/full_scope/Full_System_Sequence_Diagram.pdf)
+The Full Scope defines the direction for future development beyond the MVP.
 
----
+## Architecture
 
-## 🎮 Core Game Mechanics & Engine Constraints
+The codebase separates game/domain logic from presentation:
 
-The simulation operates under strict resource-allocation matrices managed by the central simulation loop:
+- `core/`, `academic/`, and the domain layer of `engine/` contain the game's rules and state, including `Player`, `Course`, `Quest`, `AcademicHistory`, `GameSession`, `GameClock`, and `RegistrationManager`. This layer has no dependency on Pygame.
+- `ui/` and `engine/states/` contain rendering and screen logic. Each game screen is a self-contained module reached through a routed screen-state system, keeping presentation separate from the rules it displays.
+- `content/` contains static data such as dialogue, course catalogs, and level definitions.
+- `levels/` contains level data produced with the in-repository level editor in `tools/level_editor.py`.
 
-### 💼 1. Semester Registration & Course Prerequisites
-Before entering active gameplay loops at the start of a semester, the engine executes initialization check sequences:
-* **Registration Cost Routing:** Players choose between **Option A (Work-Study)**, which costs `10 Days` from the upcoming semester time pool, or **Option B (Flat Tuition Fee)**, which deducts `12,000 BDT` from the player's wallet balance.
-* **Prerequisite Enforcement:** Available courses are filtered dynamically through the player's `AcademicHistory` tracking ledger to enforce prerequisite trees.
-* **Credit Constraints:** The engine caps course selection at a strict maximum limit of **15 Credits** per semester.
+This separation allows the underlying simulation to be reasoned about and tested independently of how it is rendered.
 
-### 🛡️ 2. The 15-Day Borderline Firewall
-During the active gameplay phase, a structural constraint firewall safeguards state progression:
-* When the remaining semester time pool falls to **15 Days or fewer**, all extracurricular activity and side quest pipelines are locked out.
-* The system isolates the state machine, forcing the execution of `MainQuest` threads (Theory & Lab Exam sequences) to prevent terminal game state traps.
+## Current Status
 
-### 📝 3. Exam Optimization & Backlog Lifecycle
-* **Q&A Optimization Loop:** Players can attempt an interactive 3-question Q&A sequence before major milestones. Success optimizes the action time cost down to **10 Days**; failure defaults it to an unoptimized cost of **14 Days**.
-* **Persistent Course Lifecycle:** Courses are tracked as persistent single-instance entities. Failed course objects are flagged as incomplete and moved directly into the `AcademicHistory` backlog array, seamlessly re-injecting them into the next available semester catalog without artificial duplication.
+The **Short Scope (MVP)** is under active development through a fixed-scope Agile workflow, using sprint-based iterations, per-contributor Git branches, and pull-request-based integration.
 
-### 🏁 4. Analytical Endgame Evaluation
-Upon reaching the final chronological timeline cap (**960 days** for Short-Scope / **1680 days** for Full-Scope), the system freezes inputs and routes control to the `EndgameEvaluationManager`. The profile is audited across three criteria:
-1. **Academic State:** Validates graduation criteria (completion of exactly **140 Credits**).
-2. **Financial Liquidity:** Audits the accumulated `walletBalance` tier.
-3. **Skill Profile:** Evaluates `SkillTree` progression depths to route the player profile into a highly tailored, text-driven narrative epilogue.
+The **Full Scope** is documented but not currently scheduled for implementation until the MVP is complete.
 
----
+## Getting Started
 
-## 🛠️ Codebase Layout & OOP Mapping
+### Requirements
 
-The codebase enforces strict encapsulation boundaries, cleanly distributing object responsibilities across isolated packages:
+- Python 3.10+
+- Pygame
 
-### 📦 `core/` Package (Universal Foundation)
-* **`interfaces.py` (`TimeConsumable`):** A pure abstract contract driving the **Polymorphism** engine. Any action modifying the timeline implements `execute_action()`, allowing uniform time tracking.
-* **`character.py` (`Character`, `Player`, `NPC`):** Enforces **Abstraction** (the base class cannot be instantiated directly), **Encapsulation** (private identity and location attributes), and **Inheritance** (`Player` and `NPC` extend the abstract base).
-* **`skill_tree.py` (`SkillTree`):** Encapsulates cross-semester technical and soft skill proficiency matrices inside private structures, exposed only via validated mutation methods.
+### Installation
 
-### 📦 `academic/` Package (Educational Logic Domain)
-* **`semester.py` (`Semester`):** Manages the 80-day time pool and registered course arrays for individual terms. Instantiated fresh each semester cycle while the player profile persists.
-* **`quest.py` (`Quest`, `MainQuest`, `SideQuest`):** Provides an abstract tracking hierarchy for events, branching into core academic requirements (`MainQuest`) and skill-building activities (`SideQuest`).
-* **`course.py` (`Course`):** Houses course metadata and provides verification logic for tracking dependencies against the player's profile.
-* **`academic_history.py` (`AcademicHistory`):** The private, permanent ledger tracking accumulated credits, completed course listings, and backlogged subjects.
+```bash
+git clone https://github.com/Hurairiam/cse-life-compile-and-conquer.git
+cd cse-life-compile-and-conquer
+pip install -r requirements-dev.txt
+```
 
-### 📦 `engine/` Package (Simulation Orchestration Core)
-* **`game_session.py` (`GameSession`):** The top-level composition owner of the runtime environment. Encapsulates the global career clock, the persistent player profile, and the active semester instance.
-* **Simulation Managers:** Orchestrates time progression, handles transactional flows during course registration, and computes final grading weights.
+### Run the Game
 
-### 🚀 Root Entry Point
-* **`main.py`:** The system bootloader. Initializes the tracking loop, validates abstract design contracts, and provisions user interface states.
+```bash
+python main.py
+```
+
+### Run the Test Suite
+
+```bash
+pytest tests/
+```
+
+## Project Structure
+
+```text
+core/           Foundational abstractions (Character, TimeConsumable, SkillTree)
+academic/       Academic domain model (Course, Quest, AcademicHistory, Semester)
+engine/         Game orchestration — session, clock, registration, exams, gates, save/load
+engine/states/  One module per screen; routed by the active screen state
+ui/             Pygame rendering — every screen the player sees
+content/        Static data — dialogue, course catalog, level schema, skill tree layout
+levels/         Level data authored with the in-repository level editor
+tools/          Standalone level editor used to author levels/*.json
+tests/          Automated test suite (pytest)
+diagrams/       UML diagrams for both project scopes
+```
+
+## Documentation
+
+UML documentation for both scopes is available in [`diagrams/`](diagrams/):
+
+- [Short Scope](diagrams/short_scope/) — diagrams matching the current MVP
+- [Full Scope](diagrams/full_scope/) — diagrams for the extended, not-yet-implemented design
+
+Additional design notes are available in [`docs/`](docs/).
+
+## Team
+
+| Member | Role |
+|---|---|
+| Abu Huraira | Engine architecture, game systems, integration |
+| Saif Hasan Khan | Academic domain logic |
+| Nangiba Tasnim | UI, Pygame implementation, level design tooling |
+| Ayesha Saheba Mostofa | Narrative content, dialogue |
+
+## License
+
+No license has been specified for this project. All rights reserved by the authors unless otherwise stated.
