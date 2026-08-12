@@ -1550,10 +1550,14 @@
           {
             "chain_id": "1",
             "lines": [
-              "Aren't we in the same CSE1101 course? I'm Purnno by the way.",
-              "Did you successfully navigate through course checklists?",
-              "You can find me somewhere around here.Join me anytime!",
-              "Let's survive this new journey together."
+              "Oh- hey! We're in the same class, right? I saw you at orientation.",
+              "I'm Purnno. Nice to actually put a name to the face.",
+              "Everyone looks a little shell-shocked their first week, don't they?",
+              "Honestly? I almost didn't come talk to you. I get weirdly nervous meeting new people.",
+              "But then I figured, everyone here's starting from the same blank page. So, hi.",
+              "I've been keeping a list since orientation. Every possibility, every shortcut, every thing I wish I was guided with earlier.",
+              "Haven't shown it to anyone yet. Kind of been waiting for the right person to do this with.",
+              "So... come find me again sometime?."
             ],
             "emotion": "happy"
           },
@@ -1672,7 +1676,19 @@
               "Don't be a stranger.Or do-sometimes that's easier."
             ],
             "emotion": "happy"
+          },
+          {
+            "chain_id": "sem1_return",
+            "lines": [
+              "You actually came back.I'm glad.",
+              "Alright, that list I mentioned- my elder brother helped me organize it and it's honestly very helpful.",
+              "Fair warning, it's a bit long, but I think it'll be very useful for us as CSE students.",
+              "To be honest, even I'm scared of the workload, but at the end of the day we're gaining some productive skills.",
+              "I hope this list helps you as much as it helped me."
+            ],
+            "emotion": "happy"
           }
+          
         ],
         "on_complete": "loop_last"
       }
