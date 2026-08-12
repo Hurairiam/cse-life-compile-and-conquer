@@ -126,6 +126,125 @@ def completed_count(source: Any) -> int:
     return len(completed_skill_ids(source))
 
 
+# ── what the stats screen draws (Task 3) ───────────────────────
+#
+# Both of these read `state_of()` and nothing else, so the label and the
+# bar are the same derivation the flag is — Task 3's "no second
+# derivation" is structural here, not a promise.
+
+LABEL_COMPLETED: str = "COMPLETED"
+LABEL_NOT_COMPLETED: str = "NOT COMPLETED"
+
+# Unoffered / Declined / Missed read as no progress; Unlocked means the
+# player took the quest and owes the reading; Completed is done.
+PROGRESS_STARTED: float = 0.5
+PROGRESS_DONE: float = 1.0
+
+
+def status_label(source: Any, skill_id: Any) -> str:
+    """
+    The word drawn where "LV n" used to be.
+
+    Two states only, upper-cased to match every other label on the stats
+    screen (its rows already `.upper()` the skill name, and its headers
+    are SKILLS / ACADEMIC RECORD). These are UI status labels, not
+    dialogue — G2 does not route them through Ayesha — and they are kept
+    to the two words the brief specifies.
+    """
+    return (LABEL_COMPLETED if is_completed(source, skill_id)
+            else LABEL_NOT_COMPLETED)
+
+
+def progress_ratio(source: Any, skill_id: Any) -> float:
+    """
+    How full the stats screen's bar should be, 0.0 to 1.0.
+
+    Three real steps, not two: empty before the quest is taken, half once
+    it is Unlocked and the player owes the reading, full when it is
+    Completed. Owner ruling (Open question C) — the bar has to keep
+    reflecting real progress once the numeric level it used to read is
+    gone, and "accepted but not read" IS progress the player made.
+    """
+    state = state_of(source, skill_id)
+    if state == STATE_COMPLETED:
+        return PROGRESS_DONE
+    if state == STATE_UNLOCKED:
+        return PROGRESS_STARTED
+    return 0.0
+
+
+class CompletionView:
+    """
+    A read-only stand-in for a SkillTree, answering off the flag.
+
+    WHY THIS EXISTS. `content/skill_tree_layout.py::build_view_model()`
+    is Saif's, and the whole skill tree screen — node fills, connectors,
+    prerequisites, the detail panel — is derived from what
+    `get_skill_level()` reports. With the grant and Invest gone every
+    real level is 0, so that screen would draw twelve LOCKED nodes
+    forever: a regression Task 4 did not ask for and Task 3's "keep
+    reflecting real progress" argues against.
+
+    Rather than edit a teammate's layout module or reimplement the
+    screen, this reports a level that ENCODES the flag, and
+    `resolve_state()` then reads exactly the states the player earned:
+
+        completed -> ceiling  -> MASTERED
+        unlocked  -> half     -> UNLOCKED
+        otherwise -> 0        -> AVAILABLE or LOCKED, by prerequisites
+
+    `resolve_state()` returns MASTERED for any node at its ceiling
+    whatever its prerequisites say, which is what makes a completed
+    skill read as completed even when the quest before it was declined.
+
+    It is a VIEW: nothing here mutates, and `increment_skill` is
+    deliberately absent so an accidental write fails loudly instead of
+    landing somewhere nothing reads.
+    """
+
+    def __init__(self, source: Any, ceiling: int = 10) -> None:
+        self.__source = source
+        self.__ceiling = max(1, int(ceiling))
+
+    def get_skill_level(self, skill_id: str) -> int:
+        """The flag, expressed as the number the layout module wants."""
+        ratio = progress_ratio(self.__source, skill_id)
+        if ratio >= PROGRESS_DONE:
+            return self.__ceiling
+        if ratio > 0.0:
+            return max(1, int(self.__ceiling * ratio))
+        return 0
+
+    def is_skill_unlocked(self, skill_id: str) -> bool:
+        """True once the quest behind this skill has been taken."""
+        return self.get_skill_level(skill_id) >= 1
+
+
+def tree_view(source: Any) -> CompletionView:
+    """The stand-in to hand `build_view_model()` instead of a SkillTree."""
+    return CompletionView(source)
+
+
+def stats_rows(source: Any) -> list:
+    """
+    (label, ratio, status) for every skill, in the screen's own order.
+
+    Ordered by `content/skill_tree_layout.py::SKILL_NODES` — the order
+    `engine/progression.py::skill_levels()` used to hand the stats screen
+    — so the rows do not shuffle under the player just because what fills
+    them changed.
+
+    The label stays the prettified skill id the screen already drew
+    ("programming language"); Task 3 changes the value column, not the
+    name column.
+    """
+    from content.skill_tree_layout import SKILL_NODES
+    return [(str(skill_id).replace("_", " "),
+             progress_ratio(source, skill_id),
+             status_label(source, skill_id))
+            for skill_id in SKILL_NODES]
+
+
 # -------------------------------------------------------------
 # STUB TEST — the repo's convention for a module with no suite.
 # Runs headless against the REAL QuestStateMachine.
@@ -178,5 +297,31 @@ if __name__ == "__main__":
     assert not is_completed(ctx, "not_a_skill")
     assert not is_completed(object(), "git"), "a machineless source raised"
     assert not is_completed(ctx, None)
+
+    # -- Task 3: the label and the bar, off the same one state -----
+    assert status_label(ctx, "git") == LABEL_COMPLETED
+    assert progress_ratio(ctx, "git") == PROGRESS_DONE
+    assert status_label(ctx, "oop") == LABEL_NOT_COMPLETED
+    assert progress_ratio(ctx, "oop") == 0.0
+
+    oop_quest = quest_for_skill("oop")
+    machine.accept(oop_quest)
+    assert progress_ratio(ctx, "oop") == PROGRESS_STARTED, \
+        "an accepted quest showed no progress"
+    assert status_label(ctx, "oop") == LABEL_NOT_COMPLETED, \
+        "accepted is not completed"
+
+    rows = stats_rows(ctx)
+    assert len(rows) == QUEST_COUNT, \
+        "expected %d stat rows, got %d" % (QUEST_COUNT, len(rows))
+    by_label = {label: (ratio, status) for label, ratio, status in rows}
+    assert by_label["git"] == (PROGRESS_DONE, LABEL_COMPLETED)
+    assert by_label["oop"] == (PROGRESS_STARTED, LABEL_NOT_COMPLETED)
+    assert by_label["docker"] == (0.0, LABEL_NOT_COMPLETED)
+    assert all(0.0 <= ratio <= 1.0 for _, ratio, _ in rows), \
+        "a bar ratio fell outside 0..1"
+    # No row may carry a number the screen could mistake for a level.
+    assert all(status in (LABEL_COMPLETED, LABEL_NOT_COMPLETED)
+               for _, _, status in rows)
 
     print("skill_completion: all checks passed")
