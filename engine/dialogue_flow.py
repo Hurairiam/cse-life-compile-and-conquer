@@ -37,6 +37,8 @@ later.
     ctx.quest_offer_open  True while the open reply list is the side
                           quest offer rather than an authored branch
     ctx.pending_quest_id  the side quest this talk owes an answer for
+    ctx.offer_portrait    the face the offer and its answer wear — see
+                          THE OFFER KEEPS THE SPEAKER'S FACE below
 
 An answer key is level + npc uid + chain id, so the same NPC placed
 in two maps, or asked the same question in two different beats, are
@@ -170,6 +172,9 @@ def reset_choice(ctx: Any) -> None:
     ctx.choice_prompt = ""
     ctx.choice_result = None
     ctx.quest_offer_open = False
+    # The remembered face goes with the conversation, so the next NPC
+    # can never inherit the last one's portrait.
+    ctx.offer_portrait = None
     if ctx.choice_box is not None:
         ctx.choice_box.reset()
 
@@ -267,6 +272,48 @@ OFFER_REPLIES: tuple = quest_offer.REPLIES
 OFFER_ACCEPT: int = quest_offer.ACCEPT_INDEX
 
 
+# ── THE OFFER KEEPS THE SPEAKER'S FACE ─────────────────────────
+# Unlike an authored branch, the offer REPLACES what is in the dialogue
+# box (see open_offer). load_dialogue()'s portrait argument is optional
+# and both calls used to omit it, which set the manager's fallback
+# portrait to None — so the NPC's face vanished the instant the quest
+# question appeared and stayed gone through the accept/decline reply.
+# Only the portrait: load_dialogue() never touches the speaker name, so
+# the card kept saying "Rafi" over an empty placeholder block.
+#
+# The face is resolved ONCE, from the chain that was on screen when the
+# offer opened, and reused for the answer. Resolving it a second time in
+# resolve_offer() would have to fall back to "neutral" — the chain is
+# deliberately dropped by then — and an NPC who was mid-serious would
+# change expression between the question and the answer for no authored
+# reason.
+
+def speaker_portrait(ctx: Any, npc_data: Any = None,
+                     chain: Any = None) -> Optional[str]:
+    """
+    The portrait path for the NPC being talked to, or None.
+
+    `npc_data` and `chain` default to whatever the conversation is
+    holding. None means there is nothing to draw and the dialog box
+    falls back to its own placeholder block, exactly as before.
+    """
+    npc_data = npc_data if npc_data is not None \
+        else getattr(ctx, "dialogue_npc", None)
+    if npc_data is None:
+        return None
+    chain = chain if chain is not None else getattr(ctx, "dialogue_chain", None)
+    emotion = "neutral"
+    if chain is not None:
+        try:
+            emotion = chain.get_emotion() or "neutral"
+        except AttributeError:
+            emotion = "neutral"
+    try:
+        return get_npc_portrait_path(npc_data.get_type_id(), emotion)
+    except AttributeError:
+        return None
+
+
 def pending_offer(ctx: Any) -> Optional[dict]:
     """The authored lines this conversation still owes the player."""
     return quest_offer.lines_for(getattr(ctx, "pending_quest_id", None))
@@ -311,7 +358,11 @@ def open_offer(ctx: Any) -> bool:
     offer = pending_offer(ctx)
     if offer is None:
         return False
-    ctx.dialogue_manager.load_dialogue(list(offer["offer_lines"]))
+    # Resolved and remembered here, while the chain that was playing is
+    # still on ctx — resolve_offer() cannot work it out again.
+    ctx.offer_portrait = speaker_portrait(ctx)
+    ctx.dialogue_manager.load_dialogue(list(offer["offer_lines"]),
+                                       ctx.offer_portrait)
     ctx.choice_options = list(OFFER_REPLIES)
     ctx.choice_prompt = OFFER_PROMPT
     ctx.choice_result = None
@@ -353,6 +404,9 @@ def resolve_offer(ctx: Any, index: int) -> bool:
     """
     offer = pending_offer(ctx)
     quest_id = getattr(ctx, "pending_quest_id", None)
+    # Read BEFORE the clear-down below, and before ctx.dialogue_chain is
+    # dropped, so the answer wears the same face as the question.
+    portrait = getattr(ctx, "offer_portrait", None) or speaker_portrait(ctx)
     ctx.choice_options = []
     ctx.choice_prompt = ""
     ctx.choice_result = None
@@ -369,5 +423,5 @@ def resolve_offer(ctx: Any, index: int) -> bool:
         return False
     lines = offer["accept_lines"] if accepted else offer["decline_lines"]
     ctx.play_sfx("page_turn")
-    ctx.dialogue_manager.load_dialogue(list(lines))
+    ctx.dialogue_manager.load_dialogue(list(lines), portrait)
     return True
