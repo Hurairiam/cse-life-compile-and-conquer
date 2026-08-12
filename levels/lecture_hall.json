@@ -2218,10 +2218,13 @@
           {
             "chain_id": "semester_1",
             "lines": [
-              "Good day.",
-              "Welcome to the department.",
-              "Academia demands discipline, not shortcuts.",
-              "A strong foundation takes time,do not rush the concrete."
+              "Ah- you must be the new student Ms. Roya mentioned. Come in, come in.",
+              "I'm Professor Rahman. You'll be seeing me around a lot.",
+              "Ms. Roya shown you around, I take it? Good. Let's make it real, then.",
+              "Every course here runs the same way. Lectures to learn it, exams to prove you did.",
+              "You'll find both from that desk at the front. Same door for either one.",
+              "A lecture prepares you for the exam. An exam decides your grade. Spend your days with that in mind.",
+              "Go on, get settled. And if you're ever stuck, my door stays open long after class."
             ],
             "emotion": "neutral"
           },
@@ -2229,7 +2232,7 @@
             "chain_id": "semester_2",
             "lines": [
               "Hello.",
-              "Midterms are coming up. PLease prepare accordingly,",
+              "Midterms are coming up. Please prepare accordingly.",
               "Many students focus on their grades instead of clarity.",
               "A mark is merely a metric,not a measure of character."
             ],
@@ -2331,7 +2334,18 @@
               "Speak through your actions, and the world will listen."
             ],
             "emotion": "happy"
+          },
+          {
+            "chain_id": "sem1_return",
+            "lines": [
+              "Back again? I was hoping you would be.",
+              "How's the material sitting with you so far- anything giving you trouble?",
+              "Come by whenever you're stuck. I'll be happy to help."
+            ],
+            "emotion": "neutral"
           }
+        
+          
         ],
         "on_complete": "loop_last"
       }
