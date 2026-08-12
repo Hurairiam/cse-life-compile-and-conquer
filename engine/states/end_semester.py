@@ -52,6 +52,13 @@ thing in the game that closes a term. DRAIN calls
 engine/day_drain.py::drain_days(), which puts one PassDaysAction through
 GameClock exactly as the pass_days prop already did — so the low-day
 warning and the HUD chip still fire on the way down.
+
+THE AUTOSAVE (Task 9) HANGS OFF ADVANCE, here, rather than inside
+close_semester(). That function is shared and has two other callers —
+engine/final_exam.py rolls a term over when the days run out, and a
+frozen run routes to ENDGAME through it — and Task 9's trigger is
+specifically the player choosing to advance. See `__autosave()` for why
+it is guarded on the semester number rather than on the call.
 """
 import pygame
 
@@ -59,6 +66,7 @@ from engine import day_drain, exam_days
 from engine.screen_manager import ScreenState
 from ui.bed_popup import (RESULT_ADVANCE, RESULT_CANCEL, RESULT_DRAIN,
                           BedPopup)
+from ui.popup import SEVERITY_DANGER
 
 # Module-level, the way engine/states/save_game.py and pass_days.py keep
 # theirs: nothing outside this file reads it, and app_context.py is a
@@ -126,7 +134,9 @@ def update(ctx, dt):
         # close_semester() reaches for engine.states.monologue late:
         # state modules are loaded by the router, not by each other.
         from engine.states.exam import close_semester
+        before = ctx.semester().get_semester_number()
         close_semester(ctx)
+        __autosave(ctx, before)
         return
 
     if choice == RESULT_DRAIN:
@@ -139,6 +149,47 @@ def update(ctx, dt):
         return
 
     __leave(ctx)
+
+
+def __autosave(ctx, semester_before):
+    """
+    Write the autosave once the term has actually rolled over (Task 9).
+
+    AFTER, NOT AROUND. `close_semester()` does the whole transition
+    synchronously — expire the term's quest, check the freeze, advance
+    the clock, reset the gates — and only then queues the monologue. So
+    by the time it returns, `ctx.semester()` IS the new semester and a
+    capture taken here is the new term's state, not a half-transitioned
+    one. That is the ordering Task 9 asks to confirm rather than assume.
+
+    GUARDED ON THE NUMBER MOVING, not on having called the function.
+    `close_semester()` has an early return: a run that is frozen goes to
+    ENDGAME without advancing anything. Autosaving there would overwrite
+    a perfectly good file with a finished run at the moment the player
+    can least afford it. Comparing the semester number is the only test
+    that distinguishes the two paths from out here.
+
+    SAME ROUTINE AS `SAVE GAME` (G6). `SaveManager.autosave(state)` is
+    literally `save(AUTOSAVE_SLOT_ID, state)`, and the payload comes
+    from `save_bridge.capture()` — the same two calls
+    engine/states/save_game.py makes when the player picks a slot. No
+    second save path exists.
+
+    NO PROMPT, and silence when it works: the player asked to end a
+    semester, not to be told about a file. A failure still speaks up,
+    because that is the case where something was lost — the same rule
+    engine/progression.py's quit-to-menu autosave already follows.
+    """
+    if ctx.semester().get_semester_number() == semester_before:
+        return                      # frozen run: nothing rolled over
+    from engine import save_bridge
+    if ctx.saves.autosave(save_bridge.capture(ctx)):
+        return
+    ctx.play_sfx("error")
+    ctx.message_popup.open(
+        "SAVE FAILED",
+        [ctx.saves.get_last_error()[:48] or "Could not write."],
+        SEVERITY_DANGER)
 
 
 def __leave(ctx):

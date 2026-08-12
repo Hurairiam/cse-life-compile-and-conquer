@@ -11,7 +11,9 @@ Headless. Nothing is written to saves/.
 from __future__ import annotations
 
 import os
+import shutil
 import sys
+import tempfile
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -21,6 +23,7 @@ import pytest                                            # noqa: E402
 
 from engine import day_drain, exam_days, save_bridge     # noqa: E402
 from engine.app_context import AppContext                # noqa: E402
+from engine.save_manager import AUTOSAVE_SLOT_ID, SaveManager  # noqa: E402
 from engine.screen_manager import ScreenState            # noqa: E402
 from engine.states import end_semester                   # noqa: E402
 from ui.bed_popup import (MODE_MENU, MODE_NUMBER,        # noqa: E402
@@ -46,12 +49,24 @@ def register(ctx, count=3):
 
 @pytest.fixture
 def ctx():
+    """
+    A started run whose saves go to a throwaway directory.
+
+    The temp SaveManager matters from Task 9 onwards: advancing a
+    semester now writes the autosave, and saves/autosave.json is a real
+    file in this repo.
+    """
+    folder = tempfile.mkdtemp(prefix="cse_life_bed_")
     context = AppContext()
+    context.saves = SaveManager(folder)
     save_bridge.new_game(context)
     register(context, 3)
     context.exam = {"course_index": 0, "tier_index": 0,
                     "answers": {}, "message": None}
-    return context
+    try:
+        yield context
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)
 
 
 def key(code):
@@ -337,3 +352,91 @@ def test_cancel_through_the_state_changes_nothing(ctx):
     end_semester.update(ctx, 0.016)
     assert ctx.semester().get_time_pool_days() == before
     assert landed_on(ctx) is ScreenState.EXPLORATION
+
+
+# ── Task 9: the autosave that hangs off ADVANCE ────────────────
+
+def advance(ctx):
+    """Sit every exam, then take ADVANCE from the bed."""
+    ctx.exam["course_index"] = 3
+    end_semester.enter(ctx)
+    end_semester.handle_events(ctx, [click(option_pos(ctx, 0))])
+    end_semester.update(ctx, 0.016)
+
+
+def autosave_slot(ctx):
+    for slot in ctx.saves.list_slots():
+        if slot.get_slot_id() == AUTOSAVE_SLOT_ID:
+            return slot
+    return None
+
+
+def test_advancing_writes_the_autosave_with_no_prompt(ctx):
+    assert autosave_slot(ctx).is_empty(), "the run started with an autosave"
+    advance(ctx)
+    assert not autosave_slot(ctx).is_empty(), "ADVANCE wrote no autosave"
+    assert not ctx.message_popup.is_open(), "the autosave asked something"
+
+
+def test_the_autosave_holds_the_post_transition_semester(ctx):
+    """
+    The ordering Task 9 asks to confirm rather than assume: the file
+    must be the NEW term, not a half-transitioned one.
+    """
+    assert ctx.semester().get_semester_number() == 1
+    advance(ctx)
+    assert ctx.semester().get_semester_number() == 2
+
+    payload = ctx.saves.load(AUTOSAVE_SLOT_ID)
+    assert payload is not None, "the autosave did not read back"
+    assert payload["player"]["current_semester"] == 2, \
+        "the autosave caught the term mid-transition"
+
+
+def test_the_autosave_uses_the_same_routine_as_save_game(ctx):
+    """G6: restoring it must rebuild the run like any other slot."""
+    advance(ctx)
+    payload = ctx.saves.load(AUTOSAVE_SLOT_ID)
+    fresh = AppContext()
+    assert save_bridge.restore(fresh, payload), \
+        "the autosave is not a normal save file"
+    assert fresh.semester().get_semester_number() == 2
+
+
+def test_draining_does_not_autosave(ctx):
+    """Task 9's trigger is ADVANCE, not any use of the bed."""
+    end_semester.enter(ctx)
+    end_semester.handle_events(ctx, [click(option_pos(ctx, 1))])
+    for char in "10":
+        end_semester.handle_events(ctx, [typed(char)])
+    end_semester.handle_events(ctx, [key(pygame.K_RETURN)])
+    end_semester.update(ctx, 0.016)
+    assert autosave_slot(ctx).is_empty(), "draining wrote an autosave"
+
+
+def test_cancel_does_not_autosave(ctx):
+    end_semester.enter(ctx)
+    end_semester.handle_events(ctx, [key(pygame.K_ESCAPE)])
+    end_semester.update(ctx, 0.016)
+    assert autosave_slot(ctx).is_empty(), "cancel wrote an autosave"
+
+
+def test_a_frozen_run_does_not_overwrite_the_autosave(ctx):
+    """
+    The guard that matters. close_semester() returns early to ENDGAME
+    without advancing anything when the run is over; autosaving there
+    would replace a good file with a finished run.
+    """
+    ctx.saves.autosave(save_bridge.capture(ctx))
+    keep = ctx.saves.load(AUTOSAVE_SLOT_ID)
+    assert keep["player"]["current_semester"] == 1
+
+    ctx.session.freeze_session()
+    assert ctx.session.get_is_frozen()
+
+    advance(ctx)
+    assert ctx.semester().get_semester_number() == 1, \
+        "a frozen run advanced the semester after all"
+    after = ctx.saves.load(AUTOSAVE_SLOT_ID)
+    assert after["player"]["current_semester"] == 1, \
+        "a frozen run overwrote the autosave"
