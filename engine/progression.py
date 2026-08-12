@@ -13,8 +13,8 @@ from __future__ import annotations
 from content.skill_tree_layout import SKILL_NODES
 from engine.screen_manager import ScreenState
 from ui.pause_menu import (
-    ACTION_QUIT_TO_MENU, ACTION_RESUME, ACTION_SAVE_GAME, ACTION_SETTINGS,
-    ACTION_SKILL_TREE, ACTION_STATS)
+    ACTION_LOAD_GAME, ACTION_QUIT_TO_MENU, ACTION_RESUME, ACTION_SAVE_GAME,
+    ACTION_SETTINGS, ACTION_SKILL_TREE, ACTION_STATS)
 from ui.popup import SEVERITY_DANGER
 
 POINTS_PER_COURSE: int = 2
@@ -104,6 +104,21 @@ def resolve_pause(ctx) -> None:
         # never chose and could not keep.
         ctx.return_state = here
         ctx.go(ScreenState.SAVE_GAME)
+    elif action == ACTION_LOAD_GAME:
+        # TASK 8. The SAME door the title screen opens: ScreenState
+        # .LOAD_GAME is engine/states/load_game.py, which owns the slot
+        # picker, the LOAD, the DELETE confirm and the call to
+        # save_bridge.restore(). Nothing about loading is repeated here
+        # and there is no second load path (G6) — this branch only says
+        # where to go and where ESC comes back to.
+        #
+        # `return_state` is what makes it safe from mid-session: backing
+        # out of the picker returns to the map instead of the title
+        # screen, which is where it would land otherwise (load_game.py
+        # falls back to MAIN_MENU). A successful load ignores it and
+        # goes to EXPLORATION on its own.
+        ctx.return_state = here
+        ctx.go(ScreenState.LOAD_GAME)
     elif action == ACTION_QUIT_TO_MENU:
         __autosave(ctx)
         ctx.go(ScreenState.MAIN_MENU)
