@@ -609,6 +609,22 @@
         "triggers_per_semester": 1,
         "menu_id": "teleport"
       }
+    },
+    {
+      "uid": "prop_0030",
+      "type_id": "yellowarrow",
+      "x": 7,
+      "y": 8,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
     }
   ],
   "npcs": []

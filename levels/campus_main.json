@@ -3145,22 +3145,6 @@
       "rotation": 270
     },
     {
-      "uid": "prop_0114",
-      "type_id": "white_concrete_powder",
-      "x": 10,
-      "y": 7,
-      "passthrough": false,
-      "speed_modifier": 1.0,
-      "interactable": false,
-      "interaction": {
-        "kind": "none",
-        "amount": 0.0,
-        "skill_id": null,
-        "triggers_per_semester": 1
-      },
-      "rotation": 270
-    },
-    {
       "uid": "prop_0115",
       "type_id": "white_concrete_powder",
       "x": 10,
@@ -4655,7 +4639,7 @@
       "type_id": "bush",
       "x": 20,
       "y": 9,
-      "passthrough": true,
+      "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -4663,16 +4647,14 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0213",
       "type_id": "bush",
       "x": 20,
       "y": 10,
-      "passthrough": true,
+      "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -4680,9 +4662,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0214",
@@ -4765,9 +4745,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0219",
@@ -4808,7 +4786,7 @@
       "type_id": "flower5",
       "x": 16,
       "y": 9,
-      "passthrough": true,
+      "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -4816,9 +4794,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0233",
@@ -4850,9 +4826,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0236",
@@ -4867,9 +4841,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0237",
@@ -4884,9 +4856,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0238",
@@ -4901,9 +4871,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0239",
@@ -4918,9 +4886,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0240",
@@ -4935,9 +4901,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0241",
@@ -4952,9 +4916,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0242",
@@ -4969,9 +4931,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0243",
@@ -4986,9 +4946,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0244",
@@ -5003,9 +4961,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0245",
@@ -5020,9 +4976,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0246",
@@ -5037,9 +4991,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0247",
@@ -5054,9 +5006,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0248",
@@ -5156,9 +5106,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0254",
@@ -5190,9 +5138,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0256",
@@ -5207,9 +5153,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0257",
@@ -5224,9 +5168,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0258",
@@ -5241,9 +5183,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0259",
@@ -5258,9 +5198,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0260",
@@ -5555,7 +5493,7 @@
       "type_id": "flower5",
       "x": 7,
       "y": 11,
-      "passthrough": true,
+      "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -5563,16 +5501,14 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0280",
       "type_id": "flower3",
       "x": 6,
       "y": 11,
-      "passthrough": true,
+      "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -5580,16 +5516,14 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0281",
       "type_id": "flower5",
       "x": 5,
       "y": 11,
-      "passthrough": true,
+      "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -5597,16 +5531,14 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0282",
       "type_id": "flower3",
       "x": 5,
       "y": 10,
-      "passthrough": true,
+      "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -5614,16 +5546,14 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0283",
       "type_id": "flower5",
       "x": 5,
       "y": 9,
-      "passthrough": true,
+      "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -5631,9 +5561,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0284",
@@ -6209,7 +6137,7 @@
       "type_id": "signboard",
       "x": 15,
       "y": 10,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": true,
       "interaction": {
@@ -6217,7 +6145,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1,
-        "note_title": "Building-B",
+        "note_title": "Cafeteria",
         "note_lines": [
           "Welcome! This is the cafeteria."
         ]
@@ -6228,7 +6156,7 @@
       "type_id": "flower3",
       "x": 16,
       "y": 10,
-      "passthrough": true,
+      "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -6236,9 +6164,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0221",
@@ -6253,7 +6179,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1,
-        "note_title": "Building-A",
+        "note_title": "Academic Building",
         "note_lines": [
           "Welcome! This is the lecture hall."
         ]
@@ -6279,8 +6205,8 @@
     {
       "uid": "prop_0307",
       "type_id": "signboard",
-      "x": 16,
-      "y": 16,
+      "x": 15,
+      "y": 15,
       "passthrough": false,
       "speed_modifier": 1.0,
       "interactable": true,
@@ -6294,6 +6220,85 @@
           "Welcome! The field is right up",
           "ahead."
         ]
+      }
+    },
+    {
+      "uid": "prop_0319",
+      "type_id": "yellowarrow",
+      "x": 25,
+      "y": 11,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0320",
+      "type_id": "yellowarrow",
+      "x": 10,
+      "y": 11,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0321",
+      "type_id": "yellowarrow",
+      "x": 18,
+      "y": 16,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 270
+    },
+    {
+      "uid": "prop_0322",
+      "type_id": "yellowarrow",
+      "x": 34,
+      "y": 8,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 180
+    },
+    {
+      "uid": "prop_0323",
+      "type_id": "white_concrete_powder",
+      "x": 10,
+      "y": 7,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
       }
     }
   ],
