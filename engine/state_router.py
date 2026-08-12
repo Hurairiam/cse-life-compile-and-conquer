@@ -31,6 +31,10 @@ HUD_HIDDEN = (
     # The save picker is the load table under another title, and
     # LOAD_GAME hides the HUD for the same reason: the card is full-bleed.
     ScreenState.SAVE_GAME,
+    # The opening tutorial. Beat 1 is a black stage with no semester to
+    # report; beats 2 and 3 draw the strip themselves so Roya can point
+    # at it.
+    ScreenState.INTRO,
 )
 
 

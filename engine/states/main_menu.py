@@ -1,7 +1,7 @@
 """Title screen — ui/main_menu_screen.py driven."""
 import pygame
 
-from engine import save_bridge
+from engine import intro_sequence, save_bridge
 from engine.app_context import VERSION
 from engine.screen_manager import ScreenState
 from ui.main_menu_screen import (
@@ -19,6 +19,11 @@ def __ui(ctx):
 
 def enter(ctx):
     __ui(ctx)
+    # Phase 18 §4 leak guard. Start a new game, back out of name entry
+    # to the title, then load a save: ctx.intro_beat would still be
+    # armed and registration would route into a dead intro. Every route
+    # back to the title clears it.
+    intro_sequence.finish(ctx)
     # Music is set centrally by engine/soundtrack.py via the router:
     # every screen takes the "menu" track except EXAM, which is silent.
 
@@ -28,11 +33,13 @@ def __activate(ctx, index):
     ui.notify_activated()
     if index == START_GAME:
         save_bridge.new_game(ctx)
-        # Name first, then the opening beat -- NAME_ENTRY arms the
-        # monologue itself. The reset above has to come first: it
-        # rebuilds the GameSession, so a name set before it would be
-        # thrown away with the old Player.
-        ctx.go(ScreenState.NAME_ENTRY)
+        # Phase 18: Roya's briefing comes BEFORE the name card now --
+        # she asks for the name, so beat 1 must never use {name}. The
+        # reset above still has to come first: it rebuilds the
+        # GameSession, so anything set before it would be thrown away
+        # with the old Player, which is why arm() follows it.
+        intro_sequence.arm(ctx)
+        ctx.go(ScreenState.INTRO)
     elif index == LOAD_GAME:
         ctx.return_state = ScreenState.MAIN_MENU
         ctx.go(ScreenState.LOAD_GAME)

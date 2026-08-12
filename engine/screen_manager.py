@@ -68,6 +68,10 @@ class ScreenState(Enum):
     # here, only engine/states/side_quests.py after the charge lands.
     # Appended for the same reason ACTIVITY was.
     SIDE_QUEST_LECTURE = auto()
+    # The three-beat opening tutorial: Ms. Roya's briefing, the room
+    # tour and the lecture hall tour. Appended, never inserted, for the
+    # same reason ACTIVITY was -- auto() numbers by position.
+    INTRO = auto()
 
 
 class ScreenManager:
