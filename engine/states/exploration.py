@@ -138,6 +138,20 @@ def update(ctx, dt):
     ctx.camera = ctx.map_screen.compute_camera(
         ctx.level, ctx.walker.get_position(), pygame.display.get_surface())
 
+    # The opening tutorial's third beat is walked into rather than handed
+    # to: beat 2 gives the controls back in the player's room and beat 3
+    # starts when the player reaches the lecture hall. All of the
+    # deciding is engine/intro_sequence.py's — a new module cannot
+    # conflict — and this file carries the call site, the same way it
+    # already does for the gate service and the day warning. It answers
+    # False on every frame of every ordinary playthrough.
+    #
+    # LAST, so the camera above is already framing the level the player
+    # just walked into: the transition is pending until the end of the
+    # frame, and this one still renders through exploration.render().
+    from engine import intro_sequence
+    intro_sequence.check_level_trigger(ctx)
+
 
 def __check_cell_transition(ctx):
     """

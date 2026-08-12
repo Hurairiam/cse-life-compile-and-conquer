@@ -231,14 +231,61 @@ def test_legal_unlocked_to_completed() -> None:
     assert machine.get_unlocked_quests() == []
 
 
-def test_legal_transitions_are_exactly_four() -> None:
-    """The rulebook itself holds four pairs and no others."""
+def test_legal_transitions_are_exactly_seven() -> None:
+    """
+    The rulebook itself holds seven pairs and no others.
+
+    TASK 2 added the last three. Declined stopped being terminal: the
+    player may walk back and accept, walk back and refuse again, or
+    leave it refused until the term ends and it expires like a quest
+    that was never put.
+    """
     assert LEGAL_TRANSITIONS == frozenset((
         (STATE_UNOFFERED, STATE_UNLOCKED),
         (STATE_UNOFFERED, STATE_DECLINED),
         (STATE_UNOFFERED, STATE_MISSED),
         (STATE_UNLOCKED, STATE_COMPLETED),
+        (STATE_DECLINED, STATE_UNLOCKED),
+        (STATE_DECLINED, STATE_DECLINED),
+        (STATE_DECLINED, STATE_MISSED),
     ))
+
+
+def test_declined_is_offerable_again(unused=None) -> None:
+    """The mechanic itself, at the machine level."""
+    definition = get_definition(FIRST_QUEST)
+    npc_id, semester = definition["npc_id"], definition["semester"]
+
+    machine = QuestStateMachine()
+    machine.decline(FIRST_QUEST)
+    assert machine.get_state(FIRST_QUEST) == STATE_DECLINED
+    assert machine.can_offer(npc_id, semester), \
+        "a declined quest was not re-offered"
+
+    # Refusing again is legal and idempotent.
+    machine.decline(FIRST_QUEST)
+    assert machine.get_state(FIRST_QUEST) == STATE_DECLINED
+    assert machine.can_offer(npc_id, semester)
+
+    # ...and saying yes later is the point of it coming back.
+    machine.accept(FIRST_QUEST)
+    assert machine.get_state(FIRST_QUEST) == STATE_UNLOCKED
+    assert not machine.can_offer(npc_id, semester), \
+        "an accepted quest was offered again"
+
+
+def test_a_declined_quest_expires_when_the_term_ends() -> None:
+    """The boundary is the semester, not the answer."""
+    machine = QuestStateMachine()
+    machine.decline(FIRST_QUEST)
+    expired = machine.expire_for_semester(get_semester(FIRST_QUEST))
+    assert expired == FIRST_QUEST
+    assert machine.get_state(FIRST_QUEST) == STATE_MISSED
+
+    definition = get_definition(FIRST_QUEST)
+    assert not machine.can_offer(definition["npc_id"],
+                                 definition["semester"]), \
+        "a missed quest came back in a later term"
 
 
 # ── every illegal transition ───────────────────────────────────
@@ -248,10 +295,16 @@ def test_illegal_transitions_all_rejected() -> None:
     Every (state, mutator) pair outside the rulebook raises, and leaves
     the quest exactly where it was.
 
-    Five states times three mutators is fifteen combinations; three are
-    legal, so twelve must raise — including the identity moves, so
-    accepting an already-Unlocked quest is an error rather than a shrug.
+    Five states times three mutators is fifteen combinations. TASK 2
+    made two of them legal that were not — Declined -> Unlocked and the
+    Declined -> Declined self-move — so five are legal now and ten must
+    raise. Accepting an already-Unlocked quest is still an error rather
+    than a shrug.
     """
+    legal_by_mutator = sum(
+        1 for source in QUEST_STATES
+        for target, _name, _operation in OPERATIONS
+        if (source, target) in LEGAL_TRANSITIONS)
     checked = 0
     for source in QUEST_STATES:
         for target, name, operation in OPERATIONS:
@@ -265,12 +318,21 @@ def test_illegal_transitions_all_rejected() -> None:
             assert machine.get_state(FIRST_QUEST) == source, \
                 "%s survived %s()" % (source, name)
             checked += 1
-    assert checked == len(QUEST_STATES) * len(OPERATIONS) - 3 == 12
+    assert legal_by_mutator == 5, \
+        "the mutator-reachable rulebook changed: %d" % legal_by_mutator
+    assert checked == len(QUEST_STATES) * len(OPERATIONS) - 5 == 10
 
 
 def test_illegal_terminal_states_are_final() -> None:
-    """Nothing leaves Declined, Missed or Completed."""
-    for source in TERMINAL_STATES:
+    """
+    Nothing leaves Missed or Completed.
+
+    TASK 2 removed Declined from this list: it is offerable again for
+    the rest of the term, so accept() and decline() are legal from it.
+    Missed and Completed are the two genuinely terminal states now —
+    Missed is what a Declined quest becomes when the term ends.
+    """
+    for source in (STATE_MISSED, STATE_COMPLETED):
         for _target, _name, operation in OPERATIONS:
             machine = machine_in(source)
             raises(QuestStateError, operation, machine, FIRST_QUEST)
@@ -283,13 +345,17 @@ def test_illegal_expire_is_a_no_op_off_unoffered() -> None:
 
     This is the one documented exception to 'throw, never no-op': it is
     not a request to move a quest, it is 'this term is over', so a quest
-    that was accepted, declined or completed simply keeps its state.
+    that was accepted or completed simply keeps its state.
+
+    TASK 2 moved Declined out of this list and into the expiring set —
+    declining is no longer an answer that outlives the term, so a quest
+    left refused when the term closes is Missed. Covered by
+    test_a_declined_quest_expires_when_the_term_ends.
     """
     semester = get_semester(FIRST_QUEST)
-    for source in (STATE_DECLINED, STATE_MISSED,
-                   STATE_UNLOCKED, STATE_COMPLETED):
+    for source in (STATE_MISSED, STATE_UNLOCKED, STATE_COMPLETED):
         machine = machine_in(source)
-        assert machine.expire_unoffered_for_semester(semester) is None
+        assert machine.expire_for_semester(semester) is None
         assert machine.get_state(FIRST_QUEST) == source
 
 
@@ -306,7 +372,16 @@ def test_illegal_unknown_quest_id_rejected() -> None:
 
 
 def test_a_full_run_reaches_every_state() -> None:
-    """One playthrough, all four transitions, twelve quests."""
+    """
+    One playthrough, every transition, twelve quests.
+
+    TASK 2 changed the shape of this. A declined quest no longer stays
+    Declined once its term is expired — it becomes Missed like one that
+    was never put — so the only way a run ends with a Declined quest is
+    for its semester to still be running. The last term is therefore
+    left unexpired, which is exactly the state a player is in when they
+    refuse an offer and keep playing.
+    """
     machine = QuestStateMachine()
     for semester in range(SEMESTER_MIN, SEMESTER_MAX + 1):
         quest_id = machine.get_quest_for_semester(semester)
@@ -317,12 +392,23 @@ def test_a_full_run_reaches_every_state() -> None:
             machine.accept(quest_id)
         elif semester % 4 == 3:
             machine.decline(quest_id)
-        machine.expire_unoffered_for_semester(semester)
+        if semester != SEMESTER_MAX:
+            machine.expire_for_semester(semester)
+
+    last = machine.get_quest_for_semester(SEMESTER_MAX)
+    machine.decline(last)               # the term the player is still in
+
     states = machine.get_all_states()
     assert len(states) == QUEST_COUNT
     assert sorted(set(states.values())) == sorted(
         {STATE_COMPLETED, STATE_UNLOCKED, STATE_DECLINED, STATE_MISSED})
     assert list(states) == list(QUEST_IDS)
+    assert states[last] == STATE_DECLINED
+
+    # ...and closing that last term takes the declined one with it.
+    machine.expire_for_semester(SEMESTER_MAX)
+    assert machine.get_state(last) == STATE_MISSED
+    assert STATE_DECLINED not in set(machine.get_all_states().values())
 
 
 # ── can_offer ──────────────────────────────────────────────────
@@ -340,14 +426,21 @@ def test_can_offer_matches_the_npc_and_the_semester() -> None:
 
 
 def test_can_offer_false_once_answered() -> None:
-    """An answered quest is never put a second time, whichever answer
-    it got."""
+    """
+    A quest that was TAKEN or LOST is never put a second time.
+
+    TASK 2: Declined is no longer in this set — it is offerable again
+    until the term ends. Accepted, completed and missed still are.
+    """
     definition = get_definition(FIRST_QUEST)
     npc_id, semester = definition["npc_id"], definition["semester"]
-    for source in TERMINAL_STATES + (STATE_UNLOCKED,):
+    for source in (STATE_MISSED, STATE_COMPLETED, STATE_UNLOCKED):
         machine = machine_in(source)
-        assert not machine.can_offer(npc_id, semester)
+        assert not machine.can_offer(npc_id, semester), \
+            "%s was offered again" % source
     assert QuestStateMachine().can_offer(npc_id, semester)
+    assert machine_in(STATE_DECLINED).can_offer(npc_id, semester), \
+        "a declined quest was not re-offered"
 
 
 # ── the ending gate ────────────────────────────────────────────

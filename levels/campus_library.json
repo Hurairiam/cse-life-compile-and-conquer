@@ -3382,9 +3382,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0179",
@@ -3399,9 +3397,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0180",
@@ -3433,9 +3429,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0182",
@@ -3450,16 +3444,14 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0183",
       "type_id": "weed",
       "x": 10,
       "y": 1,
-      "passthrough": false,
+      "passthrough": true,
       "speed_modifier": 1.0,
       "interactable": false,
       "interaction": {
@@ -3482,9 +3474,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0185",
@@ -3499,9 +3489,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0186",
@@ -3516,9 +3504,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0187",
@@ -3533,9 +3519,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0188",
@@ -3550,9 +3534,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0189",
@@ -3584,9 +3566,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0191",
@@ -3650,9 +3630,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0195",
@@ -3667,9 +3645,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0196",
@@ -3684,9 +3660,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1
-      },
-      "pass_behind": true,
-      "behind_transparency": 35
+      }
     },
     {
       "uid": "prop_0197",
@@ -3765,7 +3739,7 @@
         "amount": 0.0,
         "skill_id": null,
         "triggers_per_semester": 1,
-        "note_title": "Building-C",
+        "note_title": "Library",
         "note_lines": [
           "Welcome! This is the library."
         ]
@@ -3787,6 +3761,38 @@
       },
       "pass_behind": true,
       "behind_transparency": 35
+    },
+    {
+      "uid": "prop_0201",
+      "type_id": "yellowarrow",
+      "x": 8,
+      "y": 11,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
+    },
+    {
+      "uid": "prop_0202",
+      "type_id": "yellowarrow",
+      "x": 17,
+      "y": 8,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 180
     }
   ],
   "npcs": []

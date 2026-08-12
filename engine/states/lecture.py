@@ -10,6 +10,7 @@ import pygame
 
 from content.lectures import get_lecture
 from engine.screen_manager import ScreenState
+from ui import skip_button
 
 BG = (231, 214, 189)
 
@@ -58,11 +59,39 @@ def __advance(ctx):
         __ensure_loaded(ctx)
 
 
+def __skip(ctx):
+    """
+    End the lecture run now, where reading it through would have ended
+    (Task 1).
+
+    This screen's "completion" is course_index running past the last
+    registered course, which sets ctx.lecture["message"] and waits for
+    one more SPACE. So the skip drives that same state rather than
+    jumping straight to EXPLORATION: the player still gets the closing
+    line, and any later code that reads the message finds it set exactly
+    as a full read-through would have left it.
+
+    Nothing else is owed here. Unlike the side-quest reader this screen
+    charges no days, unlocks nothing and completes no quest — the
+    lectures are flavour between registration and the exam — so there is
+    no reward path a skip could bypass.
+    """
+    if ctx.lecture["message"] is not None:
+        return
+    ctx.play_sfx("page_turn")
+    courses = __courses(ctx)
+    ctx.lecture["course_index"] = len(courses)
+    ctx.lecture["message"] = "ALL LECTURES ATTENDED — PRESS SPACE TO CONTINUE"
+
+
 def handle_events(ctx, events):
     for event in events:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 ctx.quit()
+                return
+            if event.key == pygame.K_TAB:
+                __skip(ctx)
                 return
             if event.key == pygame.K_SPACE:
                 if ctx.lecture["message"] is not None:
@@ -72,6 +101,13 @@ def handle_events(ctx, events):
                 __advance(ctx)
                 return
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            # The button first, so a click inside it never doubles as a
+            # page turn. Only live while there are lectures left to
+            # skip — once the closing line is up, a click dismisses it.
+            if (ctx.lecture["message"] is None
+                    and skip_button.hit(ctx.screen_w, event.pos)):
+                __skip(ctx)
+                return
             if ctx.lecture["message"] is not None:
                 ctx.go(ScreenState.EXPLORATION)
                 return
@@ -90,3 +126,8 @@ def render(ctx, screen):
         screen.blit(surf, (ctx.screen_w // 2 - surf.get_width() // 2, 340))
         return
     ctx.dialogue_manager.render(screen)
+    # Top-right below the HUD strip the router paints over this screen.
+    # Not drawn once the closing line is up: there is nothing left to
+    # skip, and a live-looking button that does nothing is worse than
+    # none (Task 1).
+    skip_button.render(screen, ctx.screen_w)

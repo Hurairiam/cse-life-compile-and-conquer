@@ -91,6 +91,19 @@ FIRST_LINE_Y  = 496
 LINE_PITCH    = 32
 HINT_Y        = 644
 
+# The epilogue block: how far in from the inner border it wraps, and how
+# close its last row may come to the "Press ESC" hint.
+#
+# render() USED TO DRAW ONE SCREEN ROW PER STRING IT WAS HANDED, which
+# only worked while the epilogue was Saif's placeholder in
+# content/epilogue_text.py -- those strings were hand-broken at about 56
+# characters. Ayesha's authored epilogues are SENTENCES, up to 100
+# characters, and three of them ran off both sides of the certificate.
+# The screen wraps and fits the text now, so content/ can go on writing
+# prose and never has to know what fits.
+EPILOGUE_INSET = 90
+EPILOGUE_GAP   = 14
+
 TITLE_SIZE    = 26
 SUB_SIZE      = 11
 BODY_SIZE     = 13
@@ -168,10 +181,7 @@ class EndgameScreen:
         self.__draw_stat_box(screen, cx, final_credits, final_wallet, theme)
         self.__draw_rule(screen, cx, RULE_BOT_Y, theme["accent"])
 
-        for i, line in enumerate(epilogue_lines):
-            self.__blit_centred(screen, self.__font_body, line,
-                                theme["body"], cx,
-                                FIRST_LINE_Y + i * LINE_PITCH)
+        self.__draw_epilogue(screen, cx, epilogue_lines, theme)
 
         self.__blit_centred(screen, self.__font_label, "Press ESC to exit",
                             theme["stat"], cx, HINT_Y)
@@ -273,6 +283,58 @@ class EndgameScreen:
         """Draw a line of text horizontally centred on centre_x."""
         surface = font.render(text, True, colour)
         screen.blit(surface, (centre_x - surface.get_width() // 2, y))
+
+    # -- the epilogue block -----------------------------------
+    def wrap(self, text: str, max_width: int) -> list[str]:
+        """
+        One authored sentence broken into rows that fit `max_width`.
+
+        Public so the stub test and the certificate can measure the same
+        way this draws. Breaks on spaces; a single word longer than the
+        line is left to overhang rather than cut, because a truncated
+        word is a bug that looks like content.
+        """
+        words = str(text).split()
+        if not words:
+            return [""]
+        rows: list[str] = []
+        row = words[0]
+        for word in words[1:]:
+            candidate = row + " " + word
+            if self.__font_body.size(candidate)[0] <= max_width:
+                row = candidate
+            else:
+                rows.append(row)
+                row = word
+        rows.append(row)
+        return rows
+
+    def __draw_epilogue(self, screen: pygame.Surface, cx: int,
+                        epilogue_lines: list[str], theme: dict) -> None:
+        """
+        Wrap the epilogue to the card and fit it above the ESC hint.
+
+        The pitch tightens rather than the text spilling: four wrapped
+        rows sit at the authored LINE_PITCH and a longer ending closes
+        the gaps until it fits. It never drops a row -- an epilogue that
+        loses its last sentence is a worse ending than a snug one.
+        """
+        rows: list[str] = []
+        max_width = (screen.get_width() - 2 * (CARD_MARGIN + CARD_PAD)
+                     - 2 * EPILOGUE_INSET)
+        for line in epilogue_lines:
+            rows.extend(self.wrap(line, max_width))
+        if not rows:
+            return
+
+        floor = HINT_Y - EPILOGUE_GAP
+        pitch = LINE_PITCH
+        if FIRST_LINE_Y + (len(rows) - 1) * pitch > floor:
+            pitch = max(self.__font_body.get_height() + 2,
+                        (floor - FIRST_LINE_Y) // max(1, len(rows) - 1))
+        for i, row in enumerate(rows):
+            self.__blit_centred(screen, self.__font_body, row,
+                                theme["body"], cx, FIRST_LINE_Y + i * pitch)
 
 
 # -------------------------------------------------------------

@@ -1336,6 +1336,57 @@
       },
       "target_level_id": "player_room",
       "target_spawn": null
+    },
+    {
+      "uid": "prop_0099",
+      "type_id": "signboard",
+      "x": 13,
+      "y": 1,
+      "passthrough": false,
+      "speed_modifier": 1.0,
+      "interactable": true,
+      "interaction": {
+        "kind": "note",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1,
+        "note_title": "Living Quarters",
+        "note_lines": [
+          "The Boy's Hostel is up",
+          "ahead!"
+        ]
+      }
+    },
+    {
+      "uid": "prop_0100",
+      "type_id": "yellowarrow",
+      "x": 1,
+      "y": 5,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      }
+    },
+    {
+      "uid": "prop_0101",
+      "type_id": "yellowarrow",
+      "x": 16,
+      "y": 1,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
+      },
+      "rotation": 90
     }
   ],
   "npcs": [

@@ -39,6 +39,36 @@ WHAT WAS ADDED (additive only, nothing renamed or removed):
     skip_reveal(), get_progress(), load_npc_dialogue(npc_id, section),
     get_speaker(), is_reveal_complete()
 ─────────────────────────────────────────────────────────────
+TASK 5 — PER-LINE PORTRAITS (Sprint 5, Nangiba).
+
+THE ROOT CAUSE, which is not the one the brief names. The brief says
+content/dialogues.py assigns a per-line emotion tag that is never read.
+It does not: NPC_DIALOGUES is dict[str, dict[str, list[str]]] and holds
+no emotion data at all. The portrait never changed for TWO reasons, both
+in this file:
+
+  1. load_dialogue() resolved one portrait and advance() never revisited
+     it, so nothing could change the face mid-conversation; and
+  2. __resolve_portrait_path() took portrait_variants[0] unconditionally
+     — "neutral" for all seven NPCs — so even a caller that wanted a
+     different face could not ask for one.
+
+Both are fixed. What is still missing is DATA: no per-line emotion
+exists anywhere to drive it. Supplying it means writing into Ayesha's
+file, which is hers under G2 — reported as a gap, not invented here.
+Two ways in are provided so it works the moment she has tags:
+load_npc_dialogue(..., emotions=[...]), and authoring a section as
+(line, emotion) pairs, which __split_tagged() already accepts.
+
+STILL BYTE-IDENTICAL. load_dialogue(lines, portrait_path) with no third
+argument behaves exactly as before: one portrait, held for every line.
+All four existing call sites pass at most two arguments and are
+unchanged, and the INTRO beats depend on precisely that.
+
+ADDED HERE: load_dialogue(..., portraits=None),
+    load_npc_dialogue(..., emotions=None), get_current_portrait(),
+    has_line_portraits()
+─────────────────────────────────────────────────────────────
 """
 from __future__ import annotations
 
@@ -76,22 +106,50 @@ class DialogueManager:
         # line, which is what keeps main.py's untouched loop correct.
         self.__elapsed: float | None = None
         self.__pulse: float = 0.0
+        # -- TASK 5 (per-line portraits) --------------------------
+        # The portrait paths for each line, parallel to the queue, and
+        # the one to fall back on. Empty list = the old behaviour: one
+        # portrait for the whole call, never revisited.
+        self.__line_portraits: list[str | None] = []
+        self.__fallback_portrait: pygame.Surface | None = None
+        # path -> Surface|None, so a conversation that returns to an
+        # emotion decodes that PNG once. None is cached too: a missing
+        # file is not retried on every line.
+        self.__portrait_cache: dict[str, pygame.Surface | None] = {}
 
     def load_dialogue(self, lines: list[str],
-                      portrait_path: str | None = None) -> None:
+                      portrait_path: str | None = None,
+                      portraits: list | None = None) -> None:
         """
         Loads a new dialogue sequence and optionally a portrait image.
         portrait_path should match a value from npc_roster.py with
         the emotion placeholder replaced by the actual emotion name.
         Example: assets/portraits/npc_purnno_neutral.png
+
+        TASK 5 — `portraits` is new and OPTIONAL. Pass a list parallel
+        to `lines` to make the portrait change per line; an entry may be
+        None to mean "keep whatever was showing". Omit it entirely and
+        this behaves exactly as it always did: `portrait_path` is loaded
+        once and `advance()` never touches it, which is what the INTRO
+        beats and all four existing call sites rely on.
+
+        RAGGED INPUT IS NORMAL, not an error. Fewer portraits than
+        lines, a None entry, an empty string, or a path that is not on
+        disk all resolve the same way — see `__portrait_for()`: the last
+        portrait that did resolve, or failing that `portrait_path`, or
+        failing that the dialog box's own placeholder block. A
+        conversation never renders a blank where a face was.
         """
         self.__dialogue_queue = lines
         self.__current_index = 0
         self.__is_active = True
-        self.__current_portrait = None
         self.__elapsed = None
+        self.__fallback_portrait = None
         if portrait_path:
-            self.__current_portrait = self.__load_portrait(portrait_path)
+            self.__fallback_portrait = self.__load_portrait(portrait_path)
+        self.__line_portraits = ([] if portraits is None
+                                 else [self.__clean_path(p) for p in portraits])
+        self.__current_portrait = self.__portrait_for(0)
 
     def load_npc_chain(self, chain, portrait_path=None, display_name="") -> bool:
         """
@@ -132,12 +190,20 @@ class DialogueManager:
         Returns True if there are more lines remaining.
         Returns False when the sequence is complete -- caller should
         deactivate the dialogue state in the screen manager.
+
+        TASK 5 — this is half the bug. It moved the index and left
+        `__current_portrait` exactly as load_dialogue() had set it, so
+        the face could not change mid-conversation however the content
+        was authored. It now re-resolves the portrait for the line it
+        landed on. With no per-line list that resolves to the same
+        fallback every time, so single-portrait callers see no change.
         """
         self.__current_index += 1
         self.__elapsed = None if self.__elapsed is None else 0.0
         if self.__current_index >= len(self.__dialogue_queue):
             self.__is_active = False
             return False
+        self.__current_portrait = self.__portrait_for(self.__current_index)
         return True
 
     def is_active(self) -> bool:
@@ -250,7 +316,8 @@ class DialogueManager:
         return (self.__current_index + 1, len(self.__dialogue_queue))
 
     def load_npc_dialogue(self, npc_id: str,
-                          section: str = "greeting") -> bool:
+                          section: str = "greeting",
+                          emotions: list | None = None) -> bool:
         """
         Load one NPC's real lines from content/dialogues.py.
 
@@ -262,6 +329,19 @@ class DialogueManager:
         The portrait is resolved through the roster first, then through
         the art that actually shipped, then given up on in favour of the
         dialog box's placeholder block.
+
+        TASK 5 — two ways to get a face per line, both optional:
+
+        1. Pass `emotions`, a list of variant names parallel to the
+           section's lines ("happy", "stressed", ...). Names come from
+           that NPC's `portrait_variants` in the roster.
+        2. Author the section as (line, emotion) pairs instead of plain
+           strings. `__split_tagged()` accepts either shape, so the day
+           content/dialogues.py grows tags this starts working with no
+           further code change — and until then plain strings load
+           exactly as they always have.
+
+        An explicit `emotions` argument wins over authored tags.
         """
         try:
             from content.dialogues import NPC_DIALOGUES
@@ -274,14 +354,104 @@ class DialogueManager:
         sections = NPC_DIALOGUES[npc_id]
         if section not in sections:
             return False
-        lines = list(sections[section])
+        lines, tagged = self.__split_tagged(sections[section])
         if not lines:
             return False
 
         entry = NPC_ROSTER[npc_id]
-        self.load_dialogue(lines, self.__resolve_portrait_path(npc_id, entry))
+        wanted = list(emotions) if emotions is not None else tagged
+        portraits = None
+        if wanted:
+            portraits = [self.__resolve_portrait_path(npc_id, entry, emotion)
+                         for emotion in self.__pad(wanted, len(lines))]
+        self.load_dialogue(lines,
+                           self.__resolve_portrait_path(npc_id, entry),
+                           portraits)
         self.set_speaker(entry.get("display_name", ""))
         return True
+
+    @staticmethod
+    def __split_tagged(section) -> tuple:
+        """
+        Split a section into (lines, emotions).
+
+        Accepts the shape content/dialogues.py uses today — a list of
+        plain strings, which yields no emotions at all — and the tagged
+        shape it may grow, a list of (line, emotion) pairs. Mixed lists
+        work too: an untagged entry contributes None and inherits the
+        previous face.
+        """
+        lines: list[str] = []
+        emotions: list = []
+        found = False
+        for entry in (section or ()):
+            if isinstance(entry, (tuple, list)) and len(entry) >= 2:
+                lines.append(str(entry[0]))
+                emotions.append(str(entry[1]) or None)
+                found = True
+            else:
+                lines.append(str(entry))
+                emotions.append(None)
+        return lines, (emotions if found else [])
+
+    @staticmethod
+    def __pad(values: list, count: int) -> list:
+        """`values` grown to `count` entries with None. Never truncates
+        meaning: a short list simply stops naming faces, and
+        __portrait_for() holds the last one."""
+        values = list(values)
+        if len(values) >= count:
+            return values[:count]
+        return values + [None] * (count - len(values))
+
+    # ── per-line portraits (Task 5) ──────────────────────────
+    def get_current_portrait(self) -> pygame.Surface | None:
+        """The portrait being drawn right now, or None for the block."""
+        return self.__current_portrait
+
+    def has_line_portraits(self) -> bool:
+        """True when this sequence was loaded with a per-line list."""
+        return bool(self.__line_portraits)
+
+    @staticmethod
+    def __clean_path(value) -> str | None:
+        """A usable portrait path, or None for anything blank."""
+        if not value:
+            return None
+        text = str(value).strip()
+        return text or None
+
+    def __portrait_for(self, index: int) -> pygame.Surface | None:
+        """
+        The portrait for one line, with the ragged cases resolved.
+
+        Walks BACKWARDS from `index` to the most recent entry that names
+        a file that actually loads, then falls back to the single
+        portrait the call was loaded with. Backwards rather than
+        "remember the last one drawn" so the answer depends only on the
+        index — jumping straight to line 5 gives the same face as
+        pressing SPACE five times.
+
+        Every ragged case funnels through here: a short list (index past
+        the end), a None or empty entry, and a path that is not on disk
+        all just keep looking left. None at the end is a normal outcome
+        — ui/dialog_box.py draws its PORTRAIT_FILL block.
+        """
+        for candidate in range(min(index, len(self.__line_portraits) - 1),
+                               -1, -1):
+            path = self.__line_portraits[candidate]
+            if not path:
+                continue
+            surface = self.__cached_portrait(path)
+            if surface is not None:
+                return surface
+        return self.__fallback_portrait
+
+    def __cached_portrait(self, path: str) -> pygame.Surface | None:
+        """Load a portrait once per path, misses included."""
+        if path not in self.__portrait_cache:
+            self.__portrait_cache[path] = self.__load_portrait(path)
+        return self.__portrait_cache[path]
 
     # ── private helpers ──────────────────────────────────────
     def __visible_count(self, line: str) -> int:
@@ -295,17 +465,31 @@ class DialogueManager:
             return len(line)
         return min(len(line), DialogBox.visible_length(self.__elapsed))
 
-    def __resolve_portrait_path(self, npc_id: str, entry: dict) -> str | None:
+    def __resolve_portrait_path(self, npc_id: str, entry: dict,
+                                emotion: str | None = None) -> str | None:
         """
         Pick the best portrait path that exists on disk for this NPC.
 
-        The roster declares assets/portraits/npc_<name>_{emotion}.png,
-        which does not exist for anybody yet; the real art shipped to
-        assets/npcs/ for Hoque and Roya only. Returning None is a normal
-        outcome -- the dialog box draws its placeholder block.
+        TASK 5 — `emotion` is new and is the OTHER half of the bug. This
+        method used to take `variants[0]` unconditionally, which is
+        "neutral" for all seven NPCs, so every portrait in the game
+        resolved to the neutral face no matter what the content wanted.
+        Passing an emotion now picks that variant; passing None keeps
+        the old first-variant default, so `load_npc_dialogue()` without
+        emotions behaves as before.
+
+        An unknown or misspelled emotion is not an error: the file
+        simply will not be on disk, both candidates miss, and the caller
+        falls back the way `__portrait_for()` describes.
+
+        The art situation the old comment described has since changed —
+        assets/portraits/ now holds all three variants for all seven
+        NPCs, so the roster's declared path is the one that hits.
+        Returning None is still a normal outcome for an id with no art.
         """
         variants = entry.get("portrait_variants") or ["neutral"]
-        emotion = variants[0]
+        wanted = str(emotion).strip() if emotion else ""
+        emotion = wanted or variants[0]
         short = npc_id.rsplit("_", 1)[-1]
         declared = entry.get("portrait_file", "")
         candidates = []
@@ -314,10 +498,6 @@ class DialogueManager:
                 candidates.append(declared.format(emotion=emotion))
             except (KeyError, IndexError, ValueError):
                 candidates.append(declared)
-        # [IMAGE PLACEHOLDER: assets/npcs/npc_<name>_<emotion>.png --
-        #  96x96 emotion portraits. Only hoque and roya exist today;
-        #  purnno, rafi, zayan, kabir and rahman fall through to the
-        #  dialog box's PORTRAIT_FILL block (Style Guide §5.2).]
         candidates.append(f"assets/npcs/npc_{short}_{emotion}.png")
         for relative in candidates:
             if os.path.isfile(os.path.join(PROJECT_ROOT, relative)):

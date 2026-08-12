@@ -165,7 +165,44 @@ def drain(ctx) -> int:
     does nothing at all on a frozen session, and a caller that trusted
     the intent would report a spend that never happened.
     """
-    action = PassDaysAction.for_semester(ctx)
+    return __spend(ctx, PassDaysAction.for_semester(ctx))
+
+
+def drain_days(ctx, days: int) -> int:
+    """
+    Pass exactly `days` of the term. Returns how many were passed.
+
+    TASK 7. `drain()` above passes everything left; the bed popup lets
+    the player name a number instead. Both go through the SAME
+    `PassDaysAction` and the same `GameClock.process_time_consumable()`,
+    so Phase 6's warning popup and HUD chip still fire on the way down
+    without a line of either being repeated — the action always took an
+    arbitrary day count, `for_semester()` simply chose it.
+
+    THE FLOOR IS NOT ENFORCED HERE. `engine/exam_days.py` owns how many
+    days a term may spare, and the popup refuses out-of-range input
+    before it ever calls this. What IS enforced here is the pool: the
+    request is capped at `passable()`, so no caller can push the two
+    day counters apart however it computed its number.
+    """
+    try:
+        wanted = int(days)
+    except (TypeError, ValueError):
+        return 0
+    wanted = min(max(0, wanted), passable(ctx))
+    if wanted <= 0:
+        return 0
+    return __spend(ctx, PassDaysAction(wanted))
+
+
+def __spend(ctx, action) -> int:
+    """
+    Put one action through the clock and report what it actually cost.
+
+    Shared by both drains so the "measure it, do not trust the intent"
+    rule is written once. A frozen session spends nothing and this
+    returns 0 rather than the cost that was asked for.
+    """
     if action is None:
         return 0
     before = remaining(ctx)
@@ -276,6 +313,27 @@ if __name__ == "__main__":
     assert can_pass(frozen), "the rule is about days, not the freeze"
     assert drain(frozen) == 0, "reported a spend a frozen clock refused"
     assert remaining(frozen) == 80 and frozen.session.clock_days == 0
+
+    # -- drain_days(): a named number, same pipeline (Task 7) -------
+    some = _Ctx()
+    assert drain_days(some, 12) == 12, "did not pass the number asked for"
+    assert remaining(some) == 68 and some.player().get_time_pool_days() == 68
+    assert some.session.clock_days == 12, "the career clock did not move"
+    assert drain_days(some, 8) == 8 and remaining(some) == 60
+
+    capped = _Ctx(spent=75)                    # 5 days left, ask for 40
+    assert drain_days(capped, 40) == 5, "a request outran the pool"
+    assert remaining(capped) == 0
+
+    refused = _Ctx()
+    for bad in (0, -3, "", None, "abc"):
+        assert drain_days(refused, bad) == 0, "spent on %r" % (bad,)
+    assert remaining(refused) == 80, "a refused request still cost days"
+    assert drain_days(refused, "9") == 9, "refused a numeric string"
+
+    frozen_n = _Ctx(frozen=True)
+    assert drain_days(frozen_n, 10) == 0, "spent on a frozen clock"
+    assert remaining(frozen_n) == 80
 
     # -- the Phase 6 threshold is crossed, not re-implemented -------
     crossing = _Ctx(spent=20)                      # 60 days, well clear

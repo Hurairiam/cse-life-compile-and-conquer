@@ -360,6 +360,27 @@ def prop_cells(type_id: str, x: int, y: int) -> list:
 #                inside the editor ONLY
 # portraits    : emotion -> 96x96 face used by the in-game dialog
 #                box when a chain declares that emotion
+#
+# EVERY PATH IN A portraits TABLE MUST BE A FILE THAT EXISTS. These
+# entries are CURATED, and a curated entry CLAIMS its NPC: scan_npcs()
+# below is handed set(NPC_REGISTRY) and skips everything already in it,
+# so a hand-written path pointing at art nobody drew is never corrected
+# by the scanner — it just resolves to nothing and the dialog box draws
+# its placeholder block where the face should be.
+#
+# That is exactly what had happened. Five of the seven NPCs listed
+# happy/serious portraits that were never drawn, while the art that WAS
+# drawn sat next to them under different names, and 30 of the 76
+# authored dialogue chains in levels/*.json played faceless because of
+# it. The tables below now name real files.
+#
+# THE EDITOR'S VOCABULARY IS neutral / happy / serious. That is what a
+# DialogChain can declare, so those three keys have to resolve for every
+# NPC even when the artist named the mood something better — Rahman's
+# "serious" is his disapproving face, Zayan's is his stressed one. The
+# art's own names are kept as ADDITIONAL keys so a chain can ask for
+# them directly, and get_npc_emotions() offers all of them in the
+# editor's dropdown.
 # ─────────────────────────────────────────────────────────────
 
 NPC_REGISTRY: Dict[str, Dict[str, Any]] = {
@@ -395,10 +416,12 @@ NPC_REGISTRY: Dict[str, Dict[str, Any]] = {
         "frames": 4,
         "cell_px": 48,
         "editor_icon": "assets/npcs/npc_kabir_level_editor.png",
+        # His warm face is "calm" — there is no kabir_happy.png.
         "portraits": {
             "neutral": "assets/npcs/npc_kabir_neutral.png",
-            "happy":   "assets/npcs/npc_kabir_happy.png",
+            "happy":   "assets/npcs/npc_kabir_calm.png",
             "serious": "assets/npcs/npc_kabir_serious.png",
+            "calm":    "assets/npcs/npc_kabir_calm.png",
         },
         "default_emotion": "neutral",
     },
@@ -408,10 +431,14 @@ NPC_REGISTRY: Dict[str, Dict[str, Any]] = {
         "frames": 4,
         "cell_px": 48,
         "editor_icon": "assets/npcs/npc_zayan_level_editor.png",
+        # Joking when he is up, stressed when he is not — no
+        # zayan_happy.png or zayan_serious.png was ever drawn.
         "portraits": {
-            "neutral": "assets/npcs/npc_zayan_neutral.png",
-            "happy":   "assets/npcs/npc_zayan_happy.png",
-            "serious": "assets/npcs/npc_zayan_serious.png",
+            "neutral":  "assets/npcs/npc_zayan_neutral.png",
+            "happy":    "assets/npcs/npc_zayan_joking.png",
+            "serious":  "assets/npcs/npc_zayan_stressed.png",
+            "joking":   "assets/npcs/npc_zayan_joking.png",
+            "stressed": "assets/npcs/npc_zayan_stressed.png",
         },
         "default_emotion": "neutral",
     },
@@ -421,10 +448,15 @@ NPC_REGISTRY: Dict[str, Dict[str, Any]] = {
         "frames": 4,
         "cell_px": 48,
         "editor_icon": "assets/npcs/npc_purnno_level_editor.png",
+        # No purnno_serious.png, and nothing in his art is a fair stand
+        # -in for one — he has happy, encouraging and neutral. "serious"
+        # therefore resolves to his neutral face rather than putting an
+        # encouraging grin under a serious line.
         "portraits": {
-            "neutral": "assets/npcs/npc_purnno_neutral.png",
-            "happy":   "assets/npcs/npc_purnno_happy.png",
-            "serious": "assets/npcs/npc_purnno_serious.png",
+            "neutral":     "assets/npcs/npc_purnno_neutral.png",
+            "happy":       "assets/npcs/npc_purnno_happy.png",
+            "serious":     "assets/npcs/npc_purnno_neutral.png",
+            "encouraging": "assets/npcs/npc_purnno_encouraging.png",
         },
         "default_emotion": "neutral",
     },
@@ -434,10 +466,14 @@ NPC_REGISTRY: Dict[str, Dict[str, Any]] = {
         "frames": 4,
         "cell_px": 48,
         "editor_icon": "assets/npcs/npc_rafi_level_editor.png",
+        # Encouraging when he is pleased, focused when he is not — no
+        # rafi_happy.png or rafi_serious.png was ever drawn.
         "portraits": {
-            "neutral": "assets/npcs/npc_rafi_neutral.png",
-            "happy":   "assets/npcs/npc_rafi_happy.png",
-            "serious": "assets/npcs/npc_rafi_serious.png",
+            "neutral":     "assets/npcs/npc_rafi_neutral.png",
+            "happy":       "assets/npcs/npc_rafi_encouraging.png",
+            "serious":     "assets/npcs/npc_rafi_focused.png",
+            "encouraging": "assets/npcs/npc_rafi_encouraging.png",
+            "focused":     "assets/npcs/npc_rafi_focused.png",
         },
         "default_emotion": "neutral",
     },
@@ -447,10 +483,14 @@ NPC_REGISTRY: Dict[str, Dict[str, Any]] = {
         "frames": 4,
         "cell_px": 48,
         "editor_icon": "assets/npcs/npc_rahman_level_editor.png",
+        # A professor approves or disapproves — no rahman_happy.png or
+        # rahman_serious.png was ever drawn.
         "portraits": {
-            "neutral": "assets/npcs/npc_rahman_neutral.png",
-            "happy":   "assets/npcs/npc_rahman_happy.png",
-            "serious": "assets/npcs/npc_rahman_serious.png",
+            "neutral":      "assets/npcs/npc_rahman_neutral.png",
+            "happy":        "assets/npcs/npc_rahman_approving.png",
+            "serious":      "assets/npcs/npc_rahman_disapproving.png",
+            "approving":    "assets/npcs/npc_rahman_approving.png",
+            "disapproving": "assets/npcs/npc_rahman_disapproving.png",
         },
         "default_emotion": "neutral",
     },
@@ -1067,14 +1107,28 @@ def get_npc_portrait_path(type_id: str, emotion: str) -> Optional[str]:
     """
     Path to the emotion portrait for an NPC, falling back to that
     NPC's default emotion. None when the NPC type is unknown.
+
+    THE FALLBACK NOW CHECKS THE DISK, not just the table. It used to
+    return whatever path the table held for the emotion asked for, and
+    an entry naming a file nobody drew came back as a real-looking path
+    that then failed to load — the dialog box drew its placeholder block
+    where the NPC's face belonged, silently, for 30 of the 76 authored
+    chains. A named-but-missing portrait now falls through to the
+    default emotion the same way an unknown emotion always did, so the
+    worst case is the wrong mood rather than no face at all.
+
+    The check is one os.path.isfile per call; portraits are resolved
+    once per chain, not per frame.
     """
     entry = NPC_REGISTRY.get(type_id)
     if entry is None:
         return None
     portraits: Dict[str, str] = entry.get("portraits", {})
-    if emotion in portraits:
-        return portraits[emotion]
-    return portraits.get(entry.get("default_emotion", ""), None)
+    default = portraits.get(entry.get("default_emotion", ""), None)
+    path = portraits.get(emotion)
+    if path and os.path.isfile(path):
+        return path
+    return default
 
 
 def get_npc_display_name(type_id: str) -> str:
