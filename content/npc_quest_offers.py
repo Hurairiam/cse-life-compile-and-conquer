@@ -3,9 +3,9 @@ from __future__ import annotations
 
 SEMESTER_QUEST_OFFERS: dict[int, dict] = {
     1: {"npc": "warm_classmate_purnno", "quest_id": "SQ_GIT_GITHUB",
-        "offer_lines": ["Actually, I've been messing around with Git a lot lately.",
-                         "Not gonna lie, it's saved me more than once already.",
-                         "Want me to walk you through the basics sometime?"],
+        "offer_lines": ["The first thing here is learning Git & GitHub. Wanna tackle this together?",
+                         
+                         ],
         "decline_lines": ["No worries. I'll be around if you ever want to look into it."],
         "accept_lines": ["Nice! Check your PC back in your room, I'll drop the basics on there for you."]},
     2: {"npc": "professor_rahman", "quest_id": "SQ_OOP",
