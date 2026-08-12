@@ -7,9 +7,9 @@ to the top in red because SemesterCatalogBuilder orders them that way.
 """
 import pygame
 
+from engine import intro_sequence
 from engine.screen_manager import ScreenState
 from ui.registration_screen import RegistrationScreen
-from content.dialogues import has_cutscene
 
 # Where a confirmed registration drops the player. Their own room is
 # the fixed start of every term (owner ruling), so this is not read
@@ -71,10 +71,13 @@ def __confirm(ctx, courses):
     ctx.level_id = START_LEVEL_ID
     ctx.level = None
     ctx.pending_spawn = None
-    if has_cutscene(ctx.semester().get_semester_number()):
-        ctx.go(ScreenState.CUTSCENE)
-    else:
-        ctx.go(ScreenState.EXPLORATION)
+    # Phase 18. The if/else that was here — has_cutscene() then CUTSCENE
+    # or EXPLORATION — moved verbatim into after_registration(), which
+    # runs it unchanged whenever the intro is NOT armed. So semesters
+    # 2-12 route exactly as they did, and the semester-1 entry in
+    # CUTSCENES is suppressed during the first run without deleting it
+    # from content/dialogues.py (which is on main, and Ayesha's).
+    ctx.go(intro_sequence.after_registration(ctx))
 
 
 def handle_events(ctx, events):

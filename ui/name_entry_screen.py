@@ -2,16 +2,22 @@
 CSE Life: Compile & Conquer
 ui/name_entry_screen.py
 
-The name prompt. A ceremonial card holding one question, one text
-field, and the two things the player can do: confirm, or go back to
-the title.
+The name prompt. A card holding one question and one text field.
+
+PHASE 18 §9 STRIPPED IT. It used to carry a subtitle, a ceremonial rule
+and diamond, two hint lines, a character counter and CONFIRM / BACK
+buttons. The brief asked for "only the words 'What should we call you?'
+at the top, no other content, and it just lets the player enter their
+name", so all of that is gone and ENTER / ESC are the whole control set.
+The card frame and corner marks stayed: that is the game's visual
+identity and the brief did not ask for it to go.
 
 This file has NO game logic. render() only DRAWS what it is handed:
 the name typed so far, and whether the caret is in its visible half of
 the blink. It does not own the text, does not read a key, does not
 decide whether a name is acceptable and does not know what happens
-next -- it exposes get_field_rect() / get_confirm_rect() /
-get_back_rect() and the state manager decides (Style Guide §6.1, §6.2).
+next -- it exposes get_field_rect() and the state manager decides
+(Style Guide §6.1, §6.2).
 
 The two rules the field enforces live here as MAX_NAME_LENGTH and
 is_allowed_char() rather than in the state, for the same reason
@@ -43,8 +49,6 @@ CREDIT_HL = (155, 110, 70)      # the subtitle
 STAT_BROWN = (140, 110, 85)     # hints, counter, placeholder text
 ROW_WHITE = (247, 243, 236)     # the field fill
 ROW_BLUE = (120, 150, 190)      # the field border, which always has focus
-BTN_CONFIRM = (150, 180, 125)   # CONFIRM
-BTN_CANCEL = (199, 123, 107)    # BACK
 HINT_BROWN = (150, 125, 100)    # stub-test hint line only
 
 # Anchored to the project, not to the working directory, so the art
@@ -72,15 +76,9 @@ MAX_NAME_LENGTH = 16
 ALLOWED_PUNCTUATION = " "
 
 TITLE_TEXT = "WHAT SHOULD WE CALL YOU?"
-SUBTITLE_TEXT = "THIS NAME FOLLOWS YOU THROUGH THE DEGREE"
 # Shown greyed in an empty field. It is the name the player keeps by
 # submitting nothing, so the fallback is visible instead of a surprise.
 PLACEHOLDER_TEXT = "CSE Student"
-HINT_LINE_1 = "LETTERS AND SPACES ONLY  |  16 CHARACTERS MAX"
-HINT_LINE_2 = "LEAVE IT BLANK TO STAY CSE STUDENT"
-
-CONFIRM_LABEL = "CONFIRM"
-BACK_LABEL = "BACK"
 
 # -------------------------------------------------------------
 # LAYOUT  (positions and sizes, all in pixels)
@@ -91,25 +89,20 @@ CORNER_LEN = 26
 
 BACKDROP_ALPHA = 90     # how strongly the campus scene shows through
 
-TITLE_Y = 170
-SUBTITLE_Y = 220
-RULE_Y = 256
-RULE_HALF = 300
-RULE_GAP = 14           # §4.8 rule: 14 px gap holding the diamond
-RULE_DIAMOND = 7        # §4.8 rule: 7 px half-width diamond
+# PHASE 18 §9: the heading moves up to read as a heading with the field
+# under it, and the field re-centres now that everything below it is
+# gone. The subtitle, rule and diamond constants went with the things
+# they positioned.
+TITLE_Y = 120
 
-BTN_W = 180
-BTN_H = 44
-BTN_GAP = 22
-BTN_Y = 470
-
-# Declared above the field so the field can be measured from it. The
-# two are exactly the same width, so the box and the CONFIRM + BACK run
-# beneath it share both edges. A 16-character name is 256 px at
-# FIELD_SIZE, which leaves the box looking fillable rather than empty.
-FIELD_W = BTN_W * 2 + BTN_GAP
+# The field's width was BTN_W * 2 + BTN_GAP, so it shared both edges
+# with the CONFIRM + BACK run beneath it. Those buttons are gone; the
+# width is kept as the literal it always evaluated to, because it is a
+# good width — a 16-character name is 256 px at FIELD_SIZE, which
+# leaves the box looking fillable rather than empty.
+FIELD_W = 382
 FIELD_H = 54
-FIELD_Y = 320
+FIELD_Y = 330
 FIELD_PAD = 14          # gap from the field's left edge to the text
 CARET_W = 2
 CARET_INSET = 8         # how far the caret stops short of each edge
@@ -118,16 +111,8 @@ CARET_INSET = 8         # how far the caret stops short of each edge
 # text needs no such nudge: the caret trails it.
 PLACEHOLDER_INDENT = 8
 
-# Above the field rather than beside the hints: hint line 1 is wider
-# than the field, so a counter right-aligned to the field's edge would
-# be drawn straight through the end of it.
-COUNTER_Y = 298
-HINT_1_Y = 392
-HINT_2_Y = 414
-
 TITLE_SIZE = 28
 FIELD_SIZE = 16         # the typed name, the biggest thing after the title
-SUB_SIZE = 11
 BODY_SIZE = 12
 LABEL_SIZE = 10
 
@@ -163,7 +148,7 @@ class NameEntryScreen:
 
         self.__font_title: pygame.font.Font = self.__load_font(TITLE_SIZE)
         self.__font_field: pygame.font.Font = self.__load_font(FIELD_SIZE)
-        self.__font_sub: pygame.font.Font = self.__load_font(SUB_SIZE)
+        # __font_sub went with the subtitle (Phase 18 §9).
         self.__font_body: pygame.font.Font = self.__load_font(BODY_SIZE)
         self.__font_label: pygame.font.Font = self.__load_font(LABEL_SIZE)
 
@@ -172,13 +157,10 @@ class NameEntryScreen:
         centre_x = screen_w // 2
         self.__field_rect: pygame.Rect = pygame.Rect(
             centre_x - FIELD_W // 2, FIELD_Y, FIELD_W, FIELD_H)
-        # CONFIRM sits left of centre and BACK right of it, the same
-        # order APPLY / BACK use on the settings screen.
-        pair_w = BTN_W * 2 + BTN_GAP
-        self.__confirm_rect: pygame.Rect = pygame.Rect(
-            centre_x - pair_w // 2, BTN_Y, BTN_W, BTN_H)
-        self.__back_rect: pygame.Rect = pygame.Rect(
-            self.__confirm_rect.right + BTN_GAP, BTN_Y, BTN_W, BTN_H)
+        # PHASE 18 §9: the CONFIRM and BACK rects lived here. ENTER
+        # commits and ESC goes back, so there is nothing left to
+        # hit-test -- and engine/states/name_entry.py's two mouse
+        # branches were deleted in the same commit, as §9 requires.
 
     # -- loading helpers --------------------------------------
     def __load_font(self, size: int) -> pygame.font.Font:
@@ -208,14 +190,6 @@ class NameEntryScreen:
         """The text field's rectangle."""
         return self.__field_rect
 
-    def get_confirm_rect(self) -> pygame.Rect:
-        """The CONFIRM button's rectangle."""
-        return self.__confirm_rect
-
-    def get_back_rect(self) -> pygame.Rect:
-        """The BACK button's rectangle."""
-        return self.__back_rect
-
     # -- main drawing -----------------------------------------
     def render(self, screen: pygame.Surface, name: str,
                caret_visible: bool) -> None:
@@ -230,20 +204,19 @@ class NameEntryScreen:
         if self.__backdrop is not None:
             screen.blit(self.__backdrop, (0, 0))
 
+        # PHASE 18 §9 — the card is stripped to the heading and the
+        # field. Gone: the subtitle, the ceremonial rule and diamond,
+        # both hint lines, the character counter, and the CONFIRM/BACK
+        # buttons. The 16-character cap and the letters-and-spaces rule
+        # are still enforced; only the text telling the player about
+        # them went. The card frame and corner marks stay -- that is
+        # the game's visual identity and the brief did not ask for it
+        # to go. The signature is unchanged.
         self.__draw_card(screen)
         centre_x = screen.get_width() // 2
         self.__blit_centred(screen, self.__font_title, TITLE_TEXT,
                             TITLE_SLATE, centre_x, TITLE_Y)
-        self.__blit_centred(screen, self.__font_sub, SUBTITLE_TEXT,
-                            CREDIT_HL, centre_x, SUBTITLE_Y)
-        self.__draw_rule(screen, centre_x, RULE_Y)
-
         self.__draw_field(screen, name, caret_visible)
-        self.__draw_hints(screen, centre_x, name)
-
-        self.__draw_button(screen, self.__confirm_rect, CONFIRM_LABEL,
-                           BTN_CONFIRM)
-        self.__draw_button(screen, self.__back_rect, BACK_LABEL, BTN_CANCEL)
 
     # -- piece-by-piece drawing -------------------------------
     def __draw_card(self, screen: pygame.Surface) -> pygame.Rect:
@@ -275,18 +248,8 @@ class NameEntryScreen:
             pygame.draw.line(screen, BORDER_BROWN, (px, py),
                              (px + dx2, py + dy2), 3)
 
-    def __draw_rule(self, screen: pygame.Surface, cx: int, y: int) -> None:
-        """
-        The ceremonial horizontal rule (§4.8): two 2 px segments with a
-        14 px gap in the middle holding a 7 px half-width diamond.
-        """
-        pygame.draw.line(screen, BORDER_BROWN,
-                         (cx - RULE_HALF, y), (cx - RULE_GAP, y), 2)
-        pygame.draw.line(screen, BORDER_BROWN,
-                         (cx + RULE_GAP, y), (cx + RULE_HALF, y), 2)
-        pygame.draw.polygon(screen, BORDER_BROWN,
-                            [(cx, y - 6), (cx + RULE_DIAMOND, y),
-                             (cx, y + 6), (cx - RULE_DIAMOND, y)])
+    # PHASE 18 §9: __draw_rule() drew the ceremonial rule and diamond
+    # between the subtitle and the field. Both are gone from the card.
 
     def __draw_field(self, screen: pygame.Surface, name: str,
                      caret_visible: bool) -> None:
@@ -318,32 +281,11 @@ class NameEntryScreen:
                          pygame.Rect(caret_x, rect.y + CARET_INSET, CARET_W,
                                      rect.h - CARET_INSET * 2))
 
-    def __draw_hints(self, screen: pygame.Surface, centre_x: int,
-                     name: str) -> None:
-        """Draw the two rule lines and the character counter."""
-        self.__blit_centred(screen, self.__font_label, HINT_LINE_1,
-                            STAT_BROWN, centre_x, HINT_1_Y)
-        self.__blit_centred(screen, self.__font_label, HINT_LINE_2,
-                            STAT_BROWN, centre_x, HINT_2_Y)
-        counter = self.__font_label.render(
-            f"{len(name)}/{MAX_NAME_LENGTH}", True, STAT_BROWN)
-        screen.blit(counter, (self.__field_rect.right - counter.get_width(),
-                              COUNTER_Y))
-
-    def __draw_button(self, screen: pygame.Surface, rect: pygame.Rect,
-                      label: str, fill: tuple) -> None:
-        """
-        Draw one button.
-
-        No focus bracket and no hover effect: the keyboard belongs to
-        the field, so ENTER confirms and ESC goes back without either
-        button ever being "selected" (§4.6 forbids hover states anyway).
-        """
-        pygame.draw.rect(screen, fill, rect)
-        pygame.draw.rect(screen, BORDER_BROWN, rect, 3)
-        text = self.__font_body.render(label, True, TEXT_COFFEE)
-        screen.blit(text, (rect.centerx - text.get_width() // 2,
-                           rect.centery - text.get_height() // 2))
+    # PHASE 18 §9: __draw_hints() drew the two rule lines and the
+    # character counter, and __draw_button() drew CONFIRM and BACK. All
+    # four are gone. The rules they described are still ENFORCED --
+    # MAX_NAME_LENGTH and is_allowed_char() are untouched -- only the
+    # text announcing them went.
 
     def __blit_centred(self, screen: pygame.Surface, font: pygame.font.Font,
                        text: str, colour: tuple, centre_x: int,
@@ -412,12 +354,9 @@ if __name__ == "__main__":
                     typed += event.unicode
                     caret = 0.0
 
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if prompt.get_confirm_rect().collidepoint(event.pos):
-                    committed = typed.strip() or "(blank -> CSE Student)"
-                    print(f"committed: {committed}")
-                elif prompt.get_back_rect().collidepoint(event.pos):
-                    running = False
+            # PHASE 18 §9: the two mouse branches clicked CONFIRM and
+            # BACK. Both buttons are gone from the card, so running this
+            # file standalone would have crashed on the missing getters.
 
         prompt.render(window, typed, caret < 0.5)
 
