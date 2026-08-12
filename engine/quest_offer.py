@@ -64,6 +64,8 @@ day_cost are Phase 17's, and putting either here would mean two places
 deciding whether a side quest may be started.
 ─────────────────────────────────────────────────────────────
 """
+
+
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
@@ -76,9 +78,17 @@ from engine.quest_state import STATE_UNOFFERED, QuestStateError
 # replies rather than an authored branch: a DialogChain's `choice` is
 # level data and can jump anywhere, and this is one question with one
 # meaning that must read identically for all twelve quests.
+
+
 PROMPT: str = "YOUR DECISION"
 REPLIES: tuple = ("Accept", "Decline")
 ACCEPT_INDEX: int = 0
+
+# Semester 1's three quests are not terminal on Decline the way every
+# other semester's is -- the player can be asked again next visit.
+# Owner ruling, this phase: only semester 1, nothing else changes.
+REPEATABLE_DECLINE_SEMESTER: int = 1
+
 
 # No semester in hand — the editor, the standalone harnesses, a context
 # built before STAGE 1. Nothing is offered and nothing expires, the same
@@ -150,6 +160,24 @@ def lines_for(quest_id: Any) -> Optional[Dict[str, Any]]:
         return None
     return offer
 
+def offer_lines_for(ctx: Any, quest_id: Any) -> Optional[list]:
+    """
+    The lines to show for this offer right now.
+
+    Identical to lines_for(quest_id)["offer_lines"] except for a
+    semester-1 quest the player has already turned down once -- that
+    case gets one line appended acknowledging the repeat ask, read from
+    ctx.declined_quest_ids (see resolve()).
+    """
+    offer = lines_for(quest_id)
+    if offer is None:
+        return None
+    lines = list(offer["offer_lines"])
+    declined = getattr(ctx, "declined_quest_ids", None)
+    if declined and str(quest_id or "").strip().upper() in declined:
+        lines.append("So... did you change your mind?")
+    return lines
+
 
 # ── the question ───────────────────────────────────────────────
 
@@ -211,14 +239,20 @@ def resolve(ctx: Any, quest_id: Any, accepted: bool) -> bool:
     """
     Record Accept or Decline. False when nothing was written.
 
-    The ONLY place this module touches the machine. Both outcomes are
-    permanent — Unlocked and Declined are the two states the offer can
-    reach, and can_offer() answers False from either, so the question
-    is never put a second time under any circumstance.
+    Accepting is always permanent: Unlocked, and can_offer() answers
+    False from there for every semester. Declining is permanent for
+    semesters 2-12 -- Declined, same as accepting, never asked again.
 
-    ACCEPTING STARTS NOTHING. The quest becomes Unlocked and that is
-    all: no lecture, no day charge, no screen, no skill. Phases 14-17
-    own what an unlocked quest is worth; this phase owns the answer.
+    SEMESTER 1 IS THE ONE EXCEPTION (owner ruling). A semester-1 decline
+    does NOT transition the quest at all -- it stays Unoffered on
+    purpose, so can_offer() keeps saying yes and the NPC's sem1_return
+    chain keeps putting the question on every later visit that
+    semester. What IS written is a note in ctx.declined_quest_ids, read
+    by dialogue_flow.open_offer() to add an acknowledgement line the
+    second time the question is asked. Accepting still closes it the
+    same way it does everywhere else, and a semester-1 quest that is
+    never accepted still goes Missed at term's end, the same as any
+    other unanswered quest -- REPEATABLE, NOT UNLIMITED.
 
     QuestStateError is caught even though is_still_offerable() has just
     made it unreachable. A conversation is a place where being wrong
@@ -230,6 +264,10 @@ def resolve(ctx: Any, quest_id: Any, accepted: bool) -> bool:
     try:
         if accepted:
             machine.accept(quest_id)
+        elif get_semester(quest_id) == REPEATABLE_DECLINE_SEMESTER:
+            if not isinstance(getattr(ctx, "declined_quest_ids", None), set):
+                ctx.declined_quest_ids = set()
+            ctx.declined_quest_ids.add(str(quest_id).strip().upper())
         else:
             machine.decline(quest_id)
     except QuestStateError:
