@@ -2385,7 +2385,7 @@
     {
       "uid": "prop_0172",
       "type_id": "signboard",
-      "x": 1,
+      "x": 2,
       "y": 4,
       "passthrough": false,
       "speed_modifier": 1.0,
@@ -2400,6 +2400,21 @@
           "Welcome! The courtyard is right",
           "up ahead."
         ]
+      }
+    },
+    {
+      "uid": "prop_0173",
+      "type_id": "yellowarrow",
+      "x": 1,
+      "y": 5,
+      "passthrough": true,
+      "speed_modifier": 1.0,
+      "interactable": false,
+      "interaction": {
+        "kind": "none",
+        "amount": 0.0,
+        "skill_id": null,
+        "triggers_per_semester": 1
       }
     }
   ],
