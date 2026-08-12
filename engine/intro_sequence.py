@@ -52,12 +52,37 @@ BEAT_IDS: tuple = (BEAT_BRIEFING, BEAT_ROOM_TOUR, BEAT_CAMPUS_TOUR)
 #   player_room   10x10, spawn (4, 5), Roya (4, 3) — walkable, no prop,
 #                 no NPC. The bed is at (2, 3) and the vase at (4, 2) is
 #                 solid, so she must not move up.
-#   lecture_hall  19x16, spawn (9, 14), Roya (9, 12) — walkable, no
-#                 prop, no NPC. Prof. Rahman stands at (8, 4) and is
-#                 visible in semester 1.
+#   lecture_hall  19x16, spawn (9, 14), Roya col 9 / row 8 — walkable,
+#                 no prop, no NPC, no portal, no gate, and nothing
+#                 overhanging from the row above. Prof. Rahman stands at
+#                 (8, 4), four rows further up, and is visible in
+#                 semester 1.
 #
-# Two cells in front of the player in both, so the camera frames them
-# together with no camera work.
+# CELLS ARE (x, y) — (column, row).
+#
+# WHERE SHE STANDS IN THE LECTURE HALL, AND WHY THAT CELL (owner ruling:
+# fully in frame, centred, no prop under her, clear of the dialogue
+# card). Three constraints, and the hall only satisfies all three in one
+# column:
+#
+#   ROW. Rows 6, 7, 9, 10 and 12 are the desk rows — a prop sits on
+#   every even column. Rows 5, 8 and 11 are the clear aisles. Row 11 is
+#   behind the dialogue card and row 5 is most of the way up the hall,
+#   so row 8 is the aisle that is both empty and in shot.
+#
+#   COLUMN. The spawn is column 9 and the camera centres on the player,
+#   so column 9 is dead centre of the screen — 0px off. It is also the
+#   central aisle, which is why it is free on every row.
+#
+#   THE CARD. The lecture hall spawn is on the bottom row, so the camera
+#   clamps and everything is drawn low. Her 72px sprite hangs 24px above
+#   its own cell, and the dialogue card is Rect(46, 524, 1188, 168) —
+#   she is drawn at Rect(604, 404, 72, 72), which clears the top of the
+#   card by 48px. She was at (9, 12) originally and was rendered
+#   ENTIRELY behind the card; nobody ever saw her.
+#
+# If she is moved again: each row is 48px, her sprite bottom must stay
+# above y=524, and an odd column will put her inside a desk.
 STAGES: Dict[str, Dict[str, Any]] = {
     BEAT_BRIEFING: {
         "level_id": None,          # None = the black stage, no map loaded
@@ -73,7 +98,7 @@ STAGES: Dict[str, Dict[str, Any]] = {
     },
     BEAT_CAMPUS_TOUR: {
         "level_id": "lecture_hall",
-        "npc_cell": (9, 12),
+        "npc_cell": (9, 8),           # (x, y) = column 9, row 8
         "facing": "down",
         "fade_out": True,          # the only beat that fades on the way out
     },
@@ -81,6 +106,21 @@ STAGES: Dict[str, Dict[str, Any]] = {
 
 # The NPC whose art the cutscenes stage. NPC_REGISTRY type id.
 STAGE_NPC_TYPE: str = "roya"
+
+# BEATS THE PLAYER HAS TO WALK INTO. beat id -> the level whose doorway
+# starts it.
+#
+# Beat 2 used to hand straight to beat 3, which meant the tutorial moved
+# the player from their room to the lecture hall for them. It does not
+# any more: after_room_tour() arms beat 3 and returns EXPLORATION, so
+# the player leaves their room, crosses the campus and finds the lecture
+# hall on their own, and beat 3 starts the moment they set foot in it.
+#
+# A table rather than an `if`, for the same reason STAGES is one: a
+# second walk-in beat is a row here and no new code anywhere.
+WALK_IN_TRIGGERS: Dict[str, str] = {
+    BEAT_CAMPUS_TOUR: "lecture_hall",
+}
 
 
 # ── arming ─────────────────────────────────────────────────────
@@ -179,14 +219,51 @@ def after_registration(ctx: Any) -> ScreenState:
 
 def after_room_tour(ctx: Any) -> ScreenState:
     """
-    Beat 2 arms beat 3 and stays on INTRO.
+    Beat 2 arms beat 3 and HANDS THE PLAYER BACK THEIR LEGS.
 
-    The router only fires enter() when the state CHANGES, so returning
-    INTRO from INTRO will not re-enter. engine/states/intro.py handles
-    that itself — see its __end_beat().
+    This used to return INTRO, which played beat 3 back-to-back on a
+    lecture hall the tutorial had teleported the player into. Beat 3 is
+    now a walk-in beat (WALK_IN_TRIGGERS): the player leaves their room
+    under their own control and beat 3 starts when they enter the
+    lecture hall. check_level_trigger() is what notices, and
+    engine/states/exploration.py::update() is where it is asked.
+
+    Beat 3 stays ARMED the whole time they are walking, so nothing else
+    about the intro changes — is_running() is still True, the semester-1
+    cutscene is still suppressed, and the title screen still disarms it.
     """
     set_beat(ctx, BEAT_CAMPUS_TOUR)
-    return ScreenState.INTRO
+    return ScreenState.EXPLORATION
+
+
+# ── the walk-in trigger ────────────────────────────────────────
+
+def pending_trigger_level(ctx: Any) -> Optional[str]:
+    """The level the armed beat is waiting for the player to walk into."""
+    if not is_running(ctx):
+        return None
+    return WALK_IN_TRIGGERS.get(str(current_beat(ctx) or ""))
+
+
+def check_level_trigger(ctx: Any) -> bool:
+    """
+    Start the armed beat if the player is standing in its level.
+
+    True means the game has been routed to INTRO and the caller should
+    stop what it was doing this frame. False — the overwhelmingly common
+    answer, since this is asked once a frame while walking — means
+    nothing happened and costs one dict lookup.
+
+    Asked per frame rather than hooked onto the portal, because a player
+    can reach the lecture hall by loading into it, by a teleport rug, or
+    by any doorway a level editor grows next week; where they came from
+    is not the question, only where they are.
+    """
+    level_id = pending_trigger_level(ctx)
+    if not level_id or getattr(ctx, "level_id", None) != level_id:
+        return False
+    ctx.go(ScreenState.INTRO)
+    return True
 
 
 def after_campus_tour(ctx: Any) -> ScreenState:
@@ -232,17 +309,52 @@ if __name__ == "__main__":
     assert after_registration(ctx) is ScreenState.INTRO
     assert current_beat(ctx) == BEAT_ROOM_TOUR, "registration armed the wrong beat"
 
-    assert after(ctx, BEAT_ROOM_TOUR) is ScreenState.INTRO
+    # Beat 2 gives the player back the controls; beat 3 waits for them.
+    assert after(ctx, BEAT_ROOM_TOUR) is ScreenState.EXPLORATION
     assert current_beat(ctx) == BEAT_CAMPUS_TOUR
     assert after(ctx, BEAT_CAMPUS_TOUR) is ScreenState.EXPLORATION
 
     finish(ctx)
     assert not is_running(ctx)
 
+    # -- the walk-in trigger ---------------------------------------
+    class _Go:
+        def __init__(self, level_id):
+            self.level_id = level_id
+            self.went_to = None
+
+        def go(self, state):
+            self.went_to = state
+
+    walking = _Go("campus_main")
+    arm(walking)
+    set_beat(walking, BEAT_CAMPUS_TOUR)
+    assert pending_trigger_level(walking) == "lecture_hall"
+    assert not check_level_trigger(walking), "beat 3 fired on the wrong level"
+    assert walking.went_to is None
+
+    walking.level_id = "lecture_hall"
+    assert check_level_trigger(walking), "beat 3 did not fire on arrival"
+    assert walking.went_to is ScreenState.INTRO
+
+    # An unarmed context never triggers, whatever level it is standing in.
+    finish(walking)
+    walking.went_to = None
+    assert pending_trigger_level(walking) is None
+    assert not check_level_trigger(walking), "a finished intro fired again"
+    assert walking.went_to is None
+
+    # Beat 2 is not a walk-in beat — it plays where the player already is.
+    staged = _Go("player_room")
+    arm(staged)
+    set_beat(staged, BEAT_ROOM_TOUR)
+    assert pending_trigger_level(staged) is None
+    assert not check_level_trigger(staged)
+
     # -- the staging table -----------------------------------------
     assert stage_for(BEAT_BRIEFING)["level_id"] is None
     assert stage_for(BEAT_ROOM_TOUR)["npc_cell"] == (4, 3)
-    assert stage_for(BEAT_CAMPUS_TOUR)["npc_cell"] == (9, 12)
+    assert stage_for(BEAT_CAMPUS_TOUR)["npc_cell"] == (9, 8)
     assert stage_for(BEAT_CAMPUS_TOUR)["fade_out"] is True
     assert sum(1 for b in BEAT_IDS if stage_for(b)["fade_out"]) == 1, \
         "more than one beat fades out"
