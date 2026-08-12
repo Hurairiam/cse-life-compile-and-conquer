@@ -1,94 +1,126 @@
 """
-The "end the semester now?" question an end_semester prop opens.
+The three-choice question an end_semester prop opens (Task 7).
 
 Reached through the normal menu-prop path: a prop whose interaction
 kind is "menu" and whose menu id is "end_semester" routes here, so the
 door out of a term hangs on whichever object the author picks in the
-level editor rather than being hardcoded. Adding it cost one appended
-ScreenState member and one appended MENU_REGISTRY row — the editor's
-dropdown reads that dict, so tools/ needed no edit at all.
+level editor rather than being hardcoded. In the shipped levels that
+prop is the bed in levels/player_room.json.
 
-WHY THIS EXISTS
-───────────────
-Finishing the exams with days left now hands the campus back instead of
-rolling the term over (engine/final_exam.py, owner ruling). That is the
-whole point — the player roams and takes side quests with the finals
-behind them — but it leaves the term with no ending, so this is the
-ending: a prop they walk up to when they are done.
+WHAT CHANGED, AND WHAT THE BRIEF GOT WRONG
+──────────────────────────────────────────
+Task 7 describes replacing an "instant semester skip" with a popup. That
+is not what this prop did: it already refused while exams were unsat and
+already asked a two-button ConfirmPopup before closing the term. So this
+phase is not a replacement but an EXTENSION — the same gate, the same
+question, plus a second answer:
 
-IT REFUSES UNTIL THE EXAMS ARE DONE
-───────────────────────────────────
-`final_exam.is_finished(ctx)` is the gate. Letting a prop end a term
-mid-semester would skip every unsat exam, and close_semester() would
-dutifully backlog all of them — a way to throw a whole semester away by
-walking into a rug. The semester rollover rules are out of this phase's
-scope, and this is the one place a new door could have changed them.
+    ADVANCE SEMESTER   only when every exam has been sat
+    DRAIN TIMEPOOL     spend a typed number of days, never past the floor
+    CANCEL             nothing happens
 
-IT ASKS BEFORE IT ACTS
-──────────────────────
-The remaining days do not carry over — player.advance_semester() resets
-the pool to 80 — so this is destructive in exactly the way OVERWRITE
-SLOT n? is, and it takes the same ConfirmPopup, named with what it
-costs. The question is asked here rather than in a screen of its own
-because there is nothing to draw: the map underneath IS the screen.
+ONE NUMBER GATES AND FLOORS BOTH
+────────────────────────────────
+`engine/exam_days.py` owns "days still needed to complete all remaining
+exams this semester" — the value the brief assumes exists and the repo
+did not have. `can_advance()` opens option 1 and `drainable()` bounds
+option 2, and because `days_needed()` is zero exactly when the exams are
+done, the floor disappears at the same instant the gate opens. Neither
+answer is derived here.
 
-NOTHING ABOUT THE ROLLOVER LIVES HERE. CONFIRM calls
+THE REFUSAL POPUP IS GONE ON PURPOSE
+────────────────────────────────────
+This state used to open a "NOT YET" MessagePopup and hand control
+straight back when the exams were unsat. The brief asks for the blocked
+option to be "visibly unavailable rather than silently no-op", which the
+greyed button plus the exam count does better: the player sees the
+choice exists, sees why it is shut, and is still standing in front of
+the other two.
+
+IT OWNS ITS POPUP RATHER THAN USING ctx.popup
+─────────────────────────────────────────────
+ctx.popup is the shared ConfirmPopup and is wired into
+engine/state_router.py's modal list. BedPopup is a module-level
+singleton here instead, so this phase adds no member to app_context.py
+and no row to the router's overlay list — two shared, already-divergent
+files left untouched (G3). The cost is that this state routes the events
+and draws the card itself, which is the four lines below.
+
+NOTHING ABOUT THE ROLLOVER LIVES HERE. ADVANCE calls
 engine/states/exam.py::close_semester(), unchanged and still the only
-thing in the game that closes a term.
+thing in the game that closes a term. DRAIN calls
+engine/day_drain.py::drain_days(), which puts one PassDaysAction through
+GameClock exactly as the pass_days prop already did — so the low-day
+warning and the HUD chip still fire on the way down.
 """
-from engine import final_exam
-from engine.screen_manager import ScreenState
-from ui.popup import RESULT_CONFIRM, SEVERITY_INFO, SEVERITY_WARNING
+import pygame
 
-# Module-level rather than on ctx, the way engine/states/save_game.py
-# keeps its own row highlight: nothing outside this file reads it, and
-# app_context.py is a shared file worth not touching for one bool.
-__refused = False
+from engine import day_drain, exam_days
+from engine.screen_manager import ScreenState
+from ui.bed_popup import (RESULT_ADVANCE, RESULT_CANCEL, RESULT_DRAIN,
+                          BedPopup)
+
+# Module-level, the way engine/states/save_game.py and pass_days.py keep
+# theirs: nothing outside this file reads it, and app_context.py is a
+# shared file worth not touching for one widget.
+__popup = None
+
+
+def __ui(ctx):
+    """The card, built once against this screen's size."""
+    global __popup
+    if __popup is None:
+        __popup = BedPopup(ctx.screen_w, ctx.screen_h)
+    return __popup
 
 
 def enter(ctx):
     """
-    Ask the question, or refuse before anything is drawn.
+    Ask the question.
 
-    A refusal opens one popup and hands control straight back, so the
-    player presses E, reads why, and is still standing on the map.
+    Opened with what the rules allow rather than with the rules: the
+    widget is told whether advance is available and how many days may be
+    drained, and never consults the game itself (§6.2).
     """
-    global __refused
-    __refused = not final_exam.is_finished(ctx)
-    if __refused:
-        ctx.play_sfx("error")
-        ctx.message_popup.open(
-            "NOT YET",
-            ["You still have exams to sit.",
-             "Come back once they are done."], SEVERITY_INFO)
-        ctx.go(ctx.return_state or ScreenState.EXPLORATION)
-        return
+    __ui(ctx).open_bed(
+        can_advance=exam_days.can_advance(ctx),
+        ceiling=exam_days.drainable(ctx),
+        exams_left=exam_days.remaining_exams(ctx))
+    ctx.play_sfx("click")
 
-    days = final_exam.days_left(ctx)
-    ctx.popup.open(
-        "END THE SEMESTER?",
-        ["%d day%s left in this term." % (days, "" if days == 1 else "s"),
-         "They will not carry over."],
-        SEVERITY_WARNING, confirm_label="END TERM")
+
+def exit(ctx):
+    """Never leave the card up behind a state change."""
+    if __popup is not None:
+        __popup.close()
+
+
+def handle_events(ctx, events):
+    """
+    The card gets every event while it is open — it is a modal.
+
+    Routed here rather than by the router because this popup is not in
+    the router's modal list; see the header. `handle_event()` returns
+    True for anything it consumed, which is everything while open.
+    """
+    popup = __ui(ctx)
+    for event in events:
+        popup.handle_event(event)
 
 
 def update(ctx, dt):
-    """
-    Resolve the question. This state has no input of its own — the
-    popup is a modal and eats every event before a state sees one.
-    """
-    if __refused:
-        return
-    result = ctx.popup.take_result()
-    if result is None:
-        # A popup that closed without recording anything would strand
-        # the player on a screen with no keys. Not reachable through
-        # ConfirmPopup, which always sets a result — but being wrong
-        # about that should cost a wasted frame, not the run.
-        if not ctx.popup.is_open():
+    """Act on the choice, once."""
+    popup = __ui(ctx)
+    choice = popup.take_choice()
+    if choice is None:
+        # A card that closed without recording anything would strand the
+        # player on a screen with no keys. Not reachable through
+        # BedPopup, which always records before it closes.
+        if not popup.is_open():
             __leave(ctx)
         return
-    if result == RESULT_CONFIRM:
+
+    if choice == RESULT_ADVANCE:
         ctx.play_sfx("confirm")
         # The one call. Imported late for the same reason
         # close_semester() reaches for engine.states.monologue late:
@@ -96,6 +128,16 @@ def update(ctx, dt):
         from engine.states.exam import close_semester
         close_semester(ctx)
         return
+
+    if choice == RESULT_DRAIN:
+        # The popup already refused anything outside 1..ceiling, and
+        # drain_days() caps at the pool again on its own — the number
+        # cannot get through twice-checked and still be wrong.
+        ctx.play_sfx("confirm")
+        day_drain.drain_days(ctx, popup.get_days())
+        ctx.go(ctx.return_state or ScreenState.EXPLORATION)
+        return
+
     __leave(ctx)
 
 
@@ -107,14 +149,17 @@ def __leave(ctx):
 
 def render(ctx, screen):
     """
-    Draw the map. The router draws the question over it.
+    Draw the map, then the card over it.
 
-    Redrawn here rather than left over from the previous frame because
-    the router only renders the ACTIVE state — without this the popup
-    would sit on whatever was last flipped to the screen. Exploration's
-    render is pure drawing, so calling it is safe, and it is what
-    engine/states/activity.py and teleport.py both do.
+    Exploration is redrawn here rather than left over from the previous
+    frame because the router only renders the ACTIVE state — without
+    this the card would sit on whatever was last flipped to the screen.
+    Exploration's render is pure drawing, so calling it is safe, and it
+    is what engine/states/activity.py, teleport.py and pass_days.py all
+    do. The card is drawn after it, by this state, because it is not one
+    of the router's overlays.
     """
     from engine.states import exploration
     if getattr(ctx, "level", None) is not None:
         exploration.render(ctx, screen)
+    __ui(ctx).render(screen)
