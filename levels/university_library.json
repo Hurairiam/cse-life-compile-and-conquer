@@ -1934,24 +1934,15 @@
           {
             "chain_id": "s1",
             "lines": [
-              "Hey there. First week.I hope this journey becomes memorable.",
-              "I'm Rafi and  I was just color-coding the term syllabus.",
-              "If you plan from day one, nothing can surprise you."
+              "Sorry, give me a second, I was timing myself on the syllabus.",
+              "I'm Rafi. I read the whole outline twice before orientation even started.",
+              "Is that excessive? People keep telling me that's excessive.",
+              "I built a full semester planner already. Color-coded. Slightly unhinged, in hindsight.",
+              "But here's the thing- it's actually working, so I'm not stopping now.",
+              "You strike me as someone who might either love this or think I'm insane.",
+              "Either way, I'd genuinely like to know which."
             ],
-            "emotion": "neutral",
-            "choice": {
-              "options": [
-                {
-                  "label": "Teach me how.",
-                  "goto": "s1_yes"
-                },
-                {
-                  "label": "I'll wing it.",
-                  "goto": "s1_no"
-                }
-              ],
-              "prompt": "WHAT DO YOU SAY?"
-            }
+            "emotion": "neutral"
           },
           {
             "chain_id": "s2",
@@ -2063,22 +2054,13 @@
             "emotion": "happy"
           },
           {
-            "chain_id": "s1_yes",
+            "chain_id": "sem1_return",
             "lines": [
-              "Good. Then start with one notebook, not five.",
-              "Write the deadline down the day it's announced, not the night before.",
-              "That's the whole trick. Everything after that is just upkeep."
+              "You're back- good, I've been dying to talk to someone about this planner.",
+              "I can walk you through it if you want. Might even help you too.",
+              "No pressure, obviously. I just... don't have many people to nerd out with."
             ],
-            "emotion": "happy"
-          },
-          {
-            "chain_id": "s1_no",
-            "lines": [
-              "Suit yourself.",
-              "Half the batch says that in week one. Week ten is less relaxed about it.",
-              "Offer stands though. I'm here most days."
-            ],
-            "emotion": "serious"
+            "emotion": "neutral"
           }
         ],
         "on_complete": "loop_last"
