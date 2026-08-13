@@ -34,6 +34,7 @@ INTRO_BEATS: dict[str, dict] = {
             "Welcome to Compile & Conquer. I'm Ms. Roya.",
             "You're about to start your journey as a Computer Science and Engineering student. It'll be twelve semesters of coding, problem solving, and the occasional all-nighter.",
             "You'll need 140 credits to graduate, and each semester gives you a budget of 80 days for studying, exams, side work, and everything in between.",
+            "Every semester starts the same way — you'll sit down and register for your courses, up to 15 credits at a time. Choose them well, they shape the whole term.",
             "It won't always be an easy path, but if you stick with it, you'll have something to be proud of at the end.",
             "And I'll be your advisor for the road ahead.",
             "Before any of that begins, though, what should I call you?",
